@@ -1,0 +1,9 @@
+http://localhost:5173/order/harambe-kun?table=A4... Here, we have category tabs at C:\Users\MSA WIN10 G\Desktop\oda\cloud\odamobile\src\pages\MenuPage.jsx. Where if i have n categories, there will be n tabs. Problem is, for each tab, all the n categories are still listed inside as categories again. Come on! 
+
+http://localhost:5173/restaurants/restaurant-2/tables, here, the UI is ass. Remember, this is in PC view, but the UI does nto reflect that. The arrangement of tables should always be in a grid. WHere initially it just shows tables cards, and per each card when tapped it shows info expansion with options to download, print or share the QR code of that table. WE DO NOT SHOW THE QR CODE OR INK IN THE UI FOR THE USER!!. 
+
+This C:\Users\MSA WIN10 G\Desktop\oda\cloud\odamobile\src\components\WorkspaceShell.jsx is broken, first of all, whoever the parent of this is, has aligned all children to the left, not center. Second, The content of the links, usually the last, such as the current "Settings" is fading out, not clearly visible. ALso the ODA title at the start is almost cutoff, make this C:\Users\MSA WIN10 G\Desktop\oda\cloud\odamobile\src\components\WorkspaceShell.jsx look proper. 
+
+All the "add item" forms i am seeing should not be there by default, they should be hidden in buttons and be steps. WHen user wants to add something, we can have a complete separate page for that/. Remember, we can allow addition of multiple items, such as in adding menu items, we can't add 1 by 1.
+
+ So by default, any screen should be very clean, no noise. Each action/button clear and separate, balanced throughout the screen. Not too close, not too far, i need equal margins and paddings all around.
