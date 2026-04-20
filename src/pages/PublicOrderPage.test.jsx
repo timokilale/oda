@@ -92,9 +92,14 @@ describe("PublicOrderPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Add Pilau" }));
 
-    const placeOrderButton = screen.getByRole("button", { name: "Place Order" });
-    expect(placeOrderButton).toBeEnabled();
+    // CUS-L09: Must review cart first — button says "Review Order" initially
+    const reviewButton = screen.getByRole("button", { name: "Review Order" });
+    expect(reviewButton).toBeEnabled();
+    await user.click(reviewButton);
 
+    // Now the review sheet is open, find the Place Order button inside it
+    const placeOrderButton = screen.getByRole("button", { name: /Place Order/ });
+    expect(placeOrderButton).toBeEnabled();
     await user.click(placeOrderButton);
 
     expect(await screen.findByText("Order placed successfully.")).toBeInTheDocument();

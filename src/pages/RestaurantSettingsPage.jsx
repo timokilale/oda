@@ -3,6 +3,7 @@ import ImagePositionField from "../components/ImagePositionField.jsx";
 import { createCroppedUpload, RESTAURANT_IMAGE_TARGET } from "../lib/cropImage.js";
 import { apiRequest } from "../lib/api.js";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
+import usePageTitle from "../hooks/usePageTitle.js";
 import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
 
 function buildInitialForm(restaurant) {
@@ -26,6 +27,8 @@ export default function RestaurantSettingsPage() {
   const [form, setForm] = useState(() => buildInitialForm(restaurant));
   const [submitting, setSubmitting] = useState(false);
   const [flash, setFlash] = useState(null);
+
+  usePageTitle(`Settings — ${restaurant.name}`);
 
   useEffect(() => {
     setForm(buildInitialForm(restaurant));
@@ -163,6 +166,7 @@ export default function RestaurantSettingsPage() {
                 className="field-control"
                 id="restaurant_settings_city"
                 type="text"
+                placeholder="e.g. Nairobi"
                 value={form.city}
                 onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
               />
@@ -176,6 +180,7 @@ export default function RestaurantSettingsPage() {
                 className="field-control"
                 id="restaurant_settings_country"
                 type="text"
+                placeholder="e.g. Kenya"
                 value={form.country}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, country: event.target.value }))
@@ -252,22 +257,36 @@ export default function RestaurantSettingsPage() {
         <div className="surface panel">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">What Changes Here</h2>
+              <h2 className="panel-title">Status &amp; links</h2>
             </div>
           </div>
 
           <div className="stack-md">
-            <div className="empty-state panel">
-              <h3 className="panel-title">Owner-side impact</h3>
-              <p className="empty-text">
-                The dashboard card, workspace header, and reports all reflect these updates after save.
-              </p>
+            <div className="field-group">
+              <span className="field-label">Visibility</span>
+              <span
+                className={`status-pill ${form.active === "true" ? "status-pill--active" : "status-pill--inactive"}`}
+                role="status"
+              >
+                {form.active === "true" ? "Active — accepting orders" : "Inactive — ordering paused"}
+              </span>
             </div>
 
-            <div className="empty-state panel">
-              <h3 className="panel-title">Customer-side impact</h3>
-              <p className="empty-text">
+            {restaurant.ref ? (
+              <div className="field-group">
+                <span className="field-label">Customer menu link</span>
+                <p className="table-meta" style={{ wordBreak: "break-all" }}>
+                  {`${window.location.origin}/order/${restaurant.ref}`}
+                </p>
+              </div>
+            ) : null}
+
+            <div className="field-group">
+              <span className="field-label">How changes take effect</span>
+              <p className="field-help" style={{ margin: 0 }}>
+                The dashboard card, workspace header, and reports update after save.
                 Customers see the latest restaurant name and photo the next time they open a table link.
+                Existing QR codes and table links are not affected.
               </p>
             </div>
           </div>

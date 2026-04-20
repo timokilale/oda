@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
+import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
 
@@ -10,6 +13,9 @@ export default function TablesPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [flash, setFlash] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  usePageTitle(`Tables — ${restaurant.name}`);
 
   async function loadTables() {
     try {
@@ -68,11 +74,13 @@ export default function TablesPage() {
     }
   }
 
-  async function handleDelete(tableId) {
-    if (!window.confirm("Delete this table and its QR code?")) {
+  async function handleDelete() {
+    if (!deleteTarget) {
       return;
     }
 
+    const tableId = deleteTarget.id;
+    setDeleteTarget(null);
     setFlash(null);
 
     try {
@@ -135,7 +143,7 @@ export default function TablesPage() {
               required
             />
           </div>
-          <div style={{ paddingTop: 28 }}>
+          <div>
             <button type="submit" className="button button-confirm" disabled={submitting}>
               {submitting ? "Creating" : "Create QR"}
             </button>
@@ -145,11 +153,7 @@ export default function TablesPage() {
 
       <section className="page-section">
         {loading ? (
-          <div className="surface empty-state">
-            <div className="panel">
-              <p className="empty-text">Loading table QR codes...</p>
-            </div>
-          </div>
+          <LoadingSkeleton variant="card" count={3} />
         ) : tables.length ? (
           <div className="qr-grid">
             {tables.map((table) => (
@@ -186,7 +190,7 @@ export default function TablesPage() {
                     <button
                       type="button"
                       className="button button-danger"
-                      onClick={() => handleDelete(table.id)}
+                      onClick={() => setDeleteTarget(table)}
                     >
                       Delete
                     </button>
@@ -197,13 +201,22 @@ export default function TablesPage() {
           </div>
         ) : (
           <div className="surface empty-state">
-            <div className="panel">
-              <h2 className="panel-title">No tables yet</h2>
-              <p className="empty-text">Create your first table to generate a QR code and customer ordering link.</p>
-            </div>
+            <h2 className="panel-title">No tables yet</h2>
+            <p className="empty-text">Create your first table to generate a QR code and customer ordering link.</p>
           </div>
         )}
       </section>
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={`Delete Table ${deleteTarget?.tableNumber || ""}?`}
+        message="This will permanently delete the QR code for this table. Any printed copies of this QR code will stop working. Existing orders from this table are not affected."
+        confirmLabel="Delete table"
+        cancelLabel="Keep table"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </WorkspaceShell>
   );
 }

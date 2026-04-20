@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useResolvedCanAddRestaurant } from "../hooks/useResolvedCanAddRestaurant.js";
 import { apiRequest } from "../lib/api.js";
+import ConfirmDialog from "./ConfirmDialog.jsx";
 import FlashStack from "./FlashStack.jsx";
 import QuickCreateRestaurant from "./QuickCreateRestaurant.jsx";
 
@@ -18,6 +19,7 @@ export default function WorkspaceShell({
   const navigate = useNavigate();
   const { owner, logout } = useAuth();
   const [ownedRestaurants, setOwnedRestaurants] = useState([]);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const { resolvedCanAddRestaurant, refreshResolvedCanAddRestaurant } =
     useResolvedCanAddRestaurant(owner, ownerCanAddRestaurant);
 
@@ -61,6 +63,7 @@ export default function WorkspaceShell({
   }, [owner]);
 
   async function handleLogout() {
+    setLogoutConfirmOpen(false);
     await logout();
     navigate("/login");
   }
@@ -89,6 +92,8 @@ export default function WorkspaceShell({
 
   return (
     <div className="app-shell">
+      <a href="#main-content" className="sr-only sr-only-focusable">Skip to content</a>
+
       <header className="topbar">
         <div className="topbar__left">
           <Link to="/" className="brand">
@@ -165,10 +170,12 @@ export default function WorkspaceShell({
               {resolvedCanAddRestaurant ? (
                 <QuickCreateRestaurant onCreated={handleRestaurantCreated} />
               ) : (
-                <span className="muted-text">Restaurant limit reached</span>
+                <span className="status-pill status-pill--inactive" title="You have reached the maximum number of restaurants for your account">
+                  Limit: {ownedRestaurants.length} restaurant{ownedRestaurants.length !== 1 ? "s" : ""}
+                </span>
               )}
               <span className="muted-text">{owner.phoneNumber}</span>
-              <button type="button" className="button" onClick={handleLogout}>
+              <button type="button" className="button" onClick={() => setLogoutConfirmOpen(true)}>
                 Log out
               </button>
             </>
@@ -187,7 +194,20 @@ export default function WorkspaceShell({
 
       <FlashStack flash={flash} onDismiss={onClearFlash} />
 
-      {children}
+      <main id="main-content">
+        {children}
+      </main>
+
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        title="Log out?"
+        message="Any unsaved changes will be lost."
+        confirmLabel="Log out"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleLogout}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
     </div>
   );
 }

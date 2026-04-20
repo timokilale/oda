@@ -4,6 +4,7 @@ import ImagePositionField from "../components/ImagePositionField.jsx";
 import { createCroppedUpload, RESTAURANT_IMAGE_TARGET } from "../lib/cropImage.js";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ export default function RegisterPage() {
   const [otpRequested, setOtpRequested] = useState(false);
   const [devOtpCode, setDevOtpCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  usePageTitle("Create account");
   const [form, setForm] = useState({
     phoneNumber: "",
     otpCode: "",
@@ -23,10 +26,6 @@ export default function RegisterPage() {
     restaurantImagePositionX: 50,
     restaurantImagePositionY: 50,
   });
-
-  if (owner) {
-    return <Navigate to="/dashboard" replace />;
-  }
 
   useEffect(() => {
     if (!resendCooldown) {
@@ -39,6 +38,10 @@ export default function RegisterPage() {
 
     return () => window.clearTimeout(timer);
   }, [resendCooldown]);
+
+  if (owner) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   function resetOtpFlow() {
     setOtpRequested(false);
@@ -235,14 +238,11 @@ export default function RegisterPage() {
                   <button type="button" className="button" onClick={resetOtpFlow} disabled={submitting}>
                     Edit details
                   </button>
-                  <span className="muted-text">
-                    {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : "You can request another code now."}
-                  </span>
                 </div>
               </>
             ) : null}
 
-            {otpRequested && devOtpCode ? (
+            {import.meta.env.DEV && otpRequested && devOtpCode ? (
               <div className="alert">
                 Development OTP: <strong>{devOtpCode}</strong>
               </div>

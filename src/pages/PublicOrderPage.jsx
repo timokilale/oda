@@ -8,7 +8,7 @@ import TableLookupForm from "../components/public-order/TableLookupForm.jsx";
 import { apiRequest } from "../lib/api.js";
 import { formatCurrency } from "../lib/format.js";
 import { filterMenuNodes } from "../lib/public-order/filterMenuNodes.js";
-import orderCss from "../template-order.css?raw";
+import "../template-order.css";
 
 export default function PublicOrderPage() {
   const { restaurantRef } = useParams();
@@ -257,7 +257,7 @@ export default function PublicOrderPage() {
 
   function updateQuantity(itemId, delta) {
     setQuantities((current) => {
-      const nextValue = Math.max(0, Math.min(99, Number(current[String(itemId)] || 0) + delta));
+      const nextValue = Math.max(0, Math.min(20, Number(current[String(itemId)] || 0) + delta));
       return { ...current, [String(itemId)]: nextValue };
     });
   }
@@ -320,8 +320,7 @@ export default function PublicOrderPage() {
         : `${cartItems.items[0].name} + ${cartItems.items.length - 1} more`;
 
   return (
-    <>
-      <style>{orderCss}</style>
+    <div className="order-page">
       <div className="shell" data-page>
         <FlashStack flash={flash} onDismiss={() => setFlash(null)} bottom />
 
@@ -352,10 +351,6 @@ export default function PublicOrderPage() {
           {menuIsReady ? (
             <div className={`search-bar${searchOpen ? " is-open" : ""}`}>
               <div className="search-bar__inner">
-                <svg viewBox="0 0 16 16" fill="none" style={{ width: 14, height: 14, flexShrink: 0, color: "var(--text3)" }}>
-                  <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.2" />
-                  <line x1="9.7" y1="9.7" x2="13" y2="13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
                 <input
                   ref={searchInputRef}
                   className="search-input"
@@ -384,7 +379,7 @@ export default function PublicOrderPage() {
               <p className="lookup-card__eyebrow">Customer</p>
               <h2 className="lookup-card__title">Find your table</h2>
               <p className="lookup-card__subtitle">
-                Scan the QR code if you can. If not, enter the printed table reference below.
+                Scan the QR code on your table. If no QR is available, enter the table number printed on your table tent or ask staff.
               </p>
               <TableLookupForm
                 tableInput={tableInput}
@@ -457,13 +452,20 @@ export default function PublicOrderPage() {
         />
 
         {orderResult ? (
-          <div className="order-success">
+          <div
+            className="order-success"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setOrderResult(null);
+              }
+            }}
+          >
             <div className="order-success__backdrop" onClick={() => setOrderResult(null)} aria-hidden="true" />
-            <section className="order-success__dialog" aria-label="Order placed">
+            <section className="order-success__dialog" role="dialog" aria-modal="true" aria-label="Order placed">
               <p className="order-success__eyebrow">Order placed</p>
-              <h2 className="order-success__title">Kitchen queue updated</h2>
+              <h2 className="order-success__title">Order #{orderResult.orderId}</h2>
               <p className="order-success__copy">
-                Order #{orderResult.orderId} for table {orderResult.tableNumber} is now pending.
+                Table {orderResult.tableNumber} — your order is now pending. The kitchen has been notified.
               </p>
               <div className="order-success__summary">
                 <span>{orderResult.count} items</span>
@@ -479,6 +481,6 @@ export default function PublicOrderPage() {
           </div>
         ) : null}
       </div>
-    </>
+    </div>
   );
 }

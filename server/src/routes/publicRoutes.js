@@ -5,9 +5,49 @@ import {
   getMenuItemsForRestaurant,
   getRestaurantRecordByPublicRef,
 } from "../repository.js";
-import { buildMenuTree, HttpError, resolveTableNumber } from "../utils.js";
+import { buildMenuTree, HttpError, normalizeRequestIp, resolveTableNumber } from "../utils.js";
 
 const router = express.Router();
+
+/* ── Rate limiter for order submissions ── */
+const ORDER_RATE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const ORDER_RATE_MAX = 10; // max orders per IP per window
+const orderRateMap = new Map();
+
+const MAX_ITEM_QUANTITY = 20;
+
+function checkOrderRateLimit(req) {
+  const ip = normalizeRequestIp(req.ip || req.connection?.remoteAddress) || "unknown";
+  const now = Date.now();
+
+  let entry = orderRateMap.get(ip);
+  if (!entry || now - entry.windowStart > ORDER_RATE_WINDOW_MS) {
+    entry = { count: 0, windowStart: now };
+    orderRateMap.set(ip, entry);
+  }
+
+  entry.count += 1;
+
+  if (entry.count > ORDER_RATE_MAX) {
+    throw new HttpError(429, "Too many orders. Please wait before trying again.");
+  }
+}
+
+// Clean up stale rate-limit entries every 10 minutes
+setInterval(() => {
+  const cutoff = Date.now() - ORDER_RATE_WINDOW_MS;
+  for (const [ip, entry] of orderRateMap) {
+    if (entry.windowStart < cutoff) {
+      orderRateMap.delete(ip);
+    }
+  }
+}, 10 * 60 * 1000).unref?.();
+
+function assertRestaurantActive(restaurant) {
+  if (!restaurant.active) {
+    throw new HttpError(403, "This restaurant is not currently accepting orders.");
+  }
+}
 
 router.get(
   "/restaurants/:restaurantRef/order-context",
@@ -24,6 +64,8 @@ router.get(
     if (!restaurant) {
       throw new HttpError(404, "Restaurant not found.");
     }
+
+    assertRestaurantActive(restaurant);
 
     const tableNumber = await resolveTableNumber(pool, restaurant.id, tableReference);
     if (!tableNumber) {
@@ -44,6 +86,8 @@ router.get(
 router.post(
   "/restaurants/:restaurantRef/orders",
   asyncHandler(async (req, res) => {
+    checkOrderRateLimit(req);
+
     const { restaurantRef } = req.params;
     const tableReference = String(req.body.tableNumber || "").trim();
     const submittedItems = Array.isArray(req.body.items) ? req.body.items : [];
@@ -57,6 +101,8 @@ router.post(
       throw new HttpError(404, "Restaurant not found.");
     }
 
+    assertRestaurantActive(restaurant);
+
     const normalizedItems = submittedItems
       .map((item) => ({
         id: Number(item.id),
@@ -66,6 +112,12 @@ router.post(
 
     if (!normalizedItems.length) {
       throw new HttpError(400, "No items selected.");
+    }
+
+    for (const item of normalizedItems) {
+      if (item.quantity > MAX_ITEM_QUANTITY) {
+        throw new HttpError(400, `Maximum quantity per item is ${MAX_ITEM_QUANTITY}.`);
+      }
     }
 
     const order = await withTransaction(async (connection) => {

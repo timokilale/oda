@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
+import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 
 export default function DashboardPage() {
@@ -8,6 +10,8 @@ export default function DashboardPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [ownerCanAddRestaurant, setOwnerCanAddRestaurant] = useState(false);
   const [flash, setFlash] = useState(null);
+
+  usePageTitle("Restaurants");
 
   async function loadRestaurants() {
     setLoading(true);
@@ -47,11 +51,7 @@ export default function DashboardPage() {
 
       <section className="page-section">
         {loading ? (
-          <section className="surface empty-state">
-            <div className="panel">
-              <p className="empty-text">Loading restaurants...</p>
-            </div>
-          </section>
+          <LoadingSkeleton variant="card" count={2} />
         ) : restaurants.length ? (
           <div className="restaurant-grid">
             {restaurants.map((restaurant) => (
@@ -79,7 +79,13 @@ export default function DashboardPage() {
                 <div className="restaurant-card__body">
                   <div className="restaurant-card__topline">
                     <h2 className="entity-card__title">{restaurant.name}</h2>
-                    <span className="status-pill">{restaurant.active ? "Active" : "Inactive"}</span>
+                    <span
+                      className={`status-pill ${restaurant.active ? "status-pill--active" : "status-pill--inactive"}`}
+                      role="status"
+                      aria-label={`Restaurant status: ${restaurant.active ? "active" : "inactive"}`}
+                    >
+                      {restaurant.active ? "Active" : "Inactive"}
+                    </span>
                   </div>
                   <p className="meta-row">
                     {[restaurant.city, restaurant.country].filter(Boolean).join(", ") || "Location pending"}

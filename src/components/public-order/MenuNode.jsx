@@ -46,9 +46,14 @@ export default function MenuNode({
 
   function updateQuantity(itemId, delta) {
     setQuantities((current) => {
-      const nextValue = Math.max(0, Math.min(99, Number(current[itemId] || 0) + delta));
+      const nextValue = Math.max(0, Math.min(20, Number(current[itemId] || 0) + delta));
       return { ...current, [itemId]: nextValue };
     });
+  }
+
+  function quickAdd(event, itemId) {
+    event.stopPropagation();
+    updateQuantity(itemId, 1);
   }
 
   return (
@@ -103,7 +108,8 @@ export default function MenuNode({
           <ul className="item-list" role="list">
             {node.items.map((item, index) => {
               const itemId = String(item.id);
-              const isSelected = Number(quantities[itemId] || 0) > 0;
+              const qty = Number(quantities[itemId] || 0);
+              const isSelected = qty > 0;
               const isItemOpen = openItems.has(itemId);
 
               return (
@@ -136,12 +142,43 @@ export default function MenuNode({
                         </span>
                       </div>
                       <h3 className="item-card__title">{item.name}</h3>
+
+                      {/* CUS-U02: Quantity badge on collapsed cards */}
+                      {isSelected && !isItemOpen ? (
+                        <span className="item-card__qty-badge" aria-label={`${qty} in order`}>
+                          {qty}
+                        </span>
+                      ) : null}
                     </div>
+
+                    {/* CUS-U01: Quick-add button on collapsed cards */}
+                    {!isItemOpen ? (
+                      <span
+                        className="item-card__quick-add"
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Quick add ${item.name}`}
+                        onClick={(event) => quickAdd(event, itemId)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            quickAdd(event, itemId);
+                          }
+                        }}
+                      >
+                        <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                          <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                    ) : null}
                   </button>
 
                   <div className="item-card__expand-wrap">
                     <div className="item-card__expand">
-                      <p className="item-card__desc">{item.description || "No description yet."}</p>
+                      {item.description ? (
+                        <p className="item-card__desc">{item.description}</p>
+                      ) : null}
                       <div className="item-card__controls">
                         <div className="qty-row" role="group" aria-label={`Quantity for ${item.name}`}>
                           <button
@@ -155,12 +192,13 @@ export default function MenuNode({
                             </svg>
                           </button>
                           <output className="qty-val mono" aria-live="polite">
-                            {Number(quantities[itemId] || 0)}
+                            {qty}
                           </output>
                           <button
                             type="button"
                             className="qty-btn"
                             onClick={() => updateQuantity(itemId, 1)}
+                            disabled={qty >= 20}
                             aria-label={`Add ${item.name}`}
                           >
                             <svg viewBox="0 0 14 14" fill="none">
@@ -169,6 +207,9 @@ export default function MenuNode({
                             </svg>
                           </button>
                         </div>
+                        {qty >= 10 ? (
+                          <span className="item-card__qty-warning">Max 20 per item</span>
+                        ) : null}
                         <span className="item-badge" hidden={!isSelected}>
                           <svg viewBox="0 0 12 12" fill="none">
                             <polyline points="2,6 5,9 10,3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

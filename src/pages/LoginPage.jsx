@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import usePageTitle from "../hooks/usePageTitle.js";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -13,9 +14,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
-  if (owner) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  usePageTitle("Log in");
 
   useEffect(() => {
     if (!resendCooldown) {
@@ -28,6 +27,10 @@ export default function LoginPage() {
 
     return () => window.clearTimeout(timer);
   }, [resendCooldown]);
+
+  if (owner) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   function resetOtpFlow() {
     setOtpRequested(false);
@@ -139,14 +142,11 @@ export default function LoginPage() {
                   <button type="button" className="button" onClick={resetOtpFlow} disabled={submitting}>
                     Change phone number
                   </button>
-                  <span className="muted-text">
-                    {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : "You can request another code now."}
-                  </span>
                 </div>
               </>
             ) : null}
 
-            {otpRequested && devOtpCode ? (
+            {import.meta.env.DEV && otpRequested && devOtpCode ? (
               <div className="alert">
                 Development OTP: <strong>{devOtpCode}</strong>
               </div>

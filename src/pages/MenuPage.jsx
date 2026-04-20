@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import ImagePositionField from "../components/ImagePositionField.jsx";
+import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
+import SegmentedControl from "../components/SegmentedControl.jsx";
 import { createCroppedUpload, MENU_IMAGE_TARGET } from "../lib/cropImage.js";
 import { formatCurrency } from "../lib/format.js";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
+import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
 
@@ -46,6 +49,14 @@ export default function MenuPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [filter, setFilter] = useState("active");
+
+  usePageTitle(`Menu — ${restaurant.name}`);
+
+  const MENU_FILTER_OPTIONS = [
+    { value: "active", label: "Active" },
+    { value: "archived", label: "Archived" },
+    { value: "all", label: "All" },
+  ];
 
   const editingItem = useMemo(
     () => items.find((item) => item.id === selectedItemId) || null,
@@ -220,11 +231,7 @@ export default function MenuPage() {
                 Archived items stay out of customer menus until you restore them.
               </p>
             </div>
-            {editingItem ? (
-              <button type="button" className="button" onClick={() => resetForm()} disabled={submitting}>
-                New item
-              </button>
-            ) : null}
+
           </div>
 
           <form className="form-grid" onSubmit={handleSubmit}>
@@ -266,10 +273,12 @@ export default function MenuPage() {
                 className="field-control"
                 id="menu_item_category"
                 list="menu-category-suggestions"
+                placeholder="e.g. Drinks or Drinks > Hot Drinks"
                 value={form.category}
                 onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
                 required
               />
+              <p className="field-help">Use " &gt; " to create sub-categories visible to customers.</p>
               <datalist id="menu-category-suggestions">
                 {categorySuggestions.map((category) => (
                   <option key={category} value={category} />
@@ -362,8 +371,8 @@ export default function MenuPage() {
                 {submitting ? (editingItem ? "Saving" : "Adding") : editingItem ? "Save item" : "Add item"}
               </button>
               {editingItem ? (
-                <button type="button" className="button" onClick={() => resetForm()} disabled={submitting}>
-                  Cancel editing
+                <button type="button" className="button button-secondary" onClick={() => resetForm()} disabled={submitting}>
+                  Cancel
                 </button>
               ) : null}
             </div>
@@ -376,28 +385,16 @@ export default function MenuPage() {
               <h2 className="panel-title">Catalog</h2>
               <p className="field-help">Active dishes are visible to customers. Archived dishes stay searchable here.</p>
             </div>
-            <div className="inline-actions segmented-control" role="tablist" aria-label="Menu item filter">
-              {[
-                { id: "active", label: "Active" },
-                { id: "archived", label: "Archived" },
-                { id: "all", label: "All" },
-              ].map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={`button button-segment${filter === option.id ? " is-active" : ""}`}
-                  onClick={() => setFilter(option.id)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              label="Menu item filter"
+              options={MENU_FILTER_OPTIONS}
+              value={filter}
+              onChange={setFilter}
+            />
           </div>
 
           {loading ? (
-            <div className="empty-state panel">
-              <p className="empty-text">Loading menu catalog...</p>
-            </div>
+            <LoadingSkeleton variant="table-row" count={4} />
           ) : visibleItems.length ? (
             <table className="data-table responsive-table">
               <thead>

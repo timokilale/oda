@@ -1,4 +1,4 @@
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .order-page *, .order-page *::before, .order-page *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
       --bg:          #f5efe3;
@@ -84,7 +84,7 @@
 
     html { scroll-behavior: smooth; }
 
-    body {
+    .order-page {
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Mono', ui-monospace, monospace;
@@ -95,7 +95,7 @@
     }
 
     /* ── grain overlay ─────────────────────────────── */
-    body::after {
+    .order-page::after {
       content: '';
       position: fixed;
       inset: 0;
@@ -703,7 +703,7 @@
 
     .mono { font-family: 'DM Mono', monospace; }
 
-    body::after {
+    .order-page::after {
       z-index: 0;
     }
 
@@ -988,4 +988,108 @@
         flex-direction: column;
         align-items: stretch;
       }
+    }
+
+    /* ── quick-add button on collapsed cards (CUS-U01) ─── */
+    .item-card__quick-add {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: var(--button-text);
+      cursor: pointer;
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 180ms ease, transform 180ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .item-card__quick-add svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .item-card:hover .item-card__quick-add,
+    .item-card:focus-within .item-card__quick-add {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .item-card__quick-add:active {
+      transform: scale(0.92);
+    }
+
+    @media (hover: none) {
+      .item-card__quick-add {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* ── quantity badge on collapsed cards (CUS-U02) ──── */
+    .item-card__qty-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 3;
+      display: grid;
+      place-items: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      border-radius: 12px;
+      background: var(--gold);
+      color: var(--button-text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1;
+      pointer-events: none;
+      animation: badgePop 220ms var(--ease-out) both;
+    }
+
+    @keyframes badgePop {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* ── quantity warning (CUS-L04) ──────────────────── */
+    .item-card__qty-warning {
+      display: block;
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.04em;
+      margin-top: 2px;
+    }
+
+    /* ── cart strip chevron affordance (CUS-U04) ─────── */
+    .cart-strip__chevron {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-left: 4px;
+      vertical-align: middle;
+      color: var(--text3);
+      transition: transform 200ms ease;
+    }
+
+    .cart-strip__info[aria-expanded="true"] .cart-strip__chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ── cart review footer (CUS-L09) ────────────────── */
+    .cart-review__footer {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .order-btn--wide {
+      width: 100%;
     }

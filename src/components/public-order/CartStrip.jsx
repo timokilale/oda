@@ -10,6 +10,18 @@ export default function CartStrip({
   onAdjustItemQuantity,
   containerRef,
 }) {
+  // CUS-L09: Must review cart before placing order
+  function handlePlaceOrder(event) {
+    event.preventDefault();
+
+    if (!cartOpen) {
+      onToggleOpen(true);
+      return;
+    }
+
+    onSubmit(event);
+  }
+
   return (
     <>
       <div className={`cart-review${cartOpen && cartItems.count > 0 ? " is-open" : ""}`}>
@@ -50,6 +62,7 @@ export default function CartStrip({
                     type="button"
                     className="qty-btn"
                     onClick={() => onAdjustItemQuantity(item.id, 1)}
+                    disabled={item.quantity >= 20}
                     aria-label={`Add ${item.name}`}
                   >
                     <svg viewBox="0 0 14 14" fill="none">
@@ -60,6 +73,15 @@ export default function CartStrip({
                 </div>
               </article>
             ))}
+          </div>
+
+          {/* Submit from review sheet */}
+          <div className="cart-review__footer">
+            <form onSubmit={onSubmit}>
+              <button type="submit" className="order-btn order-btn--wide" disabled={cartItems.count === 0 || submitting}>
+                {submitting ? "Placing..." : `Place Order — ${formatCurrency(cartItems.total)}`}
+              </button>
+            </form>
           </div>
         </section>
       </div>
@@ -82,11 +104,16 @@ export default function CartStrip({
           <strong className="cart-strip__total mono">
             <span>{formatCurrency(cartItems.total)}</span>
           </strong>
-          <span className="cart-strip__summary">{visibleSummary || "Review your order"}</span>
+          <span className="cart-strip__summary">
+            {visibleSummary || "Tap to review"}
+            <svg className="cart-strip__chevron" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M3 5l3 3 3-3" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
         </button>
-        <form onSubmit={onSubmit}>
+        <form onSubmit={handlePlaceOrder}>
           <button type="submit" className="order-btn" disabled={cartItems.count === 0 || submitting}>
-            {submitting ? "Placing..." : "Place Order"}
+            {submitting ? "Placing..." : cartOpen ? "Place Order" : "Review Order"}
           </button>
         </form>
       </aside>
