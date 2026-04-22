@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
@@ -6,18 +7,27 @@ import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
 
+const dateFormatter = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
 export default function TablesPage() {
-  const { restaurant, refreshWorkspace } = useRestaurantWorkspace();
+  const { restaurant, workspaceSummary, refreshWorkspace } = useRestaurantWorkspace();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [tables, setTables] = useState([]);
-  const [tableNumber, setTableNumber] = useState("");
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [flash, setFlash] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [expandedTableId, setExpandedTableId] = useState(null);
 
-  usePageTitle(`Tables — ${restaurant.name}`);
+  usePageTitle(`Tables - ${restaurant.name}`);
 
   async function loadTables() {
+    setLoading(true);
+
     try {
       const data = await apiRequest(`/restaurants/${restaurant.id}/tables`);
       setTables(data.tables);
@@ -29,9 +39,17 @@ export default function TablesPage() {
   }
 
   useEffect(() => {
-    setLoading(true);
     loadTables();
   }, [restaurant.id]);
+
+  useEffect(() => {
+    if (!location.state?.flash) {
+      return;
+    }
+
+    setFlash(location.state.flash);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
 
   async function copyToClipboard(value) {
     if (!value) {
@@ -54,23 +72,124 @@ export default function TablesPage() {
     document.body.removeChild(textarea);
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setSubmitting(true);
-    setFlash(null);
+  function downloadQr(table) {
+    const link = document.createElement("a");
+    link.href = table.qrCodeUrl;
+    link.download = `table-${table.tableNumber}-qr.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
+  function printQr(table) {
+    const printWindow = window.open("", "_blank", "noopener,noreferrer,width=720,height=720");
+
+    if (!printWindow) {
+      throw new Error("Print window blocked");
+    }
+
+    const safeTableNumber = String(table.tableNumber).replace(/[<>&"]/g, "");
+    const safeImageUrl = String(table.qrCodeUrl).replace(/"/g, "&quot;");
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>Table ${safeTableNumber} QR</title>
+          <style>
+            body {
+              margin: 0;
+              min-height: 100vh;
+              display: grid;
+              place-items: center;
+              font-family: "DM Sans", system-ui, sans-serif;
+              background: #f5efe3;
+              color: #2e2416;
+            }
+            main {
+              width: min(92vw, 480px);
+              padding: 32px;
+              text-align: center;
+              border: 1px solid rgba(79, 61, 28, 0.14);
+              border-radius: 24px;
+              background: #fffaf3;
+            }
+            h1 {
+              margin: 0 0 8px;
+              font: italic 400 42px/1 "Cormorant Garamond", Georgia, serif;
+            }
+            p {
+              margin: 0 0 20px;
+              color: #5e5443;
+              letter-spacing: 0.04em;
+              text-transform: uppercase;
+              font-size: 12px;
+            }
+            img {
+              width: min(100%, 320px);
+              height: auto;
+            }
+          </style>
+        </head>
+        <body>
+          <main>
+            <p>ODA Table QR</p>
+            <h1>Table ${safeTableNumber}</h1>
+            <img src="${safeImageUrl}" alt="QR code for table ${safeTableNumber}" />
+          </main>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+
+    const runPrint = () => {
+      printWindow.print();
+      printWindow.close();
+    };
+
+    if (printWindow.document.readyState === "complete") {
+      runPrint();
+      return;
+    }
+
+    printWindow.onload = runPrint;
+  }
+
+  async function handleShare(table) {
     try {
-      await apiRequest(`/restaurants/${restaurant.id}/tables`, {
-        method: "POST",
-        body: { tableNumber },
-      });
-      setTableNumber("");
-      setFlash({ type: "success", message: "Table QR created" });
-      await Promise.all([loadTables(), refreshWorkspace()]);
-    } catch (error) {
-      setFlash({ type: "error", message: error.message });
-    } finally {
-      setSubmitting(false);
+      if (navigator.share) {
+        await navigator.share({
+          title: `Table ${table.tableNumber} QR`,
+          text: `Share the ordering access for table ${table.tableNumber}.`,
+          url: table.qrTargetUrl,
+        });
+        setFlash({ type: "success", message: `Shared table ${table.tableNumber}.` });
+        return;
+      }
+
+      await copyToClipboard(table.qrTargetUrl);
+      setFlash({ type: "success", message: `Copied share link for table ${table.tableNumber}.` });
+    } catch {
+      setFlash({ type: "error", message: "Unable to share this table from this device." });
+    }
+  }
+
+  function handleDownload(table) {
+    try {
+      downloadQr(table);
+      setFlash({ type: "success", message: `Download started for table ${table.tableNumber}.` });
+    } catch {
+      setFlash({ type: "error", message: "Unable to download that QR code right now." });
+    }
+  }
+
+  function handlePrint(table) {
+    try {
+      printQr(table);
+      setFlash({ type: "success", message: `Opening print view for table ${table.tableNumber}.` });
+    } catch {
+      setFlash({ type: "error", message: "Unable to open the print view right now." });
     }
   }
 
@@ -87,19 +206,11 @@ export default function TablesPage() {
       await apiRequest(`/restaurants/${restaurant.id}/tables/${tableId}`, {
         method: "DELETE",
       });
-      setFlash({ type: "success", message: "Table deleted" });
+      setExpandedTableId((current) => (current === tableId ? null : current));
+      setFlash({ type: "success", message: "Table deleted." });
       await Promise.all([loadTables(), refreshWorkspace()]);
     } catch (error) {
       setFlash({ type: "error", message: error.message });
-    }
-  }
-
-  async function handleCopyLink(table) {
-    try {
-      await copyToClipboard(table.qrTargetUrl);
-      setFlash({ type: "success", message: `Copied table ${table.tableNumber} link.` });
-    } catch {
-      setFlash({ type: "error", message: "Unable to copy the customer link on this device." });
     }
   }
 
@@ -110,99 +221,113 @@ export default function TablesPage() {
       flash={flash}
       onClearFlash={() => setFlash(null)}
     >
-      <section className="page-header">
+      <section className="page-header page-header--split">
         <div>
           <p className="eyebrow">Restaurant</p>
           <h1 className="page-title">Tables</h1>
-          <p className="page-subtitle">{restaurant.name}</p>
+          <p className="page-subtitle">
+            Keep the floorplan clean on screen. Open a table card only when you need to download, print, or share its QR access.
+          </p>
+        </div>
+        <div className="page-actions">
+          <Link to={`/restaurants/${restaurant.id}/tables/new`} className="button button-confirm">
+            Add tables
+          </Link>
         </div>
       </section>
 
-      <section className="surface panel page-section">
-        <div className="panel-header">
-          <div>
-            <h2 className="panel-title">Add table</h2>
-            <p className="field-help">
-              Create a table once, then download or copy the customer ordering link whenever staff need it.
-            </p>
-          </div>
+      <section className="metric-grid">
+        <div className="metric-card">
+          <p className="metric-label">Tables</p>
+          <p className="metric-value">{tables.length}</p>
         </div>
-
-        <form className="toolbar-row" onSubmit={handleSubmit}>
-          <div className="field-group" style={{ minWidth: 220, flex: "1 1 260px" }}>
-            <label className="field-label" htmlFor="table_number">
-              Table number
-            </label>
-            <input
-              className="field-control"
-              id="table_number"
-              type="text"
-              placeholder="1, 2, A1, VIP-3"
-              value={tableNumber}
-              onChange={(event) => setTableNumber(event.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <button type="submit" className="button button-confirm" disabled={submitting}>
-              {submitting ? "Creating" : "Create QR"}
-            </button>
-          </div>
-        </form>
+        <div className="metric-card">
+          <p className="metric-label">Open orders</p>
+          <p className="metric-value">{workspaceSummary.openOrderCount}</p>
+        </div>
+        <div className="metric-card">
+          <p className="metric-label">Menu items</p>
+          <p className="metric-value">{workspaceSummary.menuItemCount}</p>
+        </div>
+        <div className="metric-card">
+          <p className="metric-label">Workspace</p>
+          <p className="metric-value">{restaurant.name}</p>
+        </div>
       </section>
 
       <section className="page-section">
         {loading ? (
-          <LoadingSkeleton variant="card" count={3} />
+          <LoadingSkeleton variant="card" count={4} />
         ) : tables.length ? (
-          <div className="qr-grid">
-            {tables.map((table) => (
-              <article key={table.id} className="qr-card">
-                <img
-                  src={table.qrCodeUrl}
-                  alt={`QR code for table ${table.tableNumber}`}
-                  className="qr-preview"
-                />
-                <div className="stack-sm">
-                  <div>
-                    <h2 className="panel-title">Table {table.tableNumber}</h2>
-                    <p className="table-meta">{table.qrTargetUrl}</p>
-                  </div>
-                  <div className="action-row">
-                    <button type="button" className="button" onClick={() => handleCopyLink(table)}>
-                      Copy link
-                    </button>
-                    <a
-                      href={table.qrTargetUrl}
-                      className="button"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open menu
-                    </a>
-                    <a
-                      href={table.qrCodeUrl}
-                      download={`table-${table.tableNumber}-qr.png`}
-                      className="button"
-                    >
-                      Download
-                    </a>
-                    <button
-                      type="button"
-                      className="button button-danger"
-                      onClick={() => setDeleteTarget(table)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
+          <div className="table-card-grid">
+            {tables.map((table) => {
+              const isExpanded = expandedTableId === table.id;
+
+              return (
+                <article key={table.id} className={`table-card${isExpanded ? " is-expanded" : ""}`}>
+                  <button
+                    type="button"
+                    className="table-card__summary"
+                    aria-expanded={isExpanded ? "true" : "false"}
+                    onClick={() => setExpandedTableId((current) => (current === table.id ? null : table.id))}
+                  >
+                    <div className="table-card__header">
+                      <span className="table-card__eyebrow">Dining table</span>
+                      <span className="table-card__toggle">{isExpanded ? "Hide actions" : "Show actions"}</span>
+                    </div>
+                    <h2 className="table-card__title">Table {table.tableNumber}</h2>
+                    <p className="table-card__meta">
+                      QR access ready{table.createdAt ? ` since ${dateFormatter.format(new Date(table.createdAt))}` : "."}
+                    </p>
+                  </button>
+
+                  {isExpanded ? (
+                    <div className="table-card__details">
+                      <p className="table-card__details-copy">
+                        QR code and customer link stay off the screen until staff need an action.
+                      </p>
+                      <div className="table-card__actions">
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={() => handleDownload(table)}
+                        >
+                          Download QR
+                        </button>
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={() => handlePrint(table)}
+                        >
+                          Print QR
+                        </button>
+                        <button
+                          type="button"
+                          className="button"
+                          onClick={() => handleShare(table)}
+                        >
+                          Share
+                        </button>
+                        <button
+                          type="button"
+                          className="button button-danger"
+                          onClick={() => setDeleteTarget(table)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div className="surface empty-state">
             <h2 className="panel-title">No tables yet</h2>
-            <p className="empty-text">Create your first table to generate a QR code and customer ordering link.</p>
+            <p className="empty-text">
+              Use Add tables to create one or many table QR entries without crowding this page.
+            </p>
           </div>
         )}
       </section>

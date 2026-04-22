@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useParams, useSearchPar
 import { useAuth } from "./context/AuthContext.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import MenuCreatePage from "./pages/MenuCreatePage.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import OrdersPage from "./pages/OrdersPage.jsx";
@@ -10,6 +11,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import RestaurantSettingsPage from "./pages/RestaurantSettingsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import RestaurantLayout from "./pages/RestaurantLayout.jsx";
+import TablesCreatePage from "./pages/TablesCreatePage.jsx";
 import TablesPage from "./pages/TablesPage.jsx";
 
 function RedirectToCanonicalOrder() {
@@ -56,7 +58,9 @@ export default function App() {
           <Route path="/restaurants/:restaurantId" element={<RestaurantLayout />}>
             <Route index element={<Navigate to="orders" replace />} />
             <Route path="orders" element={<OrdersPage />} />
+            <Route path="menu/new" element={<MenuCreatePage />} />
             <Route path="menu" element={<MenuPage />} />
+            <Route path="tables/new" element={<TablesCreatePage />} />
             <Route path="tables" element={<TablesPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<RestaurantSettingsPage />} />

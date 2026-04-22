@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import ImagePositionField from "../components/ImagePositionField.jsx";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import SegmentedControl from "../components/SegmentedControl.jsx";
-import { createCroppedUpload, MENU_IMAGE_TARGET } from "../lib/cropImage.js";
-import { formatCurrency } from "../lib/format.js";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
+import { createCroppedUpload, MENU_IMAGE_TARGET } from "../lib/cropImage.js";
+import { formatCurrency } from "../lib/format.js";
 import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
 
 function buildEmptyForm(defaultCategory = "") {
@@ -41,6 +42,8 @@ function buildFormFromItem(item) {
 
 export default function MenuPage() {
   const { restaurant, workspaceSummary, refreshWorkspace } = useRestaurantWorkspace();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [items, setItems] = useState([]);
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +53,7 @@ export default function MenuPage() {
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [filter, setFilter] = useState("active");
 
-  usePageTitle(`Menu — ${restaurant.name}`);
+  usePageTitle(`Menu - ${restaurant.name}`);
 
   const MENU_FILTER_OPTIONS = [
     { value: "active", label: "Active" },
@@ -98,6 +101,15 @@ export default function MenuPage() {
     loadMenu();
   }, [restaurant.id]);
 
+  useEffect(() => {
+    if (!location.state?.flash) {
+      return;
+    }
+
+    setFlash(location.state.flash);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
+
   function resetForm(nextSuggestions = categorySuggestions) {
     setSelectedItemId(null);
     setForm(buildEmptyForm(nextSuggestions[0] || ""));
@@ -107,10 +119,17 @@ export default function MenuPage() {
     setSelectedItemId(item.id);
     setForm(buildFormFromItem(item));
     setFlash(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (!editingItem) {
+      setFlash({ type: "error", message: "Choose an item from the catalog to edit." });
+      return;
+    }
+
     setSubmitting(true);
     setFlash(null);
 
@@ -134,20 +153,11 @@ export default function MenuPage() {
     }
 
     try {
-      if (editingItem) {
-        await apiRequest(`/restaurants/${restaurant.id}/menu-items/${editingItem.id}`, {
-          method: "PATCH",
-          formData,
-        });
-        setFlash({ type: "success", message: "Menu item updated." });
-      } else {
-        await apiRequest(`/restaurants/${restaurant.id}/menu-items`, {
-          method: "POST",
-          formData,
-        });
-        setFlash({ type: "success", message: "Menu item added." });
-      }
-
+      await apiRequest(`/restaurants/${restaurant.id}/menu-items/${editingItem.id}`, {
+        method: "PATCH",
+        formData,
+      });
+      setFlash({ type: "success", message: "Menu item updated." });
       resetForm();
       await Promise.all([loadMenu(), refreshWorkspace()]);
     } catch (error) {
@@ -193,13 +203,18 @@ export default function MenuPage() {
       flash={flash}
       onClearFlash={() => setFlash(null)}
     >
-      <section className="page-header">
+      <section className="page-header page-header--split">
         <div>
           <p className="eyebrow">Restaurant</p>
           <h1 className="page-title">Menu</h1>
           <p className="page-subtitle">
-            Manage active dishes, revive archived ones, and fix mistakes without destructive workarounds.
+            Keep the catalog clean by default, batch-create dishes in a dedicated flow, and edit only when you need to.
           </p>
+        </div>
+        <div className="page-actions">
+          <Link to={`/restaurants/${restaurant.id}/menu/new`} className="button button-confirm">
+            Add items
+          </Link>
         </div>
       </section>
 
@@ -222,85 +237,94 @@ export default function MenuPage() {
         </div>
       </section>
 
-      <section className="split-layout page-section">
-        <div className="surface panel">
+      {editingItem ? (
+        <section className="surface panel page-section">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">{editingItem ? "Edit menu item" : "Add menu item"}</h2>
+              <h2 className="panel-title">Edit menu item</h2>
               <p className="field-help">
-                Archived items stay out of customer menus until you restore them.
+                Update details here. New items belong in the dedicated add-items flow.
               </p>
             </div>
-
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => resetForm()}
+              disabled={submitting}
+            >
+              Close editor
+            </button>
           </div>
 
           <form className="form-grid" onSubmit={handleSubmit}>
-            <div className="field-group">
-              <label className="field-label" htmlFor="menu_item_name">
-                Name
-              </label>
-              <input
-                className="field-control"
-                id="menu_item_name"
-                type="text"
-                value={form.name}
-                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                required
-              />
-            </div>
+            <div className="form-grid form-grid--two-up">
+              <div className="field-group">
+                <label className="field-label" htmlFor="menu_item_name">
+                  Name
+                </label>
+                <input
+                  className="field-control"
+                  id="menu_item_name"
+                  type="text"
+                  value={form.name}
+                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="menu_item_price">
-                Price
-              </label>
-              <input
-                className="field-control"
-                id="menu_item_price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.price}
-                onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
-                required
-              />
-            </div>
+              <div className="field-group">
+                <label className="field-label" htmlFor="menu_item_price">
+                  Price
+                </label>
+                <input
+                  className="field-control"
+                  id="menu_item_price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.price}
+                  onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                  required
+                />
+              </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="menu_item_category">
-                Category
-              </label>
-              <input
-                className="field-control"
-                id="menu_item_category"
-                list="menu-category-suggestions"
-                placeholder="e.g. Drinks or Drinks > Hot Drinks"
-                value={form.category}
-                onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-                required
-              />
-              <p className="field-help">Use " &gt; " to create sub-categories visible to customers.</p>
-              <datalist id="menu-category-suggestions">
-                {categorySuggestions.map((category) => (
-                  <option key={category} value={category} />
-                ))}
-              </datalist>
-            </div>
+              <div className="field-group">
+                <label className="field-label" htmlFor="menu_item_category">
+                  Category
+                </label>
+                <input
+                  className="field-control"
+                  id="menu_item_category"
+                  list="menu-category-suggestions"
+                  placeholder="e.g. Drinks or Drinks > Hot Drinks"
+                  value={form.category}
+                  onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+                  required
+                />
+                <p className="field-help">Use " &gt; " to create sub-categories visible to customers.</p>
+                <datalist id="menu-category-suggestions">
+                  {categorySuggestions.map((category) => (
+                    <option key={category} value={category} />
+                  ))}
+                </datalist>
+              </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="menu_item_status">
-                Availability
-              </label>
-              <select
-                className="field-control"
-                id="menu_item_status"
-                value={String(form.active)}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, active: event.target.value === "true" }))
-                }
-              >
-                <option value="true">Active</option>
-                <option value="false">Archived</option>
-              </select>
+              <div className="field-group">
+                <label className="field-label" htmlFor="menu_item_status">
+                  Availability
+                </label>
+                <select
+                  className="field-control"
+                  id="menu_item_status"
+                  value={String(form.active)}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, active: event.target.value === "true" }))
+                  }
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Archived</option>
+                </select>
+              </div>
             </div>
 
             <ImagePositionField
@@ -368,23 +392,30 @@ export default function MenuPage() {
 
             <div className="action-row">
               <button type="submit" className="button button-confirm" disabled={submitting}>
-                {submitting ? (editingItem ? "Saving" : "Adding") : editingItem ? "Save item" : "Add item"}
+                {submitting ? "Saving" : "Save item"}
               </button>
-              {editingItem ? (
-                <button type="button" className="button button-secondary" onClick={() => resetForm()} disabled={submitting}>
-                  Cancel
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => resetForm()}
+                disabled={submitting}
+              >
+                Cancel
+              </button>
             </div>
           </form>
-        </div>
+        </section>
+      ) : null}
 
-        <div className="surface panel">
-          <div className="panel-header">
-            <div>
-              <h2 className="panel-title">Catalog</h2>
-              <p className="field-help">Active dishes are visible to customers. Archived dishes stay searchable here.</p>
-            </div>
+      <section className="surface panel page-section">
+        <div className="panel-header">
+          <div>
+            <h2 className="panel-title">Catalog</h2>
+            <p className="field-help">
+              Active dishes are visible to customers. Archived dishes stay searchable here.
+            </p>
+          </div>
+          <div className="page-actions">
             <SegmentedControl
               label="Menu item filter"
               options={MENU_FILTER_OPTIONS}
@@ -392,85 +423,85 @@ export default function MenuPage() {
               onChange={setFilter}
             />
           </div>
-
-          {loading ? (
-            <LoadingSkeleton variant="table-row" count={4} />
-          ) : visibleItems.length ? (
-            <table className="data-table responsive-table">
-              <thead>
-                <tr>
-                  <th>Image</th>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Description</th>
-                  <th>Price</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleItems.map((item) => (
-                  <tr key={item.id} className={item.active ? "" : "row-muted"}>
-                    <td data-label="Image">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="table-thumb"
-                          style={{
-                            objectPosition: `${item.imagePositionX ?? 50}% ${item.imagePositionY ?? 50}%`,
-                          }}
-                        />
-                      ) : (
-                        <span className="table-thumb table-thumb--empty" aria-hidden="true"></span>
-                      )}
-                    </td>
-                    <td data-label="Name">{item.name}</td>
-                    <td data-label="Category">{item.category}</td>
-                    <td data-label="Status">
-                      <span className={`status-pill${item.active ? "" : " status-pill--muted"}`}>
-                        {item.active ? "Active" : "Archived"}
-                      </span>
-                    </td>
-                    <td data-label="Description">{item.description || "No description yet."}</td>
-                    <td data-label="Price" className="mono-total">
-                      {formatCurrency(item.price)}
-                    </td>
-                    <td data-label="Action">
-                      <div className="inline-actions">
-                        <button type="button" className="button" onClick={() => startEditing(item)}>
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className={`button${item.active ? "" : " button-confirm"}`}
-                          onClick={() => toggleItemAvailability(item, !item.active)}
-                        >
-                          {item.active ? "Archive" : "Restore"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="empty-state panel">
-              <h3 className="panel-title">
-                {filter === "archived"
-                  ? "No archived items"
-                  : filter === "all"
-                    ? "No menu items"
-                    : "No active menu items"}
-              </h3>
-              <p className="empty-text">
-                {filter === "archived"
-                  ? "Archived dishes will appear here so you can restore them when needed."
-                  : "Start with one dish, then keep refining instead of rebuilding the menu from scratch."}
-              </p>
-            </div>
-          )}
         </div>
+
+        {loading ? (
+          <LoadingSkeleton variant="table-row" count={4} />
+        ) : visibleItems.length ? (
+          <table className="data-table responsive-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleItems.map((item) => (
+                <tr key={item.id} className={item.active ? "" : "row-muted"}>
+                  <td data-label="Image">
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="table-thumb"
+                        style={{
+                          objectPosition: `${item.imagePositionX ?? 50}% ${item.imagePositionY ?? 50}%`,
+                        }}
+                      />
+                    ) : (
+                      <span className="table-thumb table-thumb--empty" aria-hidden="true"></span>
+                    )}
+                  </td>
+                  <td data-label="Name">{item.name}</td>
+                  <td data-label="Category">{item.category}</td>
+                  <td data-label="Status">
+                    <span className={`status-pill${item.active ? "" : " status-pill--muted"}`}>
+                      {item.active ? "Active" : "Archived"}
+                    </span>
+                  </td>
+                  <td data-label="Description">{item.description || "No description yet."}</td>
+                  <td data-label="Price" className="mono-total">
+                    {formatCurrency(item.price)}
+                  </td>
+                  <td data-label="Action">
+                    <div className="inline-actions">
+                      <button type="button" className="button" onClick={() => startEditing(item)}>
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className={`button${item.active ? "" : " button-confirm"}`}
+                        onClick={() => toggleItemAvailability(item, !item.active)}
+                      >
+                        {item.active ? "Archive" : "Restore"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="empty-state panel">
+            <h3 className="panel-title">
+              {filter === "archived"
+                ? "No archived items"
+                : filter === "all"
+                  ? "No menu items"
+                  : "No active menu items"}
+            </h3>
+            <p className="empty-text">
+              {filter === "archived"
+                ? "Archived dishes will appear here so you can restore them when needed."
+                : "Use Add items to build the menu in batches, then fine-tune any dish from this catalog."}
+            </p>
+          </div>
+        )}
       </section>
     </WorkspaceShell>
   );

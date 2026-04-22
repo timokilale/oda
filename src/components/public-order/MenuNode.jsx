@@ -5,6 +5,7 @@ export default function MenuNode({
   nodeId,
   level,
   collapsible = true,
+  hideHeader = false,
   showGhost = false,
   searchTerm,
   openNodes,
@@ -57,8 +58,11 @@ export default function MenuNode({
   }
 
   return (
-    <div className={`menu-node menu-node--lv${level}${isOpen ? " is-open" : ""}${collapsible ? "" : " is-static"}`} data-menu-node>
-      {collapsible ? (
+    <div
+      className={`menu-node menu-node--lv${level}${isOpen ? " is-open" : ""}${collapsible ? "" : " is-static"}${hideHeader ? " menu-node--headerless" : ""}`}
+      data-menu-node
+    >
+      {hideHeader ? null : collapsible ? (
         <button
           type="button"
           className="node-toggle"

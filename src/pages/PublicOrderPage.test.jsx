@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -88,7 +88,7 @@ describe("PublicOrderPage", () => {
     renderPage("/r/demo/order?table=A1");
 
     expect(await screen.findByRole("heading", { name: "Coast Kitchen" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Main dishes" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Main dishes" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Add Pilau" }));
 
@@ -98,7 +98,8 @@ describe("PublicOrderPage", () => {
     await user.click(reviewButton);
 
     // Now the review sheet is open, find the Place Order button inside it
-    const placeOrderButton = screen.getByRole("button", { name: /Place Order/ });
+    const reviewSheet = screen.getByRole("region", { name: "Review your order" });
+    const placeOrderButton = within(reviewSheet).getByRole("button", { name: /Place Order/ });
     expect(placeOrderButton).toBeEnabled();
     await user.click(placeOrderButton);
 

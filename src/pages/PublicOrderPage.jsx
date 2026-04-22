@@ -135,18 +135,6 @@ export default function PublicOrderPage() {
     [context, searchTerm],
   );
 
-  useEffect(() => {
-    if (!filteredRoots.length) {
-      setActiveSectionId("");
-      return;
-    }
-
-    const hasActiveSection = filteredRoots.some(({ index }) => `cat-${index + 1}` === activeSectionId);
-    if (!hasActiveSection) {
-      setActiveSectionId(`cat-${filteredRoots[0].index + 1}`);
-    }
-  }, [activeSectionId, filteredRoots]);
-
   const cartItems = useMemo(() => {
     const items = [];
     let count = 0;
@@ -210,51 +198,6 @@ export default function PublicOrderPage() {
     };
   }, [cartItems.count, menuIsReady, searchOpen]);
 
-  useEffect(() => {
-    if (!menuIsReady || !filteredRoots.length) {
-      return undefined;
-    }
-
-    let frameId = 0;
-
-    function syncActiveSection() {
-      frameId = 0;
-
-      const offset =
-        (headerRef.current?.offsetHeight || 0) +
-        (categoryNavRef.current?.offsetHeight || 0) +
-        16;
-      let nextSectionId = `cat-${filteredRoots[0].index + 1}`;
-
-      for (const { index } of filteredRoots) {
-        const sectionId = `cat-${index + 1}`;
-        const section = document.getElementById(sectionId);
-
-        if (section && section.getBoundingClientRect().top <= offset) {
-          nextSectionId = sectionId;
-        }
-      }
-
-      setActiveSectionId((current) => (current === nextSectionId ? current : nextSectionId));
-    }
-
-    function handleScroll() {
-      if (!frameId) {
-        frameId = window.requestAnimationFrame(syncActiveSection);
-      }
-    }
-
-    syncActiveSection();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      if (frameId) {
-        window.cancelAnimationFrame(frameId);
-      }
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [filteredRoots, menuIsReady]);
-
   function updateQuantity(itemId, delta) {
     setQuantities((current) => {
       const nextValue = Math.max(0, Math.min(20, Number(current[String(itemId)] || 0) + delta));
@@ -272,10 +215,6 @@ export default function PublicOrderPage() {
   function jumpToSection(index) {
     const sectionId = `cat-${index + 1}`;
     setActiveSectionId(sectionId);
-    document.getElementById(sectionId)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
   }
 
   async function handleSubmit(event) {
@@ -318,6 +257,19 @@ export default function PublicOrderPage() {
       : cartItems.items.length === 1
         ? cartItems.items[0].name
         : `${cartItems.items[0].name} + ${cartItems.items.length - 1} more`;
+
+  const resolvedActiveSectionId = filteredRoots.some(
+    ({ index }) => `cat-${index + 1}` === activeSectionId,
+  )
+    ? activeSectionId
+    : filteredRoots[0]
+      ? `cat-${filteredRoots[0].index + 1}`
+      : "";
+
+  const activeRoot =
+    filteredRoots.find(({ index }) => `cat-${index + 1}` === resolvedActiveSectionId) ||
+    filteredRoots[0] ||
+    null;
 
   return (
     <div className="order-page">
@@ -368,7 +320,7 @@ export default function PublicOrderPage() {
 
         <MenuCategoryNav
           roots={filteredRoots}
-          activeSectionId={activeSectionId}
+          activeSectionId={resolvedActiveSectionId}
           onJumpToSection={jumpToSection}
           containerRef={categoryNavRef}
         />
@@ -408,33 +360,39 @@ export default function PublicOrderPage() {
                 Ask staff to publish active dishes for this restaurant, then refresh the page.
               </p>
             </section>
-          ) : filteredRoots.length ? (
-            filteredRoots.map(({ node, index }) => {
-              const sectionId = `cat-${index + 1}`;
-              return (
-                <section
-                  key={sectionId}
-                  id={sectionId}
-                  className="root-section"
-                  aria-label={node.name}
-                >
-                  <MenuNode
-                    node={node}
-                    nodeId={`node-${index + 1}`}
-                    level={1}
-                    collapsible={false}
-                    showGhost
-                    searchTerm={searchTerm}
-                    openNodes={openNodes}
-                    setOpenNodes={setOpenNodes}
-                    openItems={openItems}
-                    setOpenItems={setOpenItems}
-                    quantities={quantities}
-                    setQuantities={setQuantities}
-                  />
-                </section>
-              );
-            })
+          ) : activeRoot ? (
+            <section
+              key={`cat-${activeRoot.index + 1}`}
+              id={`cat-${activeRoot.index + 1}`}
+              className="root-section"
+              role="tabpanel"
+              aria-labelledby={`tab-cat-${activeRoot.index + 1}`}
+            >
+              <div className="root-section__intro">
+                <p className="root-section__eyebrow">Category</p>
+                <h2 className="root-section__title">{activeRoot.node.name}</h2>
+                <p className="root-section__subtitle">
+                  {searchTerm
+                    ? `Showing matches for "${searchTerm}" in this category.`
+                    : "Pick a dish and open it to adjust quantity before ordering."}
+                </p>
+              </div>
+
+              <MenuNode
+                node={activeRoot.node}
+                nodeId={`node-${activeRoot.index + 1}`}
+                level={1}
+                collapsible={false}
+                hideHeader
+                searchTerm={searchTerm}
+                openNodes={openNodes}
+                setOpenNodes={setOpenNodes}
+                openItems={openItems}
+                setOpenItems={setOpenItems}
+                quantities={quantities}
+                setQuantities={setQuantities}
+              />
+            </section>
           ) : (
             <div className="empty-zone">No dishes matched "{searchTerm}". Try a broader search.</div>
           )}

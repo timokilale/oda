@@ -221,9 +221,6 @@
       overflow-x: auto;
       scrollbar-width: none;
       padding: 0 20px;
-      /* scroll-fade on right */
-      -webkit-mask-image: linear-gradient(to right, black 80%, transparent);
-      mask-image: linear-gradient(to right, black 80%, transparent);
     }
     .cat-strip__inner::-webkit-scrollbar { display: none; }
 
@@ -253,15 +250,59 @@
     }
 
     /* ── main content ──────────────────────────────── */
-    .main-content { padding: 0; }
+    .main-content {
+      padding: 20px;
+      max-width: 1040px;
+      margin: 0 auto;
+    }
 
-    .root-section { border-bottom: 1px solid var(--line); }
+    .root-section {
+      display: grid;
+      gap: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(250, 246, 239, 0.74) 0%, rgba(243, 235, 220, 0.9) 100%);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
     .root-section.is-hidden { display: none; }
+
+    .root-section__intro {
+      display: grid;
+      gap: 8px;
+      padding: 24px 24px 0;
+    }
+
+    .root-section__eyebrow {
+      font-size: 10px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .root-section__title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(28px, 4vw, 38px);
+      font-style: italic;
+      font-weight: 400;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .root-section__subtitle {
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 1.7;
+    }
 
     /* ── menu node (category) ──────────────────────── */
     .menu-node { border-bottom: 1px solid var(--line); }
     .menu-node.is-hidden { display: none; }
     .menu-node--lv2 { background: var(--bg2); }
+    .menu-node--headerless {
+      border-bottom: none;
+      background: transparent;
+    }
 
     .node-toggle {
       position: relative;
@@ -949,6 +990,19 @@
       .cart-strip {
         padding-left: 16px;
         padding-right: 16px;
+      }
+
+      .main-content {
+        padding: 16px 12px;
+      }
+
+      .root-section {
+        gap: 14px;
+        border-radius: 16px;
+      }
+
+      .root-section__intro {
+        padding: 20px 18px 0;
       }
 
       .lookup-card {
