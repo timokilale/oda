@@ -252,6 +252,51 @@ html[data-theme="night"] {
   padding: 24px 24px 40px;
 }
 
+.workspace-page .app-shell--tabbed {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.workspace-page .workspace-main {
+  min-width: 0;
+  min-height: 0;
+}
+
+.workspace-page .workspace-main--tabbed {
+  display: grid;
+  overflow: hidden;
+}
+
+.workspace-page .restaurant-tabs-shell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+}
+
+.workspace-page .restaurant-tab-panel {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  padding: 0 4px 12px 0;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.workspace-page .restaurant-tab-panel.is-active {
+  z-index: 1;
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+}
+
 .workspace-page .topbar {
   display: flex;
   align-items: center;
@@ -480,6 +525,11 @@ html[data-theme="night"] {
   justify-content: flex-end;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.workspace-page .page-actions--spread {
+  width: 100%;
+  justify-content: space-between;
 }
 
 .workspace-page .panel-title,
@@ -712,6 +762,14 @@ html[data-theme="night"] {
 .workspace-page .field-control--tall {
   min-height: 180px;
   resize: vertical;
+}
+
+.workspace-page .inline-note {
+  display: inline-flex;
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 .workspace-page .field-control:focus-visible,
@@ -1065,6 +1123,93 @@ html[data-theme="night"] {
   gap: 18px;
 }
 
+.workspace-page .draft-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 18px;
+}
+
+.workspace-page .draft-tile {
+  min-height: 188px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-muted) 100%);
+  box-shadow: var(--shadow);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.workspace-page .draft-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold-dim);
+}
+
+.workspace-page .draft-tile:focus-visible {
+  outline: 2px solid var(--gold-dim);
+  outline-offset: 2px;
+}
+
+.workspace-page .draft-tile--empty,
+.workspace-page .draft-tile--adder {
+  place-content: center;
+  text-align: center;
+}
+
+.workspace-page .draft-tile--adder {
+  background:
+    linear-gradient(180deg, rgba(250, 247, 239, 0.74) 0%, rgba(242, 235, 223, 0.92) 100%),
+    linear-gradient(45deg, rgba(176, 137, 64, 0.08) 25%, transparent 25%, transparent 75%, rgba(176, 137, 64, 0.08) 75%);
+}
+
+.workspace-page .draft-tile__index {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.workspace-page .draft-tile__plus {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 4px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: var(--surface-strong);
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.workspace-page .draft-tile__title {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--text);
+}
+
+.workspace-page .draft-tile__meta,
+.workspace-page .draft-tile__footer {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.workspace-page .draft-tile__footer {
+  margin-top: auto;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
 .workspace-page .tag-grid {
   display: flex;
   flex-wrap: wrap;
@@ -1157,6 +1302,30 @@ html[data-theme="night"] {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.workspace-page .filter-bar {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.4fr) repeat(2, minmax(180px, 0.8fr));
+  gap: 14px;
+  margin-bottom: 16px;
+  align-items: end;
+}
+
+.workspace-page .filter-bar__field {
+  min-width: 0;
+}
+
+.workspace-page .filter-bar__field--grow {
+  min-width: 0;
+}
+
+.workspace-page .file-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .workspace-page .flash-stack {
@@ -1325,7 +1494,8 @@ html[data-theme="night"] {
   .workspace-page .metric-grid,
   .workspace-page .qr-grid,
   .workspace-page .workflow-grid,
-  .workspace-page .table-card-grid {
+  .workspace-page .table-card-grid,
+  .workspace-page .draft-board {
     grid-template-columns: 1fr;
   }
 
@@ -1395,6 +1565,26 @@ html[data-theme="night"] {
   .workspace-page .table-card__details {
     padding-left: 18px;
     padding-right: 18px;
+  }
+
+  .workspace-page .filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-dialog {
+    width: min(calc(100vw - 20px), 720px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .workspace-dialog__header,
+  .workspace-dialog__body,
+  .workspace-dialog__footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .workspace-page .page-actions--spread {
+    justify-content: flex-start;
   }
 }
 
@@ -1573,6 +1763,57 @@ html[data-theme="night"] {
 
 .confirm-dialog--danger .confirm-dialog__title {
   color: var(--danger);
+}
+
+.workspace-dialog {
+  width: min(calc(100vw - 32px), 720px);
+  max-height: calc(100vh - 32px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-muted) 100%);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+  animation: dialogIn 240ms ease both;
+  overflow: hidden;
+}
+
+.workspace-dialog__header,
+.workspace-dialog__footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 22px 24px;
+}
+
+.workspace-dialog__header {
+  border-bottom: 1px solid var(--line);
+}
+
+.workspace-dialog__footer {
+  border-top: 1px solid var(--line);
+}
+
+.workspace-dialog__body {
+  overflow: auto;
+  padding: 22px 24px;
+}
+
+.workspace-dialog__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.workspace-dialog__description {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 /* ── segmented control (radiogroup) ─────────────── */

@@ -3,12 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import ImagePositionField from "../components/ImagePositionField.jsx";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import SegmentedControl from "../components/SegmentedControl.jsx";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { createCroppedUpload, MENU_IMAGE_TARGET } from "../lib/cropImage.js";
 import { formatCurrency } from "../lib/format.js";
-import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
+import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 function buildEmptyForm(defaultCategory = "") {
   return {
@@ -41,13 +40,19 @@ function buildFormFromItem(item) {
 }
 
 export default function MenuPage() {
-  const { restaurant, workspaceSummary, refreshWorkspace } = useRestaurantWorkspace();
+  const {
+    restaurant,
+    workspaceSummary,
+    refreshWorkspace,
+    setFlash,
+    clearFlash,
+    scrollActiveViewToTop,
+  } = useRestaurantWorkspace();
   const navigate = useNavigate();
   const location = useLocation();
   const [items, setItems] = useState([]);
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [flash, setFlash] = useState(null);
   const [form, setForm] = useState(buildEmptyForm());
   const [submitting, setSubmitting] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState(null);
@@ -107,8 +112,8 @@ export default function MenuPage() {
     }
 
     setFlash(location.state.flash);
-    navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate]);
+    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
+  }, [location.pathname, location.search, location.state, navigate, setFlash]);
 
   function resetForm(nextSuggestions = categorySuggestions) {
     setSelectedItemId(null);
@@ -118,8 +123,8 @@ export default function MenuPage() {
   function startEditing(item) {
     setSelectedItemId(item.id);
     setForm(buildFormFromItem(item));
-    setFlash(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    clearFlash();
+    scrollActiveViewToTop();
   }
 
   async function handleSubmit(event) {
@@ -131,7 +136,7 @@ export default function MenuPage() {
     }
 
     setSubmitting(true);
-    setFlash(null);
+    clearFlash();
 
     const formData = new FormData();
     formData.set("name", form.name);
@@ -168,7 +173,7 @@ export default function MenuPage() {
   }
 
   async function toggleItemAvailability(item, nextActive) {
-    setFlash(null);
+    clearFlash();
 
     try {
       await apiRequest(`/restaurants/${restaurant.id}/menu-items/${item.id}`, {
@@ -197,12 +202,7 @@ export default function MenuPage() {
   const archivedCount = items.filter((item) => !item.active).length;
 
   return (
-    <WorkspaceShell
-      currentSection="menu"
-      restaurant={restaurant}
-      flash={flash}
-      onClearFlash={() => setFlash(null)}
-    >
+    <>
       <section className="page-header page-header--split">
         <div>
           <p className="eyebrow">Restaurant</p>
@@ -503,6 +503,6 @@ export default function MenuPage() {
           </div>
         )}
       </section>
-    </WorkspaceShell>
+    </>
   );
 }

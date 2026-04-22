@@ -14,6 +14,8 @@ export default function WorkspaceShell({
   onRestaurantCreated,
   flash,
   onClearFlash,
+  appShellClassName = "",
+  mainClassName = "",
   children,
 }) {
   const navigate = useNavigate();
@@ -91,7 +93,7 @@ export default function WorkspaceShell({
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${appShellClassName ? ` ${appShellClassName}` : ""}`}>
       <a href="#main-content" className="sr-only sr-only-focusable">Skip to content</a>
 
       <header className="topbar">
@@ -194,7 +196,10 @@ export default function WorkspaceShell({
 
       <FlashStack flash={flash} onDismiss={onClearFlash} />
 
-      <main id="main-content">
+      <main
+        id="main-content"
+        className={mainClassName || undefined}
+      >
         {children}
       </main>
 

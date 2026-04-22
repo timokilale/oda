@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import ImagePositionField from "../components/ImagePositionField.jsx";
-import { createCroppedUpload, RESTAURANT_IMAGE_TARGET } from "../lib/cropImage.js";
-import { apiRequest } from "../lib/api.js";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
-import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
+import { apiRequest } from "../lib/api.js";
+import { createCroppedUpload, RESTAURANT_IMAGE_TARGET } from "../lib/cropImage.js";
+import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 function buildInitialForm(restaurant) {
   return {
@@ -23,12 +22,11 @@ function buildInitialForm(restaurant) {
 }
 
 export default function RestaurantSettingsPage() {
-  const { restaurant, refreshWorkspace } = useRestaurantWorkspace();
+  const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const [form, setForm] = useState(() => buildInitialForm(restaurant));
   const [submitting, setSubmitting] = useState(false);
-  const [flash, setFlash] = useState(null);
 
-  usePageTitle(`Settings — ${restaurant.name}`);
+  usePageTitle(`Settings - ${restaurant.name}`);
 
   useEffect(() => {
     setForm(buildInitialForm(restaurant));
@@ -37,7 +35,7 @@ export default function RestaurantSettingsPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitting(true);
-    setFlash(null);
+    clearFlash();
 
     const formData = new FormData();
     formData.set("restaurantName", form.restaurantName);
@@ -82,12 +80,7 @@ export default function RestaurantSettingsPage() {
   }
 
   return (
-    <WorkspaceShell
-      currentSection="settings"
-      restaurant={restaurant}
-      flash={flash}
-      onClearFlash={() => setFlash(null)}
-    >
+    <>
       <section className="page-header">
         <div>
           <p className="eyebrow">Restaurant</p>
@@ -268,7 +261,7 @@ export default function RestaurantSettingsPage() {
                 className={`status-pill ${form.active === "true" ? "status-pill--active" : "status-pill--inactive"}`}
                 role="status"
               >
-                {form.active === "true" ? "Active — accepting orders" : "Inactive — ordering paused"}
+                {form.active === "true" ? "Active - accepting orders" : "Inactive - ordering paused"}
               </span>
             </div>
 
@@ -292,6 +285,6 @@ export default function RestaurantSettingsPage() {
           </div>
         </div>
       </section>
-    </WorkspaceShell>
+    </>
   );
 }

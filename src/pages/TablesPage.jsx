@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
-import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
+import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   month: "short",
@@ -14,12 +13,11 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 export default function TablesPage() {
-  const { restaurant, workspaceSummary, refreshWorkspace } = useRestaurantWorkspace();
+  const { restaurant, workspaceSummary, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const navigate = useNavigate();
   const location = useLocation();
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [flash, setFlash] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [expandedTableId, setExpandedTableId] = useState(null);
 
@@ -48,8 +46,8 @@ export default function TablesPage() {
     }
 
     setFlash(location.state.flash);
-    navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate]);
+    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
+  }, [location.pathname, location.search, location.state, navigate, setFlash]);
 
   async function copyToClipboard(value) {
     if (!value) {
@@ -200,7 +198,7 @@ export default function TablesPage() {
 
     const tableId = deleteTarget.id;
     setDeleteTarget(null);
-    setFlash(null);
+    clearFlash();
 
     try {
       await apiRequest(`/restaurants/${restaurant.id}/tables/${tableId}`, {
@@ -215,12 +213,7 @@ export default function TablesPage() {
   }
 
   return (
-    <WorkspaceShell
-      currentSection="tables"
-      restaurant={restaurant}
-      flash={flash}
-      onClearFlash={() => setFlash(null)}
-    >
+    <>
       <section className="page-header page-header--split">
         <div>
           <p className="eyebrow">Restaurant</p>
@@ -342,6 +335,6 @@ export default function TablesPage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
-    </WorkspaceShell>
+    </>
   );
 }

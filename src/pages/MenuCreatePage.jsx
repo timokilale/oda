@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import ImagePositionField from "../components/ImagePositionField.jsx";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
+import WorkspaceDialog from "../components/WorkspaceDialog.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
-import { createCroppedUpload, MENU_IMAGE_TARGET } from "../lib/cropImage.js";
-import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
+import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 function buildDraft(defaultCategory = "") {
   return {
@@ -15,19 +13,21 @@ function buildDraft(defaultCategory = "") {
     category: defaultCategory,
     description: "",
     image: null,
-    imagePositionX: 50,
-    imagePositionY: 50,
     active: true,
   };
 }
 
+function isDraftComplete(draft) {
+  return Boolean(String(draft.name || "").trim() && String(draft.price || "").trim() && String(draft.category || "").trim());
+}
+
 export default function MenuCreatePage() {
-  const { restaurant } = useRestaurantWorkspace();
+  const { restaurant, setFlash, clearFlash } = useRestaurantWorkspace();
   const navigate = useNavigate();
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [drafts, setDrafts] = useState([buildDraft()]);
+  const [editingDraftId, setEditingDraftId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [flash, setFlash] = useState(null);
 
   usePageTitle(`Add menu items - ${restaurant.name}`);
 
@@ -43,8 +43,8 @@ export default function MenuCreatePage() {
 
         setCategorySuggestions(data.categorySuggestions || []);
         setDrafts((current) =>
-          current.map((draft, index) =>
-            index === 0 && !draft.category && data.categorySuggestions?.length
+          current.map((draft) =>
+            !draft.category && data.categorySuggestions?.length
               ? { ...draft, category: data.categorySuggestions[0] }
               : draft,
           ),
@@ -61,34 +61,47 @@ export default function MenuCreatePage() {
     return () => {
       active = false;
     };
-  }, [restaurant.id]);
+  }, [restaurant.id, setFlash]);
 
-  const itemCountLabel = useMemo(
-    () => `${drafts.length} item${drafts.length === 1 ? "" : "s"}`,
-    [drafts.length],
+  const editingDraft = useMemo(
+    () => drafts.find((draft) => draft.id === editingDraftId) || null,
+    [drafts, editingDraftId],
   );
 
-  function updateDraft(draftId, updater) {
+  const itemCountLabel = `${drafts.length} item${drafts.length === 1 ? "" : "s"}`;
+  const completedCount = drafts.filter(isDraftComplete).length;
+
+  function updateDraft(draftId, nextValues) {
     setDrafts((current) =>
-      current.map((draft) => (draft.id === draftId ? { ...draft, ...updater(draft) } : draft)),
+      current.map((draft) => (draft.id === draftId ? { ...draft, ...nextValues } : draft)),
     );
   }
 
-  function addDraft() {
-    setDrafts((current) => [
-      ...current,
-      buildDraft(current[current.length - 1]?.category || categorySuggestions[0] || ""),
-    ]);
+  function createDraft({ open = false } = {}) {
+    const nextDraft = buildDraft(categorySuggestions[0] || drafts[drafts.length - 1]?.category || "");
+    setDrafts((current) => [...current, nextDraft]);
+    if (open) {
+      setEditingDraftId(nextDraft.id);
+    }
   }
 
   function removeDraft(draftId) {
     setDrafts((current) => (current.length > 1 ? current.filter((draft) => draft.id !== draftId) : current));
+    setEditingDraftId((current) => (current === draftId ? null : current));
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
+    clearFlash();
+
+    const invalidIndex = drafts.findIndex((draft) => !isDraftComplete(draft));
+    if (invalidIndex >= 0) {
+      setEditingDraftId(drafts[invalidIndex].id);
+      setFlash({ type: "error", message: `Complete item ${invalidIndex + 1} before publishing.` });
+      return;
+    }
+
     setSubmitting(true);
-    setFlash(null);
 
     try {
       for (const [index, draft] of drafts.entries()) {
@@ -99,16 +112,11 @@ export default function MenuCreatePage() {
         formData.set("description", draft.description);
         formData.set("active", String(draft.active));
         formData.set("removeImage", "false");
-        formData.set("imagePositionX", String(draft.imagePositionX));
-        formData.set("imagePositionY", String(draft.imagePositionY));
+        formData.set("imagePositionX", "50");
+        formData.set("imagePositionY", "50");
 
         if (draft.image) {
-          const croppedImage = await createCroppedUpload(draft.image, {
-            ...MENU_IMAGE_TARGET,
-            positionX: draft.imagePositionX,
-            positionY: draft.imagePositionY,
-          });
-          formData.set("image", croppedImage);
+          formData.set("image", draft.image);
         }
 
         try {
@@ -137,18 +145,13 @@ export default function MenuCreatePage() {
   }
 
   return (
-    <WorkspaceShell
-      currentSection="menu"
-      restaurant={restaurant}
-      flash={flash}
-      onClearFlash={() => setFlash(null)}
-    >
+    <>
       <section className="page-header page-header--split">
         <div>
           <p className="eyebrow">Restaurant</p>
           <h1 className="page-title">Add menu items</h1>
           <p className="page-subtitle">
-            Build multiple dishes in one pass, keep categories consistent, and return to a clean catalog view when you are done.
+            Build a batch with compact cards, then open a card only when you want to edit its details.
           </p>
         </div>
         <div className="page-actions">
@@ -158,123 +161,158 @@ export default function MenuCreatePage() {
         </div>
       </section>
 
-      <section className="workflow-grid page-section">
-        <div className="workflow-step">
-          <span className="workflow-step__index">1</span>
-          <div>
-            <h2 className="panel-title">Build the batch</h2>
-            <p className="field-help">Add as many dishes as you want before publishing.</p>
-          </div>
-        </div>
-        <div className="workflow-step">
-          <span className="workflow-step__index">2</span>
-          <div>
-            <h2 className="panel-title">Tune presentation</h2>
-            <p className="field-help">Set categories, descriptions, and optional imagery for each dish.</p>
-          </div>
-        </div>
-        <div className="workflow-step">
-          <span className="workflow-step__index">3</span>
-          <div>
-            <h2 className="panel-title">Publish together</h2>
-            <p className="field-help">Create the whole batch at once instead of one item at a time.</p>
-          </div>
-        </div>
-      </section>
-
       <form className="page-section draft-stack" onSubmit={handleSubmit}>
         <section className="surface panel">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">Batch details</h2>
-              <p className="field-help">{itemCountLabel} ready for this publish pass.</p>
+              <h2 className="panel-title">Draft board</h2>
+              <p className="field-help">
+                {completedCount} of {itemCountLabel} ready to publish.
+              </p>
             </div>
             <div className="page-actions">
-              <button type="button" className="button" onClick={addDraft} disabled={submitting}>
-                Add another item
+              <button type="button" className="button" onClick={() => createDraft({ open: true })} disabled={submitting}>
+                Add item card
+              </button>
+              <button type="submit" className="button button-confirm" disabled={submitting}>
+                {submitting ? "Saving items" : `Create ${itemCountLabel}`}
               </button>
             </div>
           </div>
         </section>
 
-        {drafts.map((draft, index) => (
-          <section key={draft.id} className="surface panel draft-card">
-            <div className="panel-header">
-              <div>
-                <p className="eyebrow">Item {index + 1}</p>
-                <h2 className="panel-title">Menu item setup</h2>
-              </div>
-              <div className="page-actions">
+        <section className="draft-board" aria-label="Menu item drafts">
+          {drafts.map((draft, index) => {
+            const isComplete = isDraftComplete(draft);
+
+            return (
+              <button
+                key={draft.id}
+                type="button"
+                className={`draft-tile${isComplete ? "" : " draft-tile--empty"}`}
+                onClick={() => setEditingDraftId(draft.id)}
+              >
+                <span className="draft-tile__index">Item {index + 1}</span>
+                {isComplete ? (
+                  <>
+                    <strong className="draft-tile__title">{draft.name}</strong>
+                    <span className="draft-tile__meta">{draft.category}</span>
+                    <span className="draft-tile__meta">
+                      {draft.price ? `Ksh ${Number(draft.price || 0).toLocaleString()}` : "Price pending"}
+                    </span>
+                    <span className="draft-tile__footer">
+                      {draft.image ? draft.image.name : "No image"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="draft-tile__plus" aria-hidden="true">+</span>
+                    <strong className="draft-tile__title">Configure item</strong>
+                    <span className="draft-tile__meta">Tap to add name, price, category, and optional image.</span>
+                  </>
+                )}
+              </button>
+            );
+          })}
+
+          {/*<button
+            type="button"
+            className="draft-tile draft-tile--adder"
+            onClick={() => createDraft({ open: true })}
+          >
+            <span className="draft-tile__plus" aria-hidden="true">+</span>
+            <strong className="draft-tile__title">Add another card</strong>
+            <span className="draft-tile__meta">Create a new empty draft and open its popup editor.</span>
+          </button>*/}
+        </section>
+      </form>
+
+      <WorkspaceDialog
+        open={Boolean(editingDraft)}
+        title={editingDraft?.name?.trim() ? editingDraft.name : "Menu item details"}
+        description="Set the item details here, then close the popup to return to the draft board."
+        onClose={() => setEditingDraftId(null)}
+        footer={
+          editingDraft ? (
+            <>
+              <div className="page-actions page-actions--spread">
                 {drafts.length > 1 ? (
                   <button
                     type="button"
                     className="button button-secondary"
-                    onClick={() => removeDraft(draft.id)}
+                    onClick={() => removeDraft(editingDraft.id)}
                     disabled={submitting}
                   >
-                    Remove
+                    Remove card
                   </button>
-                ) : null}
+                ) : <span />}
+                <button type="button" className="button button-confirm" onClick={() => setEditingDraftId(null)}>
+                  Done
+                </button>
               </div>
-            </div>
-
+            </>
+          ) : null
+        }
+      >
+        {editingDraft ? (
+          <div className="form-grid">
             <div className="form-grid form-grid--two-up">
               <div className="field-group">
-                <label className="field-label" htmlFor={`menu_item_name_${draft.id}`}>
+                <label className="field-label" htmlFor="create_menu_name">
                   Name
                 </label>
                 <input
                   className="field-control"
-                  id={`menu_item_name_${draft.id}`}
+                  id="create_menu_name"
                   type="text"
-                  value={draft.name}
-                  onChange={(event) => updateDraft(draft.id, () => ({ name: event.target.value }))}
-                  required
+                  value={editingDraft.name}
+                  onChange={(event) => updateDraft(editingDraft.id, { name: event.target.value })}
                 />
               </div>
 
               <div className="field-group">
-                <label className="field-label" htmlFor={`menu_item_price_${draft.id}`}>
+                <label className="field-label" htmlFor="create_menu_price">
                   Price
                 </label>
                 <input
                   className="field-control"
-                  id={`menu_item_price_${draft.id}`}
+                  id="create_menu_price"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={draft.price}
-                  onChange={(event) => updateDraft(draft.id, () => ({ price: event.target.value }))}
-                  required
+                  value={editingDraft.price}
+                  onChange={(event) => updateDraft(editingDraft.id, { price: event.target.value })}
                 />
               </div>
 
               <div className="field-group">
-                <label className="field-label" htmlFor={`menu_item_category_${draft.id}`}>
+                <label className="field-label" htmlFor="create_menu_category">
                   Category
                 </label>
-                <input
+                <select
                   className="field-control"
-                  id={`menu_item_category_${draft.id}`}
-                  list="menu-category-suggestions-batch"
-                  placeholder="e.g. Drinks or Drinks > Hot Drinks"
-                  value={draft.category}
-                  onChange={(event) => updateDraft(draft.id, () => ({ category: event.target.value }))}
-                  required
-                />
-                <p className="field-help">Use " &gt; " to create sub-categories visible to customers.</p>
+                  id="create_menu_category"
+                  value={editingDraft.category}
+                  onChange={(event) => updateDraft(editingDraft.id, { category: event.target.value })}
+                >
+                  {(categorySuggestions.length ? categorySuggestions : ["Uncategorized"]).map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="field-group">
-                <label className="field-label" htmlFor={`menu_item_status_${draft.id}`}>
+                <label className="field-label" htmlFor="create_menu_status">
                   Availability
                 </label>
                 <select
                   className="field-control"
-                  id={`menu_item_status_${draft.id}`}
-                  value={String(draft.active)}
+                  id="create_menu_status"
+                  value={String(editingDraft.active)}
                   onChange={(event) =>
-                    updateDraft(draft.id, () => ({ active: event.target.value === "true" }))
+                    updateDraft(editingDraft.id, { active: event.target.value === "true" })
                   }
                 >
                   <option value="true">Active</option>
@@ -283,68 +321,45 @@ export default function MenuCreatePage() {
               </div>
             </div>
 
-            <ImagePositionField
-              inputId={`menu_item_image_${draft.id}`}
-              label="Image"
-              file={draft.image}
-              previewUrl=""
-              positionX={draft.imagePositionX}
-              positionY={draft.imagePositionY}
-              aspectRatio={MENU_IMAGE_TARGET.aspectRatio}
-              disabled={submitting}
-              onFileChange={(file) =>
-                updateDraft(draft.id, (current) => ({
-                  image: file,
-                  imagePositionX: file ? 50 : current.imagePositionX,
-                  imagePositionY: file ? 50 : current.imagePositionY,
-                }))
-              }
-              onPositionChange={({ x, y }) =>
-                updateDraft(draft.id, () => ({
-                  imagePositionX: x,
-                  imagePositionY: y,
-                }))
-              }
-            />
+            <div className="field-group">
+              <label className="field-label" htmlFor="create_menu_image">
+                Image
+              </label>
+              <input
+                className="field-control"
+                id="create_menu_image"
+                type="file"
+                accept="image/*"
+                onChange={(event) => updateDraft(editingDraft.id, { image: event.target.files?.[0] || null })}
+              />
+              <div className="file-inline">
+                <span className="field-help">{editingDraft.image ? editingDraft.image.name : "No file chosen"}</span>
+                {editingDraft.image ? (
+                  <button
+                    type="button"
+                    className="button button-secondary"
+                    onClick={() => updateDraft(editingDraft.id, { image: null })}
+                  >
+                    Clear file
+                  </button>
+                ) : null}
+              </div>
+            </div>
 
             <div className="field-group">
-              <label className="field-label" htmlFor={`menu_item_description_${draft.id}`}>
+              <label className="field-label" htmlFor="create_menu_description">
                 Description
               </label>
               <textarea
                 className="field-control"
-                id={`menu_item_description_${draft.id}`}
-                value={draft.description}
-                onChange={(event) =>
-                  updateDraft(draft.id, () => ({ description: event.target.value }))
-                }
+                id="create_menu_description"
+                value={editingDraft.description}
+                onChange={(event) => updateDraft(editingDraft.id, { description: event.target.value })}
               />
             </div>
-          </section>
-        ))}
-
-        <datalist id="menu-category-suggestions-batch">
-          {categorySuggestions.map((category) => (
-            <option key={category} value={category} />
-          ))}
-        </datalist>
-
-        <section className="surface panel">
-          <div className="panel-header">
-            <div>
-              <h2 className="panel-title">Ready to publish</h2>
-              <p className="field-help">
-                This will create {itemCountLabel} and return you to the catalog.
-              </p>
-            </div>
-            <div className="page-actions">
-              <button type="submit" className="button button-confirm" disabled={submitting}>
-                {submitting ? "Saving items" : `Create ${itemCountLabel}`}
-              </button>
-            </div>
           </div>
-        </section>
-      </form>
-    </WorkspaceShell>
+        ) : null}
+      </WorkspaceDialog>
+    </>
   );
 }

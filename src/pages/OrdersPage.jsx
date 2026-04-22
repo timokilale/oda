@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
-import SegmentedControl from "../components/SegmentedControl.jsx";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { formatCurrency, formatDateTime } from "../lib/format.js";
-import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
+import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "open", label: "Open" },
@@ -17,26 +15,54 @@ const STATUS_FILTER_OPTIONS = [
   { value: "all", label: "All" },
 ];
 
+const ORDER_BY_OPTIONS = [
+  { value: "placed_desc", label: "Placed: newest first" },
+  { value: "placed_asc", label: "Placed: oldest first" },
+  { value: "order_desc", label: "Order #: highest first" },
+  { value: "order_asc", label: "Order #: lowest first" },
+  { value: "table_asc", label: "Table: A-Z" },
+  { value: "table_desc", label: "Table: Z-A" },
+  { value: "total_desc", label: "Total: high to low" },
+  { value: "total_asc", label: "Total: low to high" },
+  { value: "status_asc", label: "Status: A-Z" },
+];
+
 function statusPillClass(status) {
   return `status-pill status-pill--${status}`;
 }
 
+function compareText(leftValue, rightValue, direction = "asc") {
+  const nextValue = String(leftValue || "").localeCompare(String(rightValue || ""), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+  return direction === "asc" ? nextValue : nextValue * -1;
+}
+
+function compareNumber(leftValue, rightValue, direction = "asc") {
+  const nextValue = Number(leftValue || 0) - Number(rightValue || 0);
+  return direction === "asc" ? nextValue : nextValue * -1;
+}
+
+function compareDate(leftValue, rightValue, direction = "desc") {
+  const nextValue = new Date(leftValue).getTime() - new Date(rightValue).getTime();
+  return direction === "asc" ? nextValue : nextValue * -1;
+}
+
 export default function OrdersPage() {
-  const { restaurant, refreshWorkspace } = useRestaurantWorkspace();
+  const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const [orders, setOrders] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [flash, setFlash] = useState(null);
   const [statusFilter, setStatusFilter] = useState("open");
   const [tableFilter, setTableFilter] = useState("");
+  const [orderBy, setOrderBy] = useState("placed_desc");
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-
-  // Confirm dialog state
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  usePageTitle(`Orders — ${restaurant.name}`);
+  usePageTitle(`Orders - ${restaurant.name}`);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -49,14 +75,13 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [restaurant.id]);
+  }, [restaurant.id, setFlash]);
 
   useEffect(() => {
     setLoading(true);
     loadOrders();
   }, [loadOrders]);
 
-  // Auto-refresh every 15 seconds (OWN-L14)
   useEffect(() => {
     const interval = window.setInterval(() => {
       loadOrders();
@@ -85,7 +110,7 @@ export default function OrdersPage() {
     const { orderId, status } = confirmAction;
     setConfirmOpen(false);
     setConfirmAction(null);
-    setFlash(null);
+    clearFlash();
     setUpdatingOrderId(orderId);
 
     try {
@@ -93,7 +118,7 @@ export default function OrdersPage() {
         method: "PATCH",
         body: { status },
       });
-      setFlash({ type: "success", message: "Order updated" });
+      setFlash({ type: "success", message: "Order updated." });
       await Promise.all([loadOrders(), refreshWorkspace()]);
     } catch (error) {
       setFlash({ type: "error", message: error.message });
@@ -102,34 +127,53 @@ export default function OrdersPage() {
     }
   }
 
-  const visibleOrders = orders.filter((order) => {
-    // Status filter
-    if (statusFilter === "open" && !["pending", "confirmed"].includes(order.status)) {
-      return false;
-    }
-
-    if (statusFilter !== "all" && statusFilter !== "open" && order.status !== statusFilter) {
-      return false;
-    }
-
-    // Table filter (OWN-L13)
-    if (tableFilter.trim()) {
-      const search = tableFilter.trim().toLowerCase();
-      if (!String(order.tableNumber).toLowerCase().includes(search)) {
+  const visibleOrders = useMemo(() => {
+    const filteredOrders = orders.filter((order) => {
+      if (statusFilter === "open" && !["pending", "confirmed"].includes(order.status)) {
         return false;
       }
-    }
 
-    return true;
-  });
+      if (statusFilter !== "all" && statusFilter !== "open" && order.status !== statusFilter) {
+        return false;
+      }
+
+      if (tableFilter.trim()) {
+        const search = tableFilter.trim().toLowerCase();
+        if (!String(order.tableNumber).toLowerCase().includes(search)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    return [...filteredOrders].sort((left, right) => {
+      switch (orderBy) {
+        case "placed_asc":
+          return compareDate(left.createdAt, right.createdAt, "asc");
+        case "order_desc":
+          return compareNumber(left.id, right.id, "desc");
+        case "order_asc":
+          return compareNumber(left.id, right.id, "asc");
+        case "table_asc":
+          return compareText(left.tableNumber, right.tableNumber, "asc");
+        case "table_desc":
+          return compareText(left.tableNumber, right.tableNumber, "desc");
+        case "total_desc":
+          return compareNumber(left.totalAmount, right.totalAmount, "desc");
+        case "total_asc":
+          return compareNumber(left.totalAmount, right.totalAmount, "asc");
+        case "status_asc":
+          return compareText(left.status, right.status, "asc");
+        case "placed_desc":
+        default:
+          return compareDate(left.createdAt, right.createdAt, "desc");
+      }
+    });
+  }, [orderBy, orders, statusFilter, tableFilter]);
 
   return (
-    <WorkspaceShell
-      currentSection="orders"
-      restaurant={restaurant}
-      flash={flash}
-      onClearFlash={() => setFlash(null)}
-    >
+    <>
       <section className="page-header">
         <div>
           <p className="eyebrow">Restaurant</p>
@@ -164,30 +208,62 @@ export default function OrdersPage() {
             <p className="field-help">
               Filter the queue, review what was ordered, and confirm status changes before they go through.
               {lastUpdated ? (
-                <span style={{ marginLeft: 8, opacity: 0.7, fontSize: 11 }}>
-                  Last updated: {lastUpdated.toLocaleTimeString()}
-                </span>
+                <span className="inline-note">Last updated: {lastUpdated.toLocaleTimeString()}</span>
               ) : null}
             </p>
           </div>
-          <SegmentedControl
-            label="Order filter"
-            options={STATUS_FILTER_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
         </div>
 
-        <div className="toolbar-row" style={{ marginBottom: 14 }}>
-          <input
-            className="field-control"
-            type="text"
-            placeholder="Filter by table…"
-            value={tableFilter}
-            onChange={(event) => setTableFilter(event.target.value)}
-            style={{ maxWidth: 200 }}
-            aria-label="Filter by table number"
-          />
+        <div className="filter-bar">
+          <div className="field-group filter-bar__field filter-bar__field--grow">
+            <label className="field-label" htmlFor="order_table_filter">
+              Filter by table name
+            </label>
+            <input
+              className="field-control"
+              id="order_table_filter"
+              type="text"
+              placeholder="e.g. A4"
+              value={tableFilter}
+              onChange={(event) => setTableFilter(event.target.value)}
+            />
+          </div>
+
+          <div className="field-group filter-bar__field">
+            <label className="field-label" htmlFor="order_status_filter">
+              Status
+            </label>
+            <select
+              className="field-control"
+              id="order_status_filter"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+            >
+              {STATUS_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field-group filter-bar__field">
+            <label className="field-label" htmlFor="order_sort">
+              Order by
+            </label>
+            <select
+              className="field-control"
+              id="order_sort"
+              value={orderBy}
+              onChange={(event) => setOrderBy(event.target.value)}
+            >
+              {ORDER_BY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {loading ? (
@@ -297,6 +373,6 @@ export default function OrdersPage() {
           setConfirmAction(null);
         }}
       />
-    </WorkspaceShell>
+    </>
   );
 }

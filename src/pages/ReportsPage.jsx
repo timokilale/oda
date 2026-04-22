@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import SegmentedControl from "../components/SegmentedControl.jsx";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { formatCurrency } from "../lib/format.js";
-import { useRestaurantWorkspace } from "./RestaurantLayout.jsx";
+import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 const PERIOD_OPTIONS = [
   { value: "today", label: "Today" },
@@ -15,13 +14,12 @@ const PERIOD_OPTIONS = [
 ];
 
 export default function ReportsPage() {
-  const { restaurant } = useRestaurantWorkspace();
+  const { restaurant, setFlash } = useRestaurantWorkspace();
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [flash, setFlash] = useState(null);
   const [period, setPeriod] = useState("all");
 
-  usePageTitle(`Reports — ${restaurant.name}`);
+  usePageTitle(`Reports - ${restaurant.name}`);
 
   const loadReports = useCallback(async () => {
     setLoading(true);
@@ -35,19 +33,14 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [restaurant.id, period]);
+  }, [period, restaurant.id, setFlash]);
 
   useEffect(() => {
     loadReports();
   }, [loadReports]);
 
   return (
-    <WorkspaceShell
-      currentSection="reports"
-      restaurant={restaurant}
-      flash={flash}
-      onClearFlash={() => setFlash(null)}
-    >
+    <>
       <section className="page-header">
         <div>
           <p className="eyebrow">Restaurant</p>
@@ -152,6 +145,6 @@ export default function ReportsPage() {
           </section>
         </>
       )}
-    </WorkspaceShell>
+    </>
   );
 }
