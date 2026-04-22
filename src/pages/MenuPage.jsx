@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import ImagePositionField from "../components/ImagePositionField.jsx";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import SegmentedControl from "../components/SegmentedControl.jsx";
@@ -48,8 +48,6 @@ export default function MenuPage() {
     clearFlash,
     scrollActiveViewToTop,
   } = useRestaurantWorkspace();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [items, setItems] = useState([]);
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +81,7 @@ export default function MenuPage() {
     return items.filter((item) => item.active);
   }, [filter, items]);
 
-  async function loadMenu() {
+  const loadMenu = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -100,20 +98,11 @@ export default function MenuPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [restaurant.id, setFlash]);
 
   useEffect(() => {
     loadMenu();
-  }, [restaurant.id]);
-
-  useEffect(() => {
-    if (!location.state?.flash) {
-      return;
-    }
-
-    setFlash(location.state.flash);
-    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
-  }, [location.pathname, location.search, location.state, navigate, setFlash]);
+  }, [loadMenu]);
 
   function resetForm(nextSuggestions = categorySuggestions) {
     setSelectedItemId(null);

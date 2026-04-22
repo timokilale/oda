@@ -22,7 +22,7 @@ function isDraftComplete(draft) {
 }
 
 export default function MenuCreatePage() {
-  const { restaurant, setFlash, clearFlash } = useRestaurantWorkspace();
+  const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const navigate = useNavigate();
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [drafts, setDrafts] = useState([buildDraft()]);
@@ -77,12 +77,15 @@ export default function MenuCreatePage() {
     );
   }
 
-  function createDraft({ open = false } = {}) {
+  function createDraft() {
     const nextDraft = buildDraft(categorySuggestions[0] || drafts[drafts.length - 1]?.category || "");
     setDrafts((current) => [...current, nextDraft]);
-    if (open) {
-      setEditingDraftId(nextDraft.id);
-    }
+  }
+
+  function resetComposer(nextSuggestions = categorySuggestions) {
+    setDrafts([buildDraft(nextSuggestions[0] || "")]);
+    setEditingDraftId(null);
+    setSubmitting(false);
   }
 
   function removeDraft(draftId) {
@@ -96,8 +99,10 @@ export default function MenuCreatePage() {
 
     const invalidIndex = drafts.findIndex((draft) => !isDraftComplete(draft));
     if (invalidIndex >= 0) {
-      setEditingDraftId(drafts[invalidIndex].id);
-      setFlash({ type: "error", message: `Complete item ${invalidIndex + 1} before publishing.` });
+      setFlash({
+        type: "error",
+        message: `Open item ${invalidIndex + 1} from the board and complete it before publishing.`,
+      });
       return;
     }
 
@@ -129,12 +134,15 @@ export default function MenuCreatePage() {
         }
       }
 
+      const createdCount = drafts.length;
+      resetComposer();
+      refreshWorkspace().catch(() => undefined);
       navigate(`/restaurants/${restaurant.id}/menu`, {
         replace: true,
         state: {
           flash: {
             type: "success",
-            message: `Added ${drafts.length} menu item${drafts.length === 1 ? "" : "s"}.`,
+            message: `Added ${createdCount} menu item${createdCount === 1 ? "" : "s"}.`,
           },
         },
       });
@@ -171,7 +179,7 @@ export default function MenuCreatePage() {
               </p>
             </div>
             <div className="page-actions">
-              <button type="button" className="button" onClick={() => createDraft({ open: true })} disabled={submitting}>
+              <button type="button" className="button" onClick={createDraft} disabled={submitting}>
                 Add item card
               </button>
               <button type="submit" className="button button-confirm" disabled={submitting}>
@@ -215,15 +223,6 @@ export default function MenuCreatePage() {
             );
           })}
 
-          {/*<button
-            type="button"
-            className="draft-tile draft-tile--adder"
-            onClick={() => createDraft({ open: true })}
-          >
-            <span className="draft-tile__plus" aria-hidden="true">+</span>
-            <strong className="draft-tile__title">Add another card</strong>
-            <span className="draft-tile__meta">Create a new empty draft and open its popup editor.</span>
-          </button>*/}
         </section>
       </form>
 

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
@@ -13,9 +13,13 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 export default function TablesPage() {
-  const { restaurant, workspaceSummary, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const {
+    restaurant,
+    workspaceSummary,
+    refreshWorkspace,
+    setFlash,
+    clearFlash,
+  } = useRestaurantWorkspace();
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -23,7 +27,7 @@ export default function TablesPage() {
 
   usePageTitle(`Tables - ${restaurant.name}`);
 
-  async function loadTables() {
+  const loadTables = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -34,20 +38,11 @@ export default function TablesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [restaurant.id, setFlash]);
 
   useEffect(() => {
     loadTables();
-  }, [restaurant.id]);
-
-  useEffect(() => {
-    if (!location.state?.flash) {
-      return;
-    }
-
-    setFlash(location.state.flash);
-    navigate({ pathname: location.pathname, search: location.search }, { replace: true, state: null });
-  }, [location.pathname, location.search, location.state, navigate, setFlash]);
+  }, [loadTables]);
 
   async function copyToClipboard(value) {
     if (!value) {

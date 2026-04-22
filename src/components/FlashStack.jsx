@@ -41,13 +41,14 @@ export default function FlashStack({ flash, onDismiss, bottom = false }) {
         className={`flash flash--${tone}${dismissing ? " is-dismissing" : ""}`}
         data-flash
         role={tone === "error" ? "alert" : "status"}
+        aria-live={tone === "error" ? "assertive" : "polite"}
       >
         <div className="flash__body">
           <strong className="flash__title">{tone === "error" ? "Attention" : "Success"}</strong>
-          <span>{flash.message}</span>
+          <span className="flash__message">{flash.message}</span>
         </div>
-        <button type="button" className="flash__dismiss" onClick={handleDismiss}>
-          Close
+        <button type="button" className="flash__dismiss" onClick={handleDismiss} aria-label="Dismiss notification">
+          Dismiss
         </button>
       </div>
     </div>

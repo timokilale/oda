@@ -9,23 +9,51 @@ export default function WorkspaceDialog({
   children,
 }) {
   const dialogRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  const focusedOnOpenRef = useRef(false);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!open) {
+      focusedOnOpenRef.current = false;
+      return undefined;
+    }
+
+    if (focusedOnOpenRef.current) {
+      return undefined;
+    }
+
+    focusedOnOpenRef.current = true;
+
+    const timer = window.setTimeout(() => {
+      const dialogBody = dialogRef.current?.querySelector(".workspace-dialog__body");
+      const firstFocusable =
+        dialogBody?.querySelector(
+          '[data-dialog-autofocus], input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ||
+        dialogRef.current?.querySelector(
+          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+        );
+      firstFocusable?.focus();
+    }, 60);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) {
       return undefined;
     }
 
-    const timer = window.setTimeout(() => {
-      const firstFocusable = dialogRef.current?.querySelector(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      firstFocusable?.focus();
-    }, 60);
-
     function handleKeyDown(event) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
 
@@ -34,7 +62,7 @@ export default function WorkspaceDialog({
       }
 
       const focusable = dialogRef.current?.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        'button:not([disabled]), [href], input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
       );
 
       if (!focusable?.length) {
@@ -56,10 +84,9 @@ export default function WorkspaceDialog({
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.clearTimeout(timer);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) {
     return null;

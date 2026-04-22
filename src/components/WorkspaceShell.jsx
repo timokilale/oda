@@ -1,11 +1,26 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useResolvedCanAddRestaurant } from "../hooks/useResolvedCanAddRestaurant.js";
 import { apiRequest } from "../lib/api.js";
 import ConfirmDialog from "./ConfirmDialog.jsx";
 import FlashStack from "./FlashStack.jsx";
 import QuickCreateRestaurant from "./QuickCreateRestaurant.jsx";
+
+const RESTAURANT_TABS = [
+  { section: "orders", label: "Orders" },
+  { section: "menu", label: "Menu" },
+  { section: "tables", label: "Tables" },
+  { section: "reports", label: "Reports" },
+  { section: "settings", label: "Settings" },
+];
+
+function buildRestaurantTabId(section) {
+  return `restaurant-tab-${section}`;
+}
+
+function buildRestaurantPanelId(section) {
+  return `restaurant-panel-${section}`;
+}
 
 export default function WorkspaceShell({
   currentSection,
@@ -21,9 +36,27 @@ export default function WorkspaceShell({
   const navigate = useNavigate();
   const { owner, logout } = useAuth();
   const [ownedRestaurants, setOwnedRestaurants] = useState([]);
+  const [resolvedCanAddRestaurant, setResolvedCanAddRestaurant] = useState(
+    Boolean(ownerCanAddRestaurant),
+  );
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-  const { resolvedCanAddRestaurant, refreshResolvedCanAddRestaurant } =
-    useResolvedCanAddRestaurant(owner, ownerCanAddRestaurant);
+  const activeRestaurantSection = useMemo(
+    () => (RESTAURANT_TABS.some((tab) => tab.section === currentSection) ? currentSection : "orders"),
+    [currentSection],
+  );
+  const restaurantTabs = useMemo(
+    () =>
+      restaurant
+        ? RESTAURANT_TABS.map((tab) => ({
+            ...tab,
+            id: buildRestaurantTabId(tab.section),
+            panelId: buildRestaurantPanelId(tab.section),
+            href: `/restaurants/${restaurant.id}/${tab.section}`,
+            isActive: tab.section === activeRestaurantSection,
+          }))
+        : [],
+    [activeRestaurantSection, restaurant],
+  );
 
   useEffect(() => {
     const previousClassName = document.body.className;
@@ -34,35 +67,36 @@ export default function WorkspaceShell({
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadOwnedRestaurants() {
-      if (!owner) {
-        if (active) {
-          setOwnedRestaurants([]);
-        }
-        return;
-      }
-
-      try {
-        const data = await apiRequest("/restaurants");
-        if (active) {
-          setOwnedRestaurants(data.restaurants || []);
-        }
-      } catch {
-        if (active) {
-          setOwnedRestaurants([]);
-        }
-      }
+  const loadOwnedRestaurants = useCallback(async () => {
+    if (!owner) {
+      setOwnedRestaurants([]);
+      setResolvedCanAddRestaurant(false);
+      return null;
     }
 
-    loadOwnedRestaurants();
+    try {
+      const data = await apiRequest("/restaurants");
+      setOwnedRestaurants(data.restaurants || []);
+      setResolvedCanAddRestaurant(Boolean(data.ownerCanAddRestaurant));
+      return data;
+    } catch {
+      setOwnedRestaurants([]);
+      setResolvedCanAddRestaurant(Boolean(ownerCanAddRestaurant));
+      return null;
+    }
+  }, [owner, ownerCanAddRestaurant]);
 
-    return () => {
-      active = false;
-    };
-  }, [owner]);
+  useEffect(() => {
+    loadOwnedRestaurants();
+  }, [loadOwnedRestaurants]);
+
+  useEffect(() => {
+    if (ownerCanAddRestaurant === undefined) {
+      return;
+    }
+
+    setResolvedCanAddRestaurant(Boolean(ownerCanAddRestaurant));
+  }, [ownerCanAddRestaurant]);
 
   async function handleLogout() {
     setLogoutConfirmOpen(false);
@@ -71,12 +105,7 @@ export default function WorkspaceShell({
   }
 
   async function handleRestaurantCreated(createdRestaurant) {
-    await Promise.all([
-      refreshResolvedCanAddRestaurant({ forceRemote: true }),
-      apiRequest("/restaurants")
-        .then((data) => setOwnedRestaurants(data.restaurants || []))
-        .catch(() => undefined),
-    ]);
+    await loadOwnedRestaurants();
     onRestaurantCreated?.(createdRestaurant);
   }
 
@@ -92,6 +121,39 @@ export default function WorkspaceShell({
     return `/restaurants/${nextRestaurantId}/${currentSection}`;
   }
 
+  function handleRestaurantTabKeyDown(event) {
+    if (!restaurantTabs.length) {
+      return;
+    }
+
+    let nextIndex = restaurantTabs.findIndex((tab) => tab.section === activeRestaurantSection);
+    if (nextIndex < 0) {
+      nextIndex = 0;
+    }
+
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        nextIndex = (nextIndex + 1) % restaurantTabs.length;
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        nextIndex = (nextIndex - 1 + restaurantTabs.length) % restaurantTabs.length;
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = restaurantTabs.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    navigate(restaurantTabs[nextIndex].href);
+  }
+
   return (
     <div className={`app-shell${appShellClassName ? ` ${appShellClassName}` : ""}`}>
       <a href="#main-content" className="sr-only sr-only-focusable">Skip to content</a>
@@ -103,47 +165,36 @@ export default function WorkspaceShell({
           </Link>
 
           {owner ? (
-            <nav className="nav-row" aria-label="Workspace">
+            <nav className="workspace-tabbar" aria-label="Workspace">
               <Link
                 to="/dashboard"
-                className={`nav-chip${currentSection === "restaurants" ? " is-active" : ""}`}
+                className={`nav-chip workspace-home-tab${currentSection === "restaurants" ? " is-active" : ""}`}
               >
                 Restaurants
               </Link>
 
-              {restaurant ? (
-                <>
-                  <Link
-                    to={`/restaurants/${restaurant.id}/orders`}
-                    className={`nav-chip${currentSection === "orders" ? " is-active" : ""}`}
-                  >
-                    Orders
-                  </Link>
-                  <Link
-                    to={`/restaurants/${restaurant.id}/menu`}
-                    className={`nav-chip${currentSection === "menu" ? " is-active" : ""}`}
-                  >
-                    Menu
-                  </Link>
-                  <Link
-                    to={`/restaurants/${restaurant.id}/tables`}
-                    className={`nav-chip${currentSection === "tables" ? " is-active" : ""}`}
-                  >
-                    Tables
-                  </Link>
-                  <Link
-                    to={`/restaurants/${restaurant.id}/reports`}
-                    className={`nav-chip${currentSection === "reports" ? " is-active" : ""}`}
-                  >
-                    Reports
-                  </Link>
-                  <Link
-                    to={`/restaurants/${restaurant.id}/settings`}
-                    className={`nav-chip${currentSection === "settings" ? " is-active" : ""}`}
-                  >
-                    Settings
-                  </Link>
-                </>
+              {restaurantTabs.length ? (
+                <div
+                  className="workspace-tablist"
+                  role="tablist"
+                  aria-label={`${restaurant.name} sections`}
+                  onKeyDown={handleRestaurantTabKeyDown}
+                >
+                  {restaurantTabs.map((tab) => (
+                    <Link
+                      key={tab.section}
+                      id={tab.id}
+                      to={tab.href}
+                      role="tab"
+                      aria-selected={tab.isActive ? "true" : "false"}
+                      aria-controls={tab.panelId}
+                      tabIndex={tab.isActive ? 0 : -1}
+                      className={`nav-chip workspace-tab${tab.isActive ? " is-active" : ""}`}
+                    >
+                      {tab.label}
+                    </Link>
+                  ))}
+                </div>
               ) : null}
             </nav>
           ) : null}
@@ -194,7 +245,7 @@ export default function WorkspaceShell({
         </div>
       </header>
 
-      <FlashStack flash={flash} onDismiss={onClearFlash} />
+      <FlashStack flash={flash} onDismiss={onClearFlash} bottom />
 
       <main
         id="main-content"

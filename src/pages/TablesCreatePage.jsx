@@ -17,7 +17,7 @@ function normalizeTableNumber(value) {
 }
 
 export default function TablesCreatePage() {
-  const { restaurant, setFlash, clearFlash } = useRestaurantWorkspace();
+  const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const navigate = useNavigate();
   const [drafts, setDrafts] = useState([buildTableDraft()]);
   const [editingDraftId, setEditingDraftId] = useState(null);
@@ -38,12 +38,15 @@ export default function TablesCreatePage() {
     );
   }
 
-  function createDraft({ open = false } = {}) {
+  function createDraft() {
     const nextDraft = buildTableDraft();
     setDrafts((current) => [...current, nextDraft]);
-    if (open) {
-      setEditingDraftId(nextDraft.id);
-    }
+  }
+
+  function resetComposer() {
+    setDrafts([buildTableDraft()]);
+    setEditingDraftId(null);
+    setSubmitting(false);
   }
 
   function removeDraft(draftId) {
@@ -58,8 +61,10 @@ export default function TablesCreatePage() {
     const normalizedTableNumbers = drafts.map((draft) => normalizeTableNumber(draft.tableNumber));
     const incompleteIndex = normalizedTableNumbers.findIndex((tableNumber) => !tableNumber);
     if (incompleteIndex >= 0) {
-      setEditingDraftId(drafts[incompleteIndex].id);
-      setFlash({ type: "error", message: `Complete table card ${incompleteIndex + 1} before creating tables.` });
+      setFlash({
+        type: "error",
+        message: `Open table card ${incompleteIndex + 1} from the board and complete it before creating tables.`,
+      });
       return;
     }
 
@@ -75,7 +80,6 @@ export default function TablesCreatePage() {
     });
 
     if (duplicateIndex >= 0) {
-      setEditingDraftId(drafts[duplicateIndex].id);
       setFlash({ type: "error", message: "Each table number must be unique in this batch." });
       return;
     }
@@ -94,12 +98,15 @@ export default function TablesCreatePage() {
         }
       }
 
+      const createdCount = drafts.length;
+      resetComposer();
+      refreshWorkspace().catch(() => undefined);
       navigate(`/restaurants/${restaurant.id}/tables`, {
         replace: true,
         state: {
           flash: {
             type: "success",
-            message: `Created ${drafts.length} table${drafts.length === 1 ? "" : "s"}.`,
+            message: `Created ${createdCount} table${createdCount === 1 ? "" : "s"}.`,
           },
         },
       });
@@ -136,7 +143,7 @@ export default function TablesCreatePage() {
               </p>
             </div>
             <div className="page-actions">
-              <button type="button" className="button" onClick={() => createDraft({ open: true })} disabled={submitting}>
+              <button type="button" className="button" onClick={createDraft} disabled={submitting}>
                 Add table card
               </button>
               <button type="submit" className="button button-confirm" disabled={submitting}>
@@ -176,15 +183,6 @@ export default function TablesCreatePage() {
             );
           })}
 
-         {/* <button
-            type="button"
-            className="draft-tile draft-tile--adder"
-            onClick={() => createDraft({ open: true })}
-          >
-            <span className="draft-tile__plus" aria-hidden="true">+</span>
-            <strong className="draft-tile__title">Add another card</strong>
-            <span className="draft-tile__meta">Create a new empty table card and open its popup editor.</span>
-          </button>*/}
         </section>
       </form>
 
