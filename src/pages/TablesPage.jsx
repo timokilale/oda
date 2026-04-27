@@ -249,7 +249,7 @@ export default function TablesPage() {
         ) : tables.length ? (
           <div className="table-card-grid">
             {tables.map((table) => {
-              const isExpanded = expandedTableId === table.id;
+              const isExpanded = true//expandedTableId === table.id;
 
               return (
                 <article key={table.id} className={`table-card${isExpanded ? " is-expanded" : ""}`}>
@@ -271,9 +271,6 @@ export default function TablesPage() {
 
                   {isExpanded ? (
                     <div className="table-card__details">
-                      <p className="table-card__details-copy">
-                        QR code and customer link stay off the screen until staff need an action.
-                      </p>
                       <div className="table-card__actions">
                         <button
                           type="button"
