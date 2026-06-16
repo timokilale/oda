@@ -119,25 +119,27 @@ export default function RegisterPage() {
 
   return (
     <WorkspaceShell flash={flash} onClearFlash={() => setFlash(null)}>
-      <section className="auth-shell">
-        <div className="surface panel stack-md">
+      <section className="w-full max-w-[520px] mx-auto px-4 py-12">
+        <div className="rounded-xl border border-border bg-card p-6 grid gap-4">
           <div>
-            <p className="eyebrow">Owner</p>
-            <h1 className="page-title">Create account</h1>
-            <p className="page-subtitle">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Owner</p>
+            <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+              Create account
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">
               {otpRequested
                 ? `Confirm the code sent to ${form.phoneNumber}, then we'll finish creating ${form.restaurantName || "your restaurant"}.`
                 : "Set up the first restaurant now. You can refine the details later in settings."}
             </p>
           </div>
 
-          <form className="form-grid" onSubmit={otpRequested ? handleVerifyOtp : handleRequestOtp}>
-            <div className="field-group">
-              <label className="field-label" htmlFor="phone_number">
+          <form className="grid gap-3" onSubmit={otpRequested ? handleVerifyOtp : handleRequestOtp}>
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="phone_number">
                 Phone number
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
                 id="phone_number"
                 type="tel"
                 inputMode="tel"
@@ -149,12 +151,12 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="restaurant_name">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_name">
                 Restaurant name
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
                 id="restaurant_name"
                 type="text"
                 value={form.restaurantName}
@@ -164,12 +166,12 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="city">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="city">
                 City
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
                 id="city"
                 type="text"
                 value={form.city}
@@ -178,12 +180,12 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="country">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="country">
                 Country
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
                 id="country"
                 type="text"
                 value={form.country}
@@ -217,12 +219,12 @@ export default function RegisterPage() {
 
             {otpRequested ? (
               <>
-                <div className="field-group">
-                  <label className="field-label" htmlFor="otp_code">
+                <div className="grid gap-1.5">
+                  <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="otp_code">
                     OTP code
                   </label>
                   <input
-                    className="field-control"
+                    className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                     id="otp_code"
                     type="text"
                     inputMode="numeric"
@@ -234,8 +236,13 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-                <div className="action-row">
-                  <button type="button" className="button" onClick={resetOtpFlow} disabled={submitting}>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    onClick={resetOtpFlow}
+                    disabled={submitting}
+                  >
                     Edit details
                   </button>
                 </div>
@@ -243,13 +250,17 @@ export default function RegisterPage() {
             ) : null}
 
             {import.meta.env.DEV && otpRequested && devOtpCode ? (
-              <div className="alert">
+              <div className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
                 Development OTP: <strong>{devOtpCode}</strong>
               </div>
             ) : null}
 
-            <div className="action-row">
-              <button type="submit" className="button button-confirm" disabled={submitting}>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                disabled={submitting}
+              >
                 {submitting
                   ? otpRequested
                     ? "Verifying"
@@ -261,7 +272,7 @@ export default function RegisterPage() {
               {otpRequested ? (
                 <button
                   type="button"
-                  className="button"
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                   onClick={handleRequestOtp}
                   disabled={submitting || resendCooldown > 0}
                 >
@@ -271,9 +282,12 @@ export default function RegisterPage() {
             </div>
           </form>
 
-          <div className="muted-text">
-            Already have an account? <Link to="/login">Log in</Link>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Already have an account?{" "}
+            <Link to="/login" className="text-primary underline underline-offset-2 hover:no-underline">
+              Log in
+            </Link>
+          </p>
         </div>
       </section>
     </WorkspaceShell>

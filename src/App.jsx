@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import MenuCreatePage from "./pages/MenuCreatePage.jsx";
 import MenuPage from "./pages/MenuPage.jsx";
@@ -25,7 +26,7 @@ function ProtectedOutlet() {
   const { owner, loading } = useAuth();
 
   if (loading) {
-    return <div className="app-shell">Loading your workspace...</div>;
+    return <div className="mx-auto max-w-[1280px] px-4 py-8 text-muted-foreground">Loading your workspace...</div>;
   }
 
   if (!owner) {
@@ -39,7 +40,7 @@ function HomeRedirect() {
   const { owner, loading } = useAuth();
 
   if (loading) {
-    return <div className="app-shell">Loading your workspace...</div>;
+    return <div className="mx-auto max-w-[1280px] px-4 py-8 text-muted-foreground">Loading your workspace...</div>;
   }
 
   return <Navigate to={owner ? "/dashboard" : "/login"} replace />;
@@ -54,20 +55,83 @@ export default function App() {
         <Route path="/register" element={<RegisterPage />} />
 
         <Route element={<ProtectedOutlet />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ErrorBoundary fallbackMessage="Dashboard crashed">
+                <DashboardPage />
+              </ErrorBoundary>
+            }
+          />
           <Route path="/restaurants/:restaurantId" element={<RestaurantLayout />}>
             <Route index element={<Navigate to="orders" replace />} />
-            <Route path="orders" element={<OrdersPage />} />
-            <Route path="menu/new" element={<MenuCreatePage />} />
-            <Route path="menu" element={<MenuPage />} />
-            <Route path="tables/new" element={<TablesCreatePage />} />
-            <Route path="tables" element={<TablesPage />} />
-            <Route path="reports" element={<ReportsPage />} />
-            <Route path="settings" element={<RestaurantSettingsPage />} />
+            <Route
+              path="orders"
+              element={
+                <ErrorBoundary fallbackMessage="Orders page crashed">
+                  <OrdersPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="menu/new"
+              element={
+                <ErrorBoundary fallbackMessage="Menu editor crashed">
+                  <MenuCreatePage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="menu"
+              element={
+                <ErrorBoundary fallbackMessage="Menu page crashed">
+                  <MenuPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="tables/new"
+              element={
+                <ErrorBoundary fallbackMessage="Table creator crashed">
+                  <TablesCreatePage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="tables"
+              element={
+                <ErrorBoundary fallbackMessage="Tables page crashed">
+                  <TablesPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="reports"
+              element={
+                <ErrorBoundary fallbackMessage="Reports page crashed">
+                  <ReportsPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <ErrorBoundary fallbackMessage="Settings page crashed">
+                  <RestaurantSettingsPage />
+                </ErrorBoundary>
+              }
+            />
           </Route>
         </Route>
 
-        <Route path="/order/:restaurantRef" element={<PublicOrderPage />} />
+        <Route
+          path="/order/:restaurantRef"
+          element={
+            <ErrorBoundary fallbackMessage="Order page crashed">
+              <PublicOrderPage />
+            </ErrorBoundary>
+          }
+        />
         <Route path="/r/:restaurantRef/order" element={<RedirectToCanonicalOrder />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

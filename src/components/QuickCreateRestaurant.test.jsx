@@ -28,6 +28,7 @@ describe("QuickCreateRestaurant", () => {
     });
 
     render(<QuickCreateRestaurant onCreated={onCreated} />);
+    await user.click(screen.getByRole("button", { name: "New restaurant" }));
 
     await user.type(screen.getByPlaceholderText("Restaurant"), "Dockside Grill");
     await user.type(screen.getByPlaceholderText("City"), "Mombasa");
@@ -54,7 +55,8 @@ describe("QuickCreateRestaurant", () => {
       expect(onCreated).toHaveBeenCalledWith({ id: 9, name: "Dockside Grill" });
     });
 
-    expect(screen.getByPlaceholderText("Restaurant")).toHaveValue("");
+    expect(screen.queryByPlaceholderText("Restaurant")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New restaurant" })).toBeInTheDocument();
   });
 
   it("shows backend errors instead of swallowing them", async () => {
@@ -63,6 +65,7 @@ describe("QuickCreateRestaurant", () => {
     apiRequest.mockRejectedValue(new Error("Restaurant name is required."));
 
     render(<QuickCreateRestaurant />);
+    await user.click(screen.getByRole("button", { name: "New restaurant" }));
 
     await user.type(screen.getByPlaceholderText("Restaurant"), " ");
     await user.click(screen.getByRole("button", { name: "Create" }));

@@ -163,11 +163,13 @@ export default function RestaurantLayout() {
   if (loading) {
     return (
       <WorkspaceShell currentSection={currentSection} restaurant={restaurant}>
-        <section className="page-header">
+        <section className="py-6">
           <div>
-            <p className="eyebrow">Workspace</p>
-            <h1 className="page-title">Loading restaurant</h1>
-            <p className="page-subtitle">Preparing the workspace and latest metrics.</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
+            <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+              Loading restaurant
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">Preparing the workspace and latest metrics.</p>
           </div>
         </section>
       </WorkspaceShell>
@@ -177,11 +179,13 @@ export default function RestaurantLayout() {
   if (error) {
     return (
       <WorkspaceShell currentSection={currentSection} restaurant={restaurant}>
-        <section className="page-header">
+        <section className="py-6">
           <div>
-            <p className="eyebrow">Workspace</p>
-            <h1 className="page-title">Restaurant unavailable</h1>
-            <p className="page-subtitle">{error}</p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
+            <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+              Restaurant unavailable
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">{error}</p>
           </div>
         </section>
       </WorkspaceShell>
@@ -198,7 +202,6 @@ export default function RestaurantLayout() {
       <RestaurantWorkspaceContext.Provider value={workspaceContext}>
         <section
           id={buildRestaurantPanelId(panelSection)}
-          className="workspace-tabpanel"
           role="tabpanel"
           aria-labelledby={buildRestaurantTabId(panelSection)}
         >

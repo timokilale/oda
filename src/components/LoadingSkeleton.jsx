@@ -3,9 +3,9 @@ export default function LoadingSkeleton({ variant = "card", count = 1 }) {
 
   if (variant === "metric") {
     return (
-      <div className="skeleton-grid skeleton-grid--metrics">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
         {items.map((i) => (
-          <div key={i} className="skeleton skeleton-metric" />
+          <div key={i} className="h-[132px] rounded-xl bg-muted animate-pulse" />
         ))}
       </div>
     );
@@ -13,18 +13,18 @@ export default function LoadingSkeleton({ variant = "card", count = 1 }) {
 
   if (variant === "table-row") {
     return (
-      <div className="skeleton-grid">
+      <div className="grid gap-2">
         {items.map((i) => (
-          <div key={i} className="skeleton skeleton-row" />
+          <div key={i} className="h-[52px] rounded-lg bg-muted animate-pulse" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="skeleton-grid">
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
       {items.map((i) => (
-        <div key={i} className="skeleton skeleton-card" />
+        <div key={i} className="h-[140px] rounded-xl bg-muted animate-pulse" />
       ))}
     </div>
   );

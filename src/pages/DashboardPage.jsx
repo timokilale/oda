@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
@@ -13,7 +13,7 @@ export default function DashboardPage() {
 
   usePageTitle("Restaurants");
 
-  async function loadRestaurants() {
+  const loadRestaurants = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -25,11 +25,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadRestaurants();
-  }, []);
+  }, [loadRestaurants]);
 
   return (
     <WorkspaceShell
@@ -42,55 +42,61 @@ export default function DashboardPage() {
       flash={flash}
       onClearFlash={() => setFlash(null)}
     >
-      <section className="page-header">
-        <div>
-          <p className="eyebrow">Owner</p>
-          <h1 className="page-title">Restaurants</h1>
+      <section className="py-6">
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Owner</p>
+          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            Restaurants
+          </h1>
         </div>
       </section>
 
-      <section className="page-section">
+      <section>
         {loading ? (
           <LoadingSkeleton variant="card" count={2} />
         ) : restaurants.length ? (
-          <div className="restaurant-grid">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
             {restaurants.map((restaurant) => (
               <Link
                 key={restaurant.id}
                 to={`/restaurants/${restaurant.id}/orders`}
-                className="restaurant-card"
+                className="group rounded-xl border border-border bg-card shadow-sm overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all no-underline"
               >
-                <div className="restaurant-card__media">
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
                   {restaurant.imageUrl ? (
                     <img
                       src={restaurant.imageUrl}
                       alt={restaurant.name}
-                      className="restaurant-card__image"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       style={{
                         objectPosition: `${restaurant.imagePositionX ?? 50}% ${restaurant.imagePositionY ?? 50}%`,
                       }}
                     />
                   ) : (
-                    <div className="restaurant-card__placeholder" aria-hidden="true">
+                    <div className="w-full h-full flex items-center justify-center text-[clamp(2rem,5vw,3rem)] font-display italic text-muted-foreground/40" aria-hidden="true">
                       {restaurant.name.slice(0, 1)}
                     </div>
                   )}
                 </div>
-                <div className="restaurant-card__body">
-                  <div className="restaurant-card__topline">
-                    <h2 className="entity-card__title">{restaurant.name}</h2>
+                <div className="p-4 grid gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="font-display text-lg italic text-foreground truncate">{restaurant.name}</h2>
                     <span
-                      className={`status-pill ${restaurant.active ? "status-pill--active" : "status-pill--inactive"}`}
+                      className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border uppercase tracking-wider ${
+                        restaurant.active
+                          ? "border-green-200 bg-green-50 text-green-700"
+                          : "border-red-200 bg-red-50 text-red-700"
+                      }`}
                       role="status"
                       aria-label={`Restaurant status: ${restaurant.active ? "active" : "inactive"}`}
                     >
                       {restaurant.active ? "Active" : "Inactive"}
                     </span>
                   </div>
-                  <p className="meta-row">
+                  <p className="text-xs text-muted-foreground">
                     {[restaurant.city, restaurant.country].filter(Boolean).join(", ") || "Location pending"}
                   </p>
-                  <div className="restaurant-card__stats">
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
                     <span>{restaurant.openOrderCount} open</span>
                     <span>{restaurant.menuItemCount} menu</span>
                     <span>{restaurant.tableCount} tables</span>
@@ -100,14 +106,20 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <section className="surface empty-state">
-            <div className="panel">
-              <h2 className="panel-title">No restaurants yet</h2>
-              <p className="empty-text">
-                Use <strong>New restaurant</strong> in the header to create your first workspace.
-              </p>
-            </div>
-          </section>
+          <div className="rounded-xl border border-border bg-card p-10 text-center">
+            <svg viewBox="0 0 48 48" fill="none" className="w-14 h-14 mx-auto mb-4 text-muted-foreground/30">
+              <rect x="6" y="18" width="36" height="24" rx="2" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="10" y="22" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
+              <rect x="26" y="22" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="20" y1="38" x2="28" y2="38" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+              <rect x="18" y="6" width="12" height="14" rx="2" stroke="currentColor" strokeWidth="1.2" />
+              <polyline points="24,8 24,12 27,12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <h2 className="text-lg font-display italic text-foreground">No restaurants yet</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Use <strong>New restaurant</strong> in the header to create your first workspace.
+            </p>
+          </div>
         )}
       </section>
     </WorkspaceShell>

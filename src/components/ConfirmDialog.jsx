@@ -18,7 +18,6 @@ export default function ConfirmDialog({
       return undefined;
     }
 
-    // Focus the cancel button by default (safer default)
     const timer = window.setTimeout(() => {
       confirmBtnRef.current?.focus();
     }, 60);
@@ -30,10 +29,9 @@ export default function ConfirmDialog({
         return;
       }
 
-      // Trap focus inside dialog
       if (event.key === "Tab") {
         const focusable = dialogRef.current?.querySelectorAll(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
         );
 
         if (!focusable?.length) {
@@ -69,7 +67,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="confirm-dialog-overlay"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           onCancel?.();
@@ -80,19 +78,37 @@ export default function ConfirmDialog({
       aria-label={title}
     >
       <div
-        className={`confirm-dialog${isDestructive ? " confirm-dialog--danger" : ""}`}
+        className={`w-full max-w-[420px] mx-4 rounded-xl border bg-card shadow-lg ${
+          isDestructive ? "border-destructive/30" : "border-border"
+        }`}
         ref={dialogRef}
       >
-        <h2 className="confirm-dialog__title">{title}</h2>
-        {message ? <p className="confirm-dialog__message">{message}</p> : null}
-        <div className="confirm-dialog__actions">
-          <button type="button" className="button" onClick={() => onCancel?.()}>
+        <div className="p-6">
+          <h2 className={`text-xl font-display italic mb-2 ${
+            isDestructive ? "text-destructive" : "text-foreground"
+          }`}>
+            {title}
+          </h2>
+          {message ? (
+            <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
+          ) : null}
+        </div>
+        <div className="flex items-center justify-end gap-2 px-6 pb-6">
+          <button
+            type="button"
+            className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
+            onClick={() => onCancel?.()}
+          >
             {cancelLabel}
           </button>
           <button
             type="button"
-            className={`button ${isDestructive ? "button-danger" : "button-confirm"}`}
             ref={confirmBtnRef}
+            className={`inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium text-white transition-colors ${
+              isDestructive
+                ? "bg-destructive hover:bg-destructive/90"
+                : "bg-primary hover:bg-primary/90"
+            }`}
             onClick={() => onConfirm?.()}
           >
             {confirmLabel}

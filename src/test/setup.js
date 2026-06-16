@@ -17,3 +17,14 @@ if (!URL.createObjectURL) {
 if (!URL.revokeObjectURL) {
   URL.revokeObjectURL = vi.fn();
 }
+
+if (!window.IntersectionObserver) {
+  class MockIntersectionObserver {
+    constructor() {
+      this.observe = vi.fn();
+      this.unobserve = vi.fn();
+      this.disconnect = vi.fn();
+    }
+  }
+  window.IntersectionObserver = MockIntersectionObserver;
+}

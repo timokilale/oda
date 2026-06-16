@@ -62,102 +62,122 @@ export default function QuickCreateRestaurant({ onCreated }) {
   }
 
   return (
-    <details
-      className="quick-create"
-      open={open}
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary className="button button-confirm">New restaurant</summary>
-      <form onSubmit={handleSubmit} className="quick-create__panel">
-        <div className="field-group">
-          <label className="field-label" htmlFor="quick_create_restaurant_name">
-            Restaurant name
-          </label>
-          <input
-            className="field-control quick-create__input"
-            id="quick_create_restaurant_name"
-            type="text"
-            placeholder="Restaurant"
-            value={form.restaurantName}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                restaurantName: event.target.value,
-              }))
-            }
-            required
-          />
-        </div>
-        <div className="field-group">
-          <label className="field-label" htmlFor="quick_create_restaurant_city">
-            City
-          </label>
-          <input
-            className="field-control quick-create__input"
-            id="quick_create_restaurant_city"
-            type="text"
-            placeholder="City"
-            value={form.city}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, city: event.target.value }))
-            }
-          />
-        </div>
-        <div className="field-group">
-          <label className="field-label" htmlFor="quick_create_restaurant_country">
-            Country
-          </label>
-          <input
-            className="field-control quick-create__input"
-            id="quick_create_restaurant_country"
-            type="text"
-            placeholder="Country"
-            value={form.country}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                country: event.target.value,
-              }))
-            }
-          />
-        </div>
-        <ImagePositionField
-          inputId="quick_create_restaurant_image"
-          label="Image"
-          file={form.restaurantImage}
-          positionX={form.restaurantImagePositionX}
-          positionY={form.restaurantImagePositionY}
-          aspectRatio={RESTAURANT_IMAGE_TARGET.aspectRatio}
-          onFileChange={(file) =>
-            setForm((current) => ({
-              ...current,
-              restaurantImage: file,
-              restaurantImagePositionX: 50,
-              restaurantImagePositionY: 50,
-            }))
-          }
-          onPositionChange={({ x, y }) =>
-            setForm((current) => ({
-              ...current,
-              restaurantImagePositionX: x,
-              restaurantImagePositionY: y,
-            }))
-          }
-        />
-        {error ? (
-          <div className="field-error" role="alert">
-            {error}
+    <div className="relative">
+      {!open ? (
+        <button
+          type="button"
+          className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          onClick={() => setOpen(true)}
+        >
+          New restaurant
+        </button>
+      ) : null}
+
+      {open ? (
+        <div className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-32px),420px)] max-h-[calc(100dvh-100px)] overflow-y-auto rounded-xl border border-border bg-card shadow-lg p-5">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-base font-medium text-foreground">New restaurant</span>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
+              onClick={handleClose}
+              disabled={submitting}
+            >
+              Close
+            </button>
           </div>
-        ) : null}
-        <div className="action-row">
-          <button type="submit" className="button button-confirm" disabled={submitting}>
-            {submitting ? "Creating" : "Create"}
-          </button>
-          <button type="button" className="button" onClick={handleClose} disabled={submitting}>
-            Cancel
-          </button>
+          <form onSubmit={handleSubmit} className="grid gap-3">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="quick_create_restaurant_name">
+                Restaurant name
+              </label>
+              <input
+                className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                id="quick_create_restaurant_name"
+                type="text"
+                placeholder="Restaurant"
+                value={form.restaurantName}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    restaurantName: event.target.value,
+                  }))
+                }
+                required
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="quick_create_restaurant_city">
+                City
+              </label>
+              <input
+                className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                id="quick_create_restaurant_city"
+                type="text"
+                placeholder="City"
+                value={form.city}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, city: event.target.value }))
+                }
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="quick_create_restaurant_country">
+                Country
+              </label>
+              <input
+                className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                id="quick_create_restaurant_country"
+                type="text"
+                placeholder="Country"
+                value={form.country}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    country: event.target.value,
+                  }))
+                }
+              />
+            </div>
+            <ImagePositionField
+              inputId="quick_create_restaurant_image"
+              label="Image"
+              file={form.restaurantImage}
+              positionX={form.restaurantImagePositionX}
+              positionY={form.restaurantImagePositionY}
+              aspectRatio={RESTAURANT_IMAGE_TARGET.aspectRatio}
+              onFileChange={(file) =>
+                setForm((current) => ({
+                  ...current,
+                  restaurantImage: file,
+                  restaurantImagePositionX: 50,
+                  restaurantImagePositionY: 50,
+                }))
+              }
+              onPositionChange={({ x, y }) =>
+                setForm((current) => ({
+                  ...current,
+                  restaurantImagePositionX: x,
+                  restaurantImagePositionY: y,
+                }))
+              }
+            />
+            {error ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                {error}
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2 pt-2">
+              <button type="submit" className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50" disabled={submitting}>
+                {submitting ? "Creating" : "Create"}
+              </button>
+              <button type="button" className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50" onClick={handleClose} disabled={submitting}>
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
-    </details>
+      ) : null}
+    </div>
   );
 }

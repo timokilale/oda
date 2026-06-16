@@ -18,15 +18,13 @@ export default function SegmentedControl({ label, options, value, onChange }) {
     }
 
     onChange(options[nextIndex].value);
-
-    // Focus the new button
     const buttons = containerRef.current?.querySelectorAll("[role='radio']");
     buttons?.[nextIndex]?.focus();
   }
 
   return (
     <div
-      className="segmented-control"
+      className="inline-flex rounded-lg border border-border bg-background p-0.5"
       role="radiogroup"
       aria-label={label}
       ref={containerRef}
@@ -41,7 +39,11 @@ export default function SegmentedControl({ label, options, value, onChange }) {
             role="radio"
             aria-checked={isChecked ? "true" : "false"}
             tabIndex={isChecked ? 0 : -1}
-            className="segmented-control__option"
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              isChecked
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
             onClick={() => onChange(option.value)}
           >
             {option.label}

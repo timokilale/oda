@@ -58,15 +58,6 @@ export default function WorkspaceShell({
     [activeRestaurantSection, restaurant],
   );
 
-  useEffect(() => {
-    const previousClassName = document.body.className;
-    document.body.className = "workspace-page";
-
-    return () => {
-      document.body.className = previousClassName;
-    };
-  }, []);
-
   const loadOwnedRestaurants = useCallback(async () => {
     if (!owner) {
       setOwnedRestaurants([]);
@@ -155,93 +146,107 @@ export default function WorkspaceShell({
   }
 
   return (
-    <div className={`app-shell${appShellClassName ? ` ${appShellClassName}` : ""}`}>
+    <div className={`mx-auto max-w-[1280px] px-4${appShellClassName ? ` ${appShellClassName}` : ""}`}>
       <a href="#main-content" className="sr-only sr-only-focusable">Skip to content</a>
 
-      <header className="topbar">
-        <div className="topbar__left">
-          <Link to="/" className="brand">
-            ODA
-          </Link>
+      <header className="sticky top-0 z-30 -mx-4 px-4 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="flex items-center justify-between h-12">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link to="/" className="text-[1.95rem] font-display italic font-normal text-foreground shrink-0 no-underline">
+              ODA
+            </Link>
 
-          {owner ? (
-            <nav className="workspace-tabbar" aria-label="Workspace">
-              <Link
-                to="/dashboard"
-                className={`nav-chip workspace-home-tab${currentSection === "restaurants" ? " is-active" : ""}`}
-              >
-                Restaurants
-              </Link>
-
-              {restaurantTabs.length ? (
-                <div
-                  className="workspace-tablist"
-                  role="tablist"
-                  aria-label={`${restaurant.name} sections`}
-                  onKeyDown={handleRestaurantTabKeyDown}
+            {owner ? (
+              <nav className="flex items-center gap-0 overflow-x-auto scrollbar-none" aria-label="Workspace">
+                <Link
+                  to="/dashboard"
+                  className={`shrink-0 px-3 py-3 text-xs font-medium tracking-wider uppercase whitespace-nowrap border-b-2 transition-colors no-underline ${
+                    currentSection === "restaurants"
+                      ? "border-primary text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  {restaurantTabs.map((tab) => (
-                    <Link
-                      key={tab.section}
-                      id={tab.id}
-                      to={tab.href}
-                      role="tab"
-                      aria-selected={tab.isActive ? "true" : "false"}
-                      aria-controls={tab.panelId}
-                      tabIndex={tab.isActive ? 0 : -1}
-                      className={`nav-chip workspace-tab${tab.isActive ? " is-active" : ""}`}
-                    >
-                      {tab.label}
-                    </Link>
-                  ))}
-                </div>
-              ) : null}
-            </nav>
-          ) : null}
-        </div>
+                  Restaurants
+                </Link>
 
-        <div className="topbar__right">
-          {owner ? (
-            <>
-              {ownedRestaurants.length > 1 ? (
-                <label className="workspace-picker">
-                  <span className="workspace-picker__label">Restaurant</span>
-                  <select
-                    className="field-control workspace-picker__control"
-                    value={restaurant?.id || ""}
-                    onChange={(event) => navigate(buildRestaurantTarget(event.target.value))}
+                {restaurantTabs.length ? (
+                  <div
+                    className="flex items-center"
+                    role="tablist"
+                    aria-label={`${restaurant.name} sections`}
+                    onKeyDown={handleRestaurantTabKeyDown}
                   >
-                    <option value="">Jump to restaurant</option>
-                    {ownedRestaurants.map((ownedRestaurant) => (
-                      <option key={ownedRestaurant.id} value={ownedRestaurant.id}>
-                        {ownedRestaurant.name}
-                      </option>
+                    {restaurantTabs.map((tab) => (
+                      <Link
+                        key={tab.section}
+                        id={tab.id}
+                        to={tab.href}
+                        role="tab"
+                        aria-selected={tab.isActive ? "true" : "false"}
+                        aria-controls={tab.panelId}
+                        tabIndex={tab.isActive ? 0 : -1}
+                        className={`shrink-0 px-3 py-3 text-xs font-medium tracking-wider uppercase whitespace-nowrap border-b-2 transition-colors no-underline ${
+                          tab.isActive
+                            ? "border-primary text-foreground"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {tab.label}
+                      </Link>
                     ))}
-                  </select>
-                </label>
-              ) : null}
-              {resolvedCanAddRestaurant ? (
-                <QuickCreateRestaurant onCreated={handleRestaurantCreated} />
-              ) : (
-                <span className="status-pill status-pill--inactive" title="You have reached the maximum number of restaurants for your account">
-                  Limit: {ownedRestaurants.length} restaurant{ownedRestaurants.length !== 1 ? "s" : ""}
-                </span>
-              )}
-              <span className="muted-text">{owner.phoneNumber}</span>
-              <button type="button" className="button" onClick={() => setLogoutConfirmOpen(true)}>
-                Log out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" className="button">
-                Log in
-              </Link>
-              <Link to="/register" className="button button-confirm">
-                Create account
-              </Link>
-            </>
-          )}
+                  </div>
+                ) : null}
+              </nav>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {owner ? (
+              <>
+                {ownedRestaurants.length > 1 ? (
+                  <label className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground font-mono">Restaurant</span>
+                    <select
+                      className="h-8 rounded-lg border border-input bg-background px-2 text-xs text-foreground"
+                      value={restaurant?.id || ""}
+                      onChange={(event) => navigate(buildRestaurantTarget(event.target.value))}
+                    >
+                      <option value="">Jump to restaurant</option>
+                      {ownedRestaurants.map((ownedRestaurant) => (
+                        <option key={ownedRestaurant.id} value={ownedRestaurant.id}>
+                          {ownedRestaurant.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : null}
+                {resolvedCanAddRestaurant ? (
+                  <QuickCreateRestaurant onCreated={handleRestaurantCreated} />
+                ) : (
+                  <span className="inline-flex items-center h-6 px-2 rounded-full text-[11px] font-medium border border-border bg-muted/50 text-muted-foreground uppercase tracking-wider">
+                    Limit: {ownedRestaurants.length} restaurant{ownedRestaurants.length !== 1 ? "s" : ""}
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground">{owner.phoneNumber}</span>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                  onClick={() => setLogoutConfirmOpen(true)}
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors no-underline">
+                  Log in
+                </Link>
+                <Link to="/register" className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors no-underline">
+                  Create account
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </header>
 

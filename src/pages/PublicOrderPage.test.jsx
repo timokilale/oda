@@ -97,8 +97,8 @@ describe("PublicOrderPage", () => {
     expect(reviewButton).toBeEnabled();
     await user.click(reviewButton);
 
-    // Now the review sheet is open, find the Place Order button inside it
-    const reviewSheet = screen.getByRole("region", { name: "Review your order" });
+    // Now the review sheet is open (role="dialog"), find the Place Order button inside it
+    const reviewSheet = screen.getByRole("dialog", { name: "Your order" });
     const placeOrderButton = within(reviewSheet).getByRole("button", { name: /Place Order/ });
     expect(placeOrderButton).toBeEnabled();
     await user.click(placeOrderButton);

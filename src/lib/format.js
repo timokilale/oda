@@ -1,21 +1,28 @@
-const currencyFormatter = new Intl.NumberFormat("en-KE", {
-  style: "currency",
-  currency: "KES",
-  maximumFractionDigits: 2,
-});
+function createCurrencyFormatter(currency) {
+  return new Intl.NumberFormat("en-TZ", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  });
+}
 
-const compactNumberFormatter = new Intl.NumberFormat("en-KE", {
+const compactNumberFormatter = new Intl.NumberFormat("en-TZ", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
 
-const dateTimeFormatter = new Intl.DateTimeFormat("en-KE", {
+const dateTimeFormatter = new Intl.DateTimeFormat("en-TZ", {
   dateStyle: "medium",
   timeStyle: "short",
 });
 
-export function formatCurrency(value) {
-  return currencyFormatter.format(Number(value || 0));
+const formatterCache = {};
+
+export function formatCurrency(value, currency = "TZS") {
+  if (!formatterCache[currency]) {
+    formatterCache[currency] = createCurrencyFormatter(currency);
+  }
+  return formatterCache[currency].format(Number(value || 0));
 }
 
 export function formatCount(value) {

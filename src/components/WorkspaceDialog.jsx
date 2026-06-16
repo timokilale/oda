@@ -29,7 +29,7 @@ export default function WorkspaceDialog({
     focusedOnOpenRef.current = true;
 
     const timer = window.setTimeout(() => {
-      const dialogBody = dialogRef.current?.querySelector(".workspace-dialog__body");
+      const dialogBody = dialogRef.current?.querySelector("[data-dialog-body]");
       const firstFocusable =
         dialogBody?.querySelector(
           '[data-dialog-autofocus], input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -94,7 +94,7 @@ export default function WorkspaceDialog({
 
   return (
     <div
-      className="confirm-dialog-overlay"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           onClose?.();
@@ -104,20 +104,33 @@ export default function WorkspaceDialog({
       aria-modal="true"
       aria-label={title}
     >
-      <div className="workspace-dialog" ref={dialogRef}>
-        <div className="workspace-dialog__header">
-          <div>
-            <h2 className="workspace-dialog__title">{title}</h2>
-            {description ? <p className="workspace-dialog__description">{description}</p> : null}
+      <div
+        className="w-full max-w-[720px] mx-4 max-h-[calc(100dvh-64px)] flex flex-col rounded-xl border border-border bg-card shadow-lg"
+        ref={dialogRef}
+      >
+        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
+          <div className="min-w-0">
+            <h2 className="text-xl font-display italic text-foreground">{title}</h2>
+            {description ? (
+              <p className="text-sm text-muted-foreground mt-1">{description}</p>
+            ) : null}
           </div>
-          <button type="button" className="button button-secondary" onClick={() => onClose?.()}>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors shrink-0"
+            onClick={() => onClose?.()}
+          >
             Close
           </button>
         </div>
 
-        <div className="workspace-dialog__body">{children}</div>
+        <div className="overflow-y-auto px-6 py-5" data-dialog-body>
+          {children}
+        </div>
 
-        {footer ? <div className="workspace-dialog__footer">{footer}</div> : null}
+        {footer ? (
+          <div className="px-6 py-4 border-t border-border">{footer}</div>
+        ) : null}
       </div>
     </div>
   );

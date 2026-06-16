@@ -118,35 +118,47 @@ export default function TablesCreatePage() {
 
   return (
     <>
-      <section className="page-header page-header--split">
+      <section className="flex items-start justify-between gap-4 py-6">
         <div>
-          <p className="eyebrow">Restaurant</p>
-          <h1 className="page-title">Add tables</h1>
-          <p className="page-subtitle">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
+          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            Add tables
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">
             Create table cards in a compact board, then open any card to set or change its table number.
           </p>
         </div>
-        <div className="page-actions">
-          <Link to={`/restaurants/${restaurant.id}/tables`} className="button button-secondary">
-            Back to tables
-          </Link>
-        </div>
+        <Link
+          to={`/restaurants/${restaurant.id}/tables`}
+          className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors no-underline shrink-0 mt-6"
+        >
+          Back to tables
+        </Link>
       </section>
 
-      <form className="page-section draft-stack" onSubmit={handleSubmit}>
-        <section className="surface panel">
-          <div className="panel-header">
+      <form className="grid gap-4 mb-8" onSubmit={handleSubmit}>
+        <section className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="panel-title">Table board</h2>
-              <p className="field-help">
+              <h2 className="text-[1.42rem] font-display italic text-foreground">Table board</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 {completedCount} of {drafts.length} table card{drafts.length === 1 ? "" : "s"} ready to generate.
               </p>
             </div>
-            <div className="page-actions">
-              <button type="button" className="button" onClick={createDraft} disabled={submitting}>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                onClick={createDraft}
+                disabled={submitting}
+              >
                 Add table card
               </button>
-              <button type="submit" className="button button-confirm" disabled={submitting}>
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                disabled={submitting}
+              >
                 {submitting
                   ? "Creating tables"
                   : `Create ${drafts.length} table${drafts.length === 1 ? "" : "s"}`}
@@ -155,7 +167,10 @@ export default function TablesCreatePage() {
           </div>
         </section>
 
-        <section className="draft-board" aria-label="Table drafts">
+        <section
+          className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3"
+          aria-label="Table drafts"
+        >
           {drafts.map((draft, index) => {
             const tableNumber = normalizeTableNumber(draft.tableNumber);
 
@@ -163,26 +178,31 @@ export default function TablesCreatePage() {
               <button
                 key={draft.id}
                 type="button"
-                className={`draft-tile${tableNumber ? "" : " draft-tile--empty"}`}
+                className={`text-left rounded-xl border p-4 transition-all hover:shadow-md hover:-translate-y-0.5 ${
+                  tableNumber
+                    ? "border-border bg-card hover:border-muted-foreground/30"
+                    : "border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40"
+                }`}
                 onClick={() => setEditingDraftId(draft.id)}
               >
-                <span className="draft-tile__index">Table card {index + 1}</span>
+                <span className="text-xs font-mono text-muted-foreground block mb-3">
+                  Table card {index + 1}
+                </span>
                 {tableNumber ? (
                   <>
-                    <strong className="draft-tile__title">Table {tableNumber}</strong>
-                    <span className="draft-tile__meta">QR access will be generated when you publish this board.</span>
+                    <strong className="block text-sm font-medium text-foreground">Table {tableNumber}</strong>
+                    <span className="block text-xs text-muted-foreground mt-1">QR access will be generated when you publish this board.</span>
                   </>
                 ) : (
                   <>
-                    <span className="draft-tile__plus" aria-hidden="true">+</span>
-                    <strong className="draft-tile__title">Configure table</strong>
-                    <span className="draft-tile__meta">Tap to set the table number for this card.</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-lg mb-2" aria-hidden="true">+</span>
+                    <strong className="block text-sm font-medium text-foreground">Configure table</strong>
+                    <span className="block text-xs text-muted-foreground mt-1">Tap to set the table number for this card.</span>
                   </>
                 )}
               </button>
             );
           })}
-
         </section>
       </form>
 
@@ -193,18 +213,22 @@ export default function TablesCreatePage() {
         onClose={() => setEditingDraftId(null)}
         footer={
           editingDraft ? (
-            <div className="page-actions page-actions--spread">
+            <div className="flex items-center justify-between">
               {drafts.length > 1 ? (
                 <button
                   type="button"
-                  className="button button-secondary"
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                   onClick={() => removeDraft(editingDraft.id)}
                   disabled={submitting}
                 >
                   Remove card
                 </button>
               ) : <span />}
-              <button type="button" className="button button-confirm" onClick={() => setEditingDraftId(null)}>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => setEditingDraftId(null)}
+              >
                 Done
               </button>
             </div>
@@ -212,19 +236,19 @@ export default function TablesCreatePage() {
         }
       >
         {editingDraft ? (
-          <div className="field-group">
-            <label className="field-label" htmlFor="create_table_number">
+          <div className="grid gap-1.5">
+            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_table_number">
               Table number
             </label>
             <input
-              className="field-control"
+              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
               id="create_table_number"
               type="text"
               placeholder="1, 2, A1, VIP-3"
               value={editingDraft.tableNumber}
               onChange={(event) => updateDraft(editingDraft.id, { tableNumber: event.target.value })}
             />
-            <p className="field-help">Keep each number unique so staff can match the right QR card to the right table.</p>
+            <p className="text-xs text-muted-foreground">Keep each number unique so staff can match the right QR card to the right table.</p>
           </div>
         ) : null}
       </WorkspaceDialog>

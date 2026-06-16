@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import WorkspaceDialog from "../components/WorkspaceDialog.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
+import { formatCurrency } from "../lib/format.js";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 function buildDraft(defaultCategory = "") {
@@ -154,42 +155,57 @@ export default function MenuCreatePage() {
 
   return (
     <>
-      <section className="page-header page-header--split">
+      <section className="flex items-start justify-between gap-4 py-6">
         <div>
-          <p className="eyebrow">Restaurant</p>
-          <h1 className="page-title">Add menu items</h1>
-          <p className="page-subtitle">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
+          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            Add menu items
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">
             Build a batch with compact cards, then open a card only when you want to edit its details.
           </p>
         </div>
-        <div className="page-actions">
-          <Link to={`/restaurants/${restaurant.id}/menu`} className="button button-secondary">
-            Back to menu
-          </Link>
-        </div>
+        <Link
+          to={`/restaurants/${restaurant.id}/menu`}
+          className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors no-underline shrink-0 mt-6"
+        >
+          Back to menu
+        </Link>
       </section>
 
-      <form className="page-section draft-stack" onSubmit={handleSubmit}>
-        <section className="surface panel">
-          <div className="panel-header">
+      <form className="grid gap-4 mb-8" onSubmit={handleSubmit}>
+        <section className="rounded-xl border border-border bg-card p-5">
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="panel-title">Draft board</h2>
-              <p className="field-help">
+              <h2 className="text-[1.42rem] font-display italic text-foreground">Draft board</h2>
+              <p className="text-xs text-muted-foreground mt-1">
                 {completedCount} of {itemCountLabel} ready to publish.
               </p>
             </div>
-            <div className="page-actions">
-              <button type="button" className="button" onClick={createDraft} disabled={submitting}>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                onClick={createDraft}
+                disabled={submitting}
+              >
                 Add item card
               </button>
-              <button type="submit" className="button button-confirm" disabled={submitting}>
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                disabled={submitting}
+              >
                 {submitting ? "Saving items" : `Create ${itemCountLabel}`}
               </button>
             </div>
           </div>
         </section>
 
-        <section className="draft-board" aria-label="Menu item drafts">
+        <section
+          className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3"
+          aria-label="Menu item drafts"
+        >
           {drafts.map((draft, index) => {
             const isComplete = isDraftComplete(draft);
 
@@ -197,32 +213,37 @@ export default function MenuCreatePage() {
               <button
                 key={draft.id}
                 type="button"
-                className={`draft-tile${isComplete ? "" : " draft-tile--empty"}`}
+                className={`text-left rounded-xl border p-4 transition-all hover:shadow-md hover:-translate-y-0.5 ${
+                  isComplete
+                    ? "border-border bg-card hover:border-muted-foreground/30"
+                    : "border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40"
+                }`}
                 onClick={() => setEditingDraftId(draft.id)}
               >
-                <span className="draft-tile__index">Item {index + 1}</span>
+                <span className="text-xs font-mono text-muted-foreground block mb-3">
+                  Item {index + 1}
+                </span>
                 {isComplete ? (
                   <>
-                    <strong className="draft-tile__title">{draft.name}</strong>
-                    <span className="draft-tile__meta">{draft.category}</span>
-                    <span className="draft-tile__meta">
-                      {draft.price ? `Ksh ${Number(draft.price || 0).toLocaleString()}` : "Price pending"}
+                    <strong className="block text-sm font-medium text-foreground mb-1">{draft.name}</strong>
+                    <span className="block text-xs text-muted-foreground">{draft.category}</span>
+                    <span className="block text-xs text-muted-foreground mt-1">
+                      {draft.price ? formatCurrency(draft.price) : "Price pending"}
                     </span>
-                    <span className="draft-tile__footer">
+                    <span className="block text-[11px] text-muted-foreground/60 mt-2 truncate">
                       {draft.image ? draft.image.name : "No image"}
                     </span>
                   </>
                 ) : (
                   <>
-                    <span className="draft-tile__plus" aria-hidden="true">+</span>
-                    <strong className="draft-tile__title">Configure item</strong>
-                    <span className="draft-tile__meta">Tap to add name, price, category, and optional image.</span>
+                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-lg mb-2" aria-hidden="true">+</span>
+                    <strong className="block text-sm font-medium text-foreground">Configure item</strong>
+                    <span className="block text-xs text-muted-foreground mt-1">Tap to add name, price, category, and optional image.</span>
                   </>
                 )}
               </button>
             );
           })}
-
         </section>
       </form>
 
@@ -233,63 +254,67 @@ export default function MenuCreatePage() {
         onClose={() => setEditingDraftId(null)}
         footer={
           editingDraft ? (
-            <>
-              <div className="page-actions page-actions--spread">
-                {drafts.length > 1 ? (
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => removeDraft(editingDraft.id)}
-                    disabled={submitting}
-                  >
-                    Remove card
-                  </button>
-                ) : <span />}
-                <button type="button" className="button button-confirm" onClick={() => setEditingDraftId(null)}>
-                  Done
+            <div className="flex items-center justify-between">
+              {drafts.length > 1 ? (
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                  onClick={() => removeDraft(editingDraft.id)}
+                  disabled={submitting}
+                >
+                  Remove card
                 </button>
-              </div>
-            </>
+              ) : <span />}
+              <button
+                type="button"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                onClick={() => setEditingDraftId(null)}
+              >
+                Done
+              </button>
+            </div>
           ) : null
         }
       >
         {editingDraft ? (
-          <div className="form-grid">
-            <div className="form-grid form-grid--two-up">
-              <div className="field-group">
-                <label className="field-label" htmlFor="create_menu_name">
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_name">
                   Name
                 </label>
                 <input
-                  className="field-control"
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                   id="create_menu_name"
                   type="text"
+                  placeholder="e.g. Grilled Tilapia"
                   value={editingDraft.name}
                   onChange={(event) => updateDraft(editingDraft.id, { name: event.target.value })}
                 />
               </div>
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="create_menu_price">
-                  Price
-                </label>
-                <input
-                  className="field-control"
-                  id="create_menu_price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={editingDraft.price}
-                  onChange={(event) => updateDraft(editingDraft.id, { price: event.target.value })}
-                />
-              </div>
+                <div className="grid gap-1.5">
+                  <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_price">
+                    Price
+                  </label>
+                  <input
+                    className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                    id="create_menu_price"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="e.g. 2500"
+                    value={editingDraft.price}
+                    onChange={(event) => updateDraft(editingDraft.id, { price: event.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground/70">Number only — currency formatting is applied automatically.</p>
+                </div>
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="create_menu_category">
+              <div className="grid gap-1.5">
+                <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_category">
                   Category
                 </label>
                 <select
-                  className="field-control"
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                   id="create_menu_category"
                   value={editingDraft.category}
                   onChange={(event) => updateDraft(editingDraft.id, { category: event.target.value })}
@@ -302,12 +327,12 @@ export default function MenuCreatePage() {
                 </select>
               </div>
 
-              <div className="field-group">
-                <label className="field-label" htmlFor="create_menu_status">
+              <div className="grid gap-1.5">
+                <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_status">
                   Availability
                 </label>
                 <select
-                  className="field-control"
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                   id="create_menu_status"
                   value={String(editingDraft.active)}
                   onChange={(event) =>
@@ -320,41 +345,46 @@ export default function MenuCreatePage() {
               </div>
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="create_menu_image">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_image">
                 Image
               </label>
-              <input
-                className="field-control"
-                id="create_menu_image"
-                type="file"
-                accept="image/*"
-                onChange={(event) => updateDraft(editingDraft.id, { image: event.target.files?.[0] || null })}
-              />
-              <div className="file-inline">
-                <span className="field-help">{editingDraft.image ? editingDraft.image.name : "No file chosen"}</span>
-                {editingDraft.image ? (
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => updateDraft(editingDraft.id, { image: null })}
-                  >
-                    Clear file
-                  </button>
-                ) : null}
-              </div>
+                <input
+                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:mr-2"
+                  id="create_menu_image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => updateDraft(editingDraft.id, { image: event.target.files?.[0] || null })}
+                />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className={editingDraft.image ? "text-foreground" : "text-muted-foreground/60"}>
+                    {editingDraft.image ? editingDraft.image.name : "No file chosen"}
+                  </span>
+                  {editingDraft.image ? (
+                    <button
+                      type="button"
+                      className="text-xs underline underline-offset-2 hover:no-underline text-muted-foreground"
+                      onClick={() => updateDraft(editingDraft.id, { image: null })}
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground/70">Optional — items without images show a warm color placeholder.</p>
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="create_menu_description">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_description">
                 Description
               </label>
-              <textarea
-                className="field-control"
-                id="create_menu_description"
-                value={editingDraft.description}
-                onChange={(event) => updateDraft(editingDraft.id, { description: event.target.value })}
-              />
+                <textarea
+                  className="h-8 min-h-[80px] w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm text-foreground transition-colors resize-y"
+                  id="create_menu_description"
+                  placeholder="Briefly describe the dish…"
+                  value={editingDraft.description}
+                  onChange={(event) => updateDraft(editingDraft.id, { description: event.target.value })}
+                />
+                <p className="text-xs text-muted-foreground/70">Optional — brief descriptions help customers choose.</p>
             </div>
           </div>
         ) : null}

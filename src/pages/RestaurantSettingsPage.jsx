@@ -81,34 +81,34 @@ export default function RestaurantSettingsPage() {
 
   return (
     <>
-      <section className="page-header">
+      <section className="py-6">
         <div>
-          <p className="eyebrow">Restaurant</p>
-          <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
+          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            Settings
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">
             Update the details customers and staff rely on every day.
           </p>
         </div>
       </section>
 
-      <section className="split-layout page-section">
-        <div className="surface panel">
-          <div className="panel-header">
-            <div>
-              <h2 className="panel-title">Profile</h2>
-              <p className="field-help">
-                Public links and existing table QR codes stay the same when you edit these details.
-              </p>
-            </div>
+      <section className="grid grid-cols-[320px_1fr] gap-4 mb-8">
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="mb-4">
+            <h2 className="text-[1.42rem] font-display italic text-foreground">Profile</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Public links and existing table QR codes stay the same when you edit these details.
+            </p>
           </div>
 
-          <form className="form-grid" onSubmit={handleSubmit}>
-            <div className="field-group">
-              <label className="field-label" htmlFor="restaurant_settings_name">
+          <form className="grid gap-3" onSubmit={handleSubmit}>
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_name">
                 Restaurant name
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                 id="restaurant_settings_name"
                 type="text"
                 value={form.restaurantName}
@@ -119,12 +119,12 @@ export default function RestaurantSettingsPage() {
               />
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="restaurant_settings_status">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_status">
                 Visibility
               </label>
               <select
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                 id="restaurant_settings_status"
                 value={form.active}
                 onChange={(event) => setForm((current) => ({ ...current, active: event.target.value }))}
@@ -132,17 +132,17 @@ export default function RestaurantSettingsPage() {
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
               </select>
-              <p className="field-help">
+              <p className="text-xs text-muted-foreground">
                 Inactive restaurants stay in your workspace but should be treated as paused.
               </p>
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="restaurant_settings_address">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_address">
                 Address
               </label>
               <textarea
-                className="field-control"
+                className="h-8 min-h-[60px] w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm text-foreground transition-colors resize-y"
                 id="restaurant_settings_address"
                 value={form.address}
                 onChange={(event) =>
@@ -151,12 +151,12 @@ export default function RestaurantSettingsPage() {
               />
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="restaurant_settings_city">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_city">
                 City
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                 id="restaurant_settings_city"
                 type="text"
                 placeholder="e.g. Nairobi"
@@ -165,12 +165,12 @@ export default function RestaurantSettingsPage() {
               />
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="restaurant_settings_country">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_country">
                 Country
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                 id="restaurant_settings_country"
                 type="text"
                 placeholder="e.g. Kenya"
@@ -181,12 +181,12 @@ export default function RestaurantSettingsPage() {
               />
             </div>
 
-            <div className="field-group">
-              <label className="field-label" htmlFor="restaurant_settings_phone">
+            <div className="grid gap-1.5">
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_phone">
                 Service phone
               </label>
               <input
-                className="field-control"
+                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
                 id="restaurant_settings_phone"
                 type="tel"
                 inputMode="tel"
@@ -224,41 +224,51 @@ export default function RestaurantSettingsPage() {
             />
 
             {(form.previewUrl || form.restaurantImage) ? (
-              <div className="action-row">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className={`button${form.removeImage ? " button-danger" : ""}`}
+                  className={`inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
+                    form.removeImage
+                      ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
                   onClick={handleRemoveImageToggle}
                   disabled={submitting}
                 >
                   {form.removeImage ? "Keep image" : "Remove image"}
                 </button>
                 {form.removeImage ? (
-                  <span className="muted-text">The current image will be removed when you save.</span>
+                  <span className="text-xs text-muted-foreground">The current image will be removed when you save.</span>
                 ) : null}
               </div>
             ) : null}
 
-            <div className="action-row">
-              <button type="submit" className="button button-confirm" disabled={submitting}>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                disabled={submitting}
+              >
                 {submitting ? "Saving" : "Save settings"}
               </button>
             </div>
           </form>
         </div>
 
-        <div className="surface panel">
-          <div className="panel-header">
-            <div>
-              <h2 className="panel-title">Status &amp; links</h2>
-            </div>
+        <div className="rounded-xl border border-border bg-card p-5">
+          <div className="mb-4">
+            <h2 className="text-[1.42rem] font-display italic text-foreground">Status &amp; links</h2>
           </div>
 
-          <div className="stack-md">
-            <div className="field-group">
-              <span className="field-label">Visibility</span>
+          <div className="grid gap-4">
+            <div className="grid gap-1.5">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Visibility</span>
               <span
-                className={`status-pill ${form.active === "true" ? "status-pill--active" : "status-pill--inactive"}`}
+                className={`inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium border uppercase tracking-wider w-fit ${
+                  form.active === "true"
+                    ? "border-green-200 bg-green-50 text-green-700"
+                    : "border-red-200 bg-red-50 text-red-700"
+                }`}
                 role="status"
               >
                 {form.active === "true" ? "Active - accepting orders" : "Inactive - ordering paused"}
@@ -266,17 +276,17 @@ export default function RestaurantSettingsPage() {
             </div>
 
             {restaurant.ref ? (
-              <div className="field-group">
-                <span className="field-label">Customer menu link</span>
-                <p className="table-meta" style={{ wordBreak: "break-all" }}>
+              <div className="grid gap-1.5">
+                <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Customer menu link</span>
+                <p className="text-sm text-foreground break-all">
                   {`${window.location.origin}/order/${restaurant.ref}`}
                 </p>
               </div>
             ) : null}
 
-            <div className="field-group">
-              <span className="field-label">How changes take effect</span>
-              <p className="field-help" style={{ margin: 0 }}>
+            <div className="grid gap-1.5">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono">How changes take effect</span>
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 The dashboard card, workspace header, and reports update after save.
                 Customers see the latest restaurant name and photo the next time they open a table link.
                 Existing QR codes and table links are not affected.

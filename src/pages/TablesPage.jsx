@@ -74,6 +74,15 @@ export default function TablesPage() {
     document.body.removeChild(link);
   }
 
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function printQr(table) {
     const printWindow = window.open("", "_blank", "noopener,noreferrer,width=720,height=720");
 
@@ -81,14 +90,14 @@ export default function TablesPage() {
       throw new Error("Print window blocked");
     }
 
-    const safeTableNumber = String(table.tableNumber).replace(/[<>&"]/g, "");
-    const safeImageUrl = String(table.qrCodeUrl).replace(/"/g, "&quot;");
+    const tableNumber = escapeHtml(table.tableNumber);
+    const imageUrl = escapeHtml(table.qrCodeUrl);
 
     printWindow.document.write(`
       <!doctype html>
       <html>
         <head>
-          <title>Table ${safeTableNumber} QR</title>
+          <title>Table ${tableNumber} QR</title>
           <style>
             body {
               margin: 0;
@@ -127,8 +136,8 @@ export default function TablesPage() {
         <body>
           <main>
             <p>ODA Table QR</p>
-            <h1>Table ${safeTableNumber}</h1>
-            <img src="${safeImageUrl}" alt="QR code for table ${safeTableNumber}" />
+            <h1>Table ${tableNumber}</h1>
+            <img src="${imageUrl}" alt="QR code for table ${tableNumber}" />
           </main>
         </body>
       </html>
@@ -209,93 +218,107 @@ export default function TablesPage() {
 
   return (
     <>
-      <section className="page-header page-header--split">
+      <section className="flex items-start justify-between gap-4 py-6">
         <div>
-          <p className="eyebrow">Restaurant</p>
-          <h1 className="page-title">Tables</h1>
-          <p className="page-subtitle">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
+          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            Tables
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">
             Keep the floorplan clean on screen. Open a table card only when you need to download, print, or share its QR access.
           </p>
         </div>
-        <div className="page-actions">
-          <Link to={`/restaurants/${restaurant.id}/tables/new`} className="button button-confirm">
-            Add tables
-          </Link>
+        <Link
+          to={`/restaurants/${restaurant.id}/tables/new`}
+          className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors no-underline shrink-0 mt-6"
+        >
+          Add tables
+        </Link>
+      </section>
+
+      <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Tables</p>
+          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{tables.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Open orders</p>
+          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{workspaceSummary.openOrderCount}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Menu items</p>
+          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{workspaceSummary.menuItemCount}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
+          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{restaurant.name}</p>
         </div>
       </section>
 
-      <section className="metric-grid">
-        <div className="metric-card">
-          <p className="metric-label">Tables</p>
-          <p className="metric-value">{tables.length}</p>
-        </div>
-        <div className="metric-card">
-          <p className="metric-label">Open orders</p>
-          <p className="metric-value">{workspaceSummary.openOrderCount}</p>
-        </div>
-        <div className="metric-card">
-          <p className="metric-label">Menu items</p>
-          <p className="metric-value">{workspaceSummary.menuItemCount}</p>
-        </div>
-        <div className="metric-card">
-          <p className="metric-label">Workspace</p>
-          <p className="metric-value">{restaurant.name}</p>
-        </div>
-      </section>
-
-      <section className="page-section">
+      <section className="mb-8">
         {loading ? (
           <LoadingSkeleton variant="card" count={4} />
         ) : tables.length ? (
-          <div className="table-card-grid">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
             {tables.map((table) => {
-              const isExpanded = true//expandedTableId === table.id;
+              const isExpanded = expandedTableId === table.id;
 
               return (
-                <article key={table.id} className={`table-card${isExpanded ? " is-expanded" : ""}`}>
+                <article
+                  key={table.id}
+                  className={`rounded-xl border transition-all ${
+                    isExpanded
+                      ? "border-primary shadow-md bg-card"
+                      : "border-border bg-card hover:shadow-md hover:-translate-y-0.5"
+                  }`}
+                >
                   <button
                     type="button"
-                    className="table-card__summary"
+                    className="w-full text-left p-4 cursor-pointer border-none bg-transparent"
                     aria-expanded={isExpanded ? "true" : "false"}
                     onClick={() => setExpandedTableId((current) => (current === table.id ? null : table.id))}
                   >
-                    <div className="table-card__header">
-                      <span className="table-card__eyebrow">Dining table</span>
-                      <span className="table-card__toggle">{isExpanded ? "Hide actions" : "Show actions"}</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono">
+                        Dining table
+                      </span>
+                      <span className="text-[11px] text-muted-foreground font-mono">
+                        {isExpanded ? "Hide actions" : "Show actions"}
+                      </span>
                     </div>
-                    <h2 className="table-card__title">Table {table.tableNumber}</h2>
-                    <p className="table-card__meta">
+                    <h2 className="text-2xl font-display italic text-foreground">Table {table.tableNumber}</h2>
+                    <p className="text-xs text-muted-foreground mt-1">
                       QR access ready{table.createdAt ? ` since ${dateFormatter.format(new Date(table.createdAt))}` : "."}
                     </p>
                   </button>
 
                   {isExpanded ? (
-                    <div className="table-card__details">
-                      <div className="table-card__actions">
+                    <div className="border-t border-border px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
-                          className="button"
+                          className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
                           onClick={() => handleDownload(table)}
                         >
                           Download QR
                         </button>
                         <button
                           type="button"
-                          className="button"
+                          className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
                           onClick={() => handlePrint(table)}
                         >
                           Print QR
                         </button>
                         <button
                           type="button"
-                          className="button"
+                          className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
                           onClick={() => handleShare(table)}
                         >
                           Share
                         </button>
                         <button
                           type="button"
-                          className="button button-danger"
+                          className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
                           onClick={() => setDeleteTarget(table)}
                         >
                           Delete
@@ -308,9 +331,18 @@ export default function TablesPage() {
             })}
           </div>
         ) : (
-          <div className="surface empty-state">
-            <h2 className="panel-title">No tables yet</h2>
-            <p className="empty-text">
+          <div className="rounded-xl border border-border bg-card p-10 text-center">
+            <svg viewBox="0 0 48 48" fill="none" className="w-14 h-14 mx-auto mb-4 text-muted-foreground/30">
+              <rect x="4" y="8" width="40" height="32" rx="3" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="24" y1="8" x2="24" y2="40" stroke="currentColor" strokeWidth="1.2" />
+              <line x1="4" y1="24" x2="44" y2="24" stroke="currentColor" strokeWidth="1.2" />
+              <rect x="10" y="12" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
+              <rect x="32" y="12" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
+              <rect x="10" y="30" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
+              <rect x="32" y="30" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
+            </svg>
+            <h2 className="text-lg font-display italic text-foreground">No tables yet</h2>
+            <p className="text-sm text-muted-foreground mt-2">
               Use Add tables to create one or many table QR entries without crowding this page.
             </p>
           </div>

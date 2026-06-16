@@ -107,13 +107,13 @@ export default function ImagePositionField({
   const safePositionY = clampPosition(positionY);
 
   return (
-    <div className="image-position-field">
-      <div className="field-group">
-        <label className="field-label" htmlFor={inputId}>
+    <div className="grid gap-4">
+      <div className="grid gap-2">
+        <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor={inputId}>
           {label}
         </label>
         <input
-          className="field-control"
+          className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           id={inputId}
           type="file"
           accept="image/*"
@@ -124,9 +124,13 @@ export default function ImagePositionField({
 
       <div
         ref={frameRef}
-        className={`image-position-field__frame${resolvedPreviewUrl ? "" : " is-empty"}${
-          dragging ? " is-dragging" : ""
-        }${disabled ? " is-disabled" : ""}`}
+        className={`relative overflow-hidden rounded-xl border-2 border-dashed transition-colors ${
+          resolvedPreviewUrl
+            ? dragging
+              ? "border-primary cursor-grabbing"
+              : "border-border hover:border-muted-foreground cursor-grab"
+            : "border-border bg-muted/30"
+        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
         style={{ aspectRatio: String(aspectRatio) }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -136,35 +140,36 @@ export default function ImagePositionField({
         {resolvedPreviewUrl ? (
           <>
             <div
-              className="image-position-field__preview"
+              className="absolute inset-0 bg-cover bg-no-repeat"
               style={{
                 backgroundImage: `url("${resolvedPreviewUrl}")`,
                 backgroundPosition: `${safePositionX}% ${safePositionY}%`,
               }}
             />
             <span
-              className="image-position-field__focus"
+              className="absolute w-5 h-5 -ml-2.5 -mt-2.5 rounded-full border-2 border-white bg-primary/60 shadow-md pointer-events-none"
               style={{ left: `${safePositionX}%`, top: `${safePositionY}%` }}
               aria-hidden="true"
             />
           </>
         ) : (
-          <div className="image-position-field__placeholder">
-            Upload an image, then drag it inside the frame to set the crop.
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground/60 p-4 text-center select-none">
+            <svg viewBox="0 0 40 40" fill="none" className="w-10 h-10 mb-2 opacity-40">
+              <rect x="4" y="8" width="32" height="24" rx="2" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="14" cy="16" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M4 26l8-8 6 6 4-4 6 6 8-8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <p className="w-full">Choose an image, then drag to frame it.</p>
           </div>
         )}
       </div>
 
-      <div className="image-position-field__hint">
-        Fixed frame. Drag the preview, or fine-tune the sliders below.
-      </div>
-
       {resolvedPreviewUrl ? (
-        <div className="image-position-field__controls">
-          <label className="image-position-field__slider-row">
-            <span className="image-position-field__slider-label">Horizontal</span>
+        <div className="grid gap-2">
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono shrink-0 w-16">Pan</span>
             <input
-              className="image-position-field__slider"
+              className="flex-1 h-1 rounded-full appearance-none bg-border accent-primary cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm"
               type="range"
               min="0"
               max="100"
@@ -173,13 +178,11 @@ export default function ImagePositionField({
               disabled={disabled}
               onChange={(event) => updatePosition(event.target.value, safePositionY)}
             />
-            <span className="image-position-field__slider-value">{Math.round(safePositionX)}%</span>
-          </label>
-
-          <label className="image-position-field__slider-row">
-            <span className="image-position-field__slider-label">Vertical</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-mono shrink-0 w-16">Tilt</span>
             <input
-              className="image-position-field__slider"
+              className="flex-1 h-1 rounded-full appearance-none bg-border accent-primary cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-sm"
               type="range"
               min="0"
               max="100"
@@ -188,8 +191,7 @@ export default function ImagePositionField({
               disabled={disabled}
               onChange={(event) => updatePosition(safePositionX, event.target.value)}
             />
-            <span className="image-position-field__slider-value">{Math.round(safePositionY)}%</span>
-          </label>
+          </div>
         </div>
       ) : null}
     </div>
