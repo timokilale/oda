@@ -34,6 +34,7 @@ class OwnerGuard implements Guard
         }
 
         $tokenHash = hash('sha256', $rawToken);
+
         $token = OwnerAuthToken::where('token_hash', $tokenHash)
             ->whereNull('revoked_at')
             ->where('expires_at', '>', now())
@@ -48,7 +49,9 @@ class OwnerGuard implements Guard
             return null;
         }
 
-        $token->update(['last_used_at' => now()]);
+        if ($token->last_used_at === null || $token->last_used_at->diffInHours(now()) > 1) {
+            $token->update(['last_used_at' => now()]);
+        }
 
         $this->resolvedOwner = $owner;
         $this->resolvedToken = $token;

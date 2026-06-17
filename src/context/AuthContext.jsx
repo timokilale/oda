@@ -1,26 +1,23 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { apiRequest } from "../lib/api.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [owner, setOwner] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   async function refreshSession() {
+    setLoading(true);
     try {
       const data = await apiRequest("/auth/me");
       setOwner(data.owner);
-    } catch (_error) {
+    } catch {
       setOwner(null);
     } finally {
       setLoading(false);
     }
   }
-
-  useEffect(() => {
-    refreshSession();
-  }, []);
 
   const value = {
     owner,

@@ -1,5 +1,8 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
+import { apiRequest } from "./lib/api.js";
+import ApiLogPanel from "./components/ApiLogPanel.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
@@ -24,9 +27,20 @@ function RedirectToCanonicalOrder() {
 }
 
 function ProtectedOutlet() {
-  const { owner, loading } = useAuth();
+  const { owner, loading, refreshSession } = useAuth();
+  const [checking, setChecking] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    if (checking) {
+      if (owner) {
+        setChecking(false);
+      } else {
+        refreshSession().finally(() => setChecking(false));
+      }
+    }
+  }, [checking, owner, refreshSession]);
+
+  if (checking || loading) {
     return <div className="mx-auto max-w-[1280px] px-4 py-8 text-muted-foreground">Loading your workspace...</div>;
   }
 
@@ -38,18 +52,23 @@ function ProtectedOutlet() {
 }
 
 function HomeRedirect() {
-  const { owner, loading } = useAuth();
+  const navigate = useNavigate();
 
-  if (loading) {
-    return <div className="mx-auto max-w-[1280px] px-4 py-8 text-muted-foreground">Loading your workspace...</div>;
-  }
+  useEffect(() => {
+    apiRequest("/auth/me").then((data) => {
+      navigate(data.owner ? "/dashboard" : "/login", { replace: true });
+    }).catch(() => {
+      navigate("/login", { replace: true });
+    });
+  }, [navigate]);
 
-  return <Navigate to={owner ? "/dashboard" : "/login"} replace />;
+  return <div className="mx-auto max-w-[1280px] px-4 py-8 text-muted-foreground">Loading...</div>;
 }
 
 export default function App() {
   return (
     <BrowserRouter>
+      <ApiLogPanel />
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<LoginPage />} />
