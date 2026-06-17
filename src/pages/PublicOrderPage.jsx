@@ -3,13 +3,12 @@ import { useParams } from "react-router-dom";
 import FlashStack from "../components/FlashStack.jsx";
 import CartStrip from "../components/public-order/CartStrip.jsx";
 import MenuCategoryNav from "../components/public-order/MenuCategoryNav.jsx";
-import MenuNode from "../components/public-order/MenuNode.jsx";
+
 import TableLookupForm from "../components/public-order/TableLookupForm.jsx";
 import { MenuInteractionProvider, useMenuInteraction } from "../context/MenuInteractionContext.jsx";
 import { useCart } from "../hooks/useCart.js";
 import { useTableLookup } from "../hooks/useTableLookup.js";
 import { Button } from "../components/ui/button.jsx";
-import { Input } from "../components/ui/input.jsx";
 import { apiRequest } from "../lib/api.js";
 import { formatCurrency } from "../lib/format.js";
 import { filterMenuNodes } from "../lib/public-order/filterMenuNodes.js";
@@ -25,29 +24,52 @@ function orderStatusMeta(status) {
   return ORDER_LABELS[status] || ORDER_LABELS.pending;
 }
 
-function TabBar({ activeTab, onTabChange, tableNumber }) {
+function TabBar({ activeTab, onTabChange, searchTerm, onSearchChange, searchInputRef }) {
   return (
     <div className="flex items-center gap-1 rounded-lg border border-border bg-muted p-1">
-      {[
-        { value: "menu", label: "Menu" },
-        { value: "status", label: "Status" },
-      ].map((tab) => (
-        <button
-          key={tab.value}
-          type="button"
-          onClick={() => onTabChange(tab.value)}
-          className={`inline-flex items-center justify-center h-8 px-4 rounded text-sm font-medium transition-colors ${
-            activeTab === tab.value
-              ? "bg-card text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {tab.label}
-          {tab.value === "status" && tableNumber ? (
-            <LiveDot />
-          ) : null}
-        </button>
-      ))}
+      <button
+        type="button"
+        onClick={() => onTabChange("menu")}
+        className={`inline-flex items-center justify-center h-8 px-4 rounded text-sm font-medium transition-colors shrink-0 ${
+          activeTab === "menu"
+            ? "bg-card text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        Menu
+      </button>
+
+      {activeTab === "menu" ? (
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 px-2">
+          <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 shrink-0 text-muted-foreground">
+            <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.3" />
+            <line x1="9.7" y1="9.7" x2="13" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          </svg>
+          <input
+            ref={searchInputRef}
+            type="search"
+            placeholder="Search menu..."
+            autoComplete="off"
+            aria-label="Search menu"
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground outline-none min-w-0"
+          />
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => onTabChange("status")}
+        className={`inline-flex items-center justify-center h-8 px-4 rounded text-sm font-medium transition-colors shrink-0 ${
+          activeTab === "status"
+            ? "bg-card text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        Status
+        {activeTab === "status" ? <LiveDot /> : null}
+      </button>
     </div>
   );
 }
@@ -61,25 +83,30 @@ function LiveDot() {
 function OrderStatusView({ restaurantRef, tableQuery, onNewOrder }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const mounted = useRef(false);
 
   const loadOrders = useCallback(async () => {
     try {
       const data = await apiRequest(
         `/public/restaurants/${encodeURIComponent(restaurantRef)}/orders?table=${encodeURIComponent(tableQuery)}`
       );
-      setOrders(data.orders || []);
+      if (mounted.current) setOrders(data.orders || []);
     } catch {
       // silent
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }, [restaurantRef, tableQuery]);
 
   useEffect(() => {
+    mounted.current = true;
     setLoading(true);
     loadOrders();
-    const interval = setInterval(loadOrders, 5000);
-    return () => clearInterval(interval);
+    const interval = setInterval(loadOrders, 30000);
+    return () => {
+      mounted.current = false;
+      clearInterval(interval);
+    };
   }, [loadOrders]);
 
   if (loading) {
@@ -168,7 +195,7 @@ function PublicOrderPageInner() {
   const { restaurantRef } = useParams();
   const { context, loading, lookupError, tableQuery, menuIsReady, handleLookup: lookupByInput } =
     useTableLookup(restaurantRef);
-  const { setOpenItems, quantities, setQuantities } = useMenuInteraction();
+  const { openItems, setOpenItems, quantities, setQuantities } = useMenuInteraction();
   const { cartItems, visibleSummary, updateQuantity, clearCart } = useCart(
     context?.menuItems,
     quantities,
@@ -180,6 +207,8 @@ function PublicOrderPageInner() {
   const [flash, setFlash] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(null);
+  const [detailedView, setDetailedView] = useState(false);
+  const [detailIndex, setDetailIndex] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [orderResult, setOrderResult] = useState(null);
   const [activeTab, setActiveTab] = useState("menu");
@@ -192,7 +221,18 @@ function PublicOrderPageInner() {
     setTableInput(tableQuery);
   }, [tableQuery]);
 
-  const headerH = menuIsReady ? 134 : 56;
+  const [headerHeight, setHeaderHeight] = useState(56 + (tableQuery ? 44 : 0));
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setHeaderHeight(entry.contentRect.height);
+    });
+    ro.observe(el);
+    setHeaderHeight(el.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
 
   const filteredRoots = useMemo(
     () =>
@@ -271,6 +311,85 @@ function PublicOrderPageInner() {
     );
   }
 
+  function MenuItemCard({ item, index }) {
+    const itemId = String(item.id);
+    const qty = Number(quantities[itemId] || 0);
+    const isSelected = qty > 0;
+
+    function changeQuantity(delta) {
+      setQuantities((prev) => {
+        const current = Number(prev[itemId] || 0);
+        const next = Math.max(0, Math.min(20, current + delta));
+        return { ...prev, [itemId]: next };
+      });
+    }
+
+    return (
+      <div
+        className="rounded-xl border border-border bg-card shadow-sm overflow-hidden opacity-0 translate-y-1 animate-[cardIn_300ms_ease-out_both]"
+        style={{ animationDelay: `${Math.min(index * 40, 320)}ms` }}
+      >
+        <div className="flex items-start gap-3 px-4 py-3.5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-foreground text-[15px] leading-tight">{item.name}</h3>
+              {isSelected ? <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold font-mono leading-none animate-[badgePop_200ms_ease-out_both]">{qty}</span> : null}
+            </div>
+            <p className="mt-1 font-mono text-sm font-medium text-primary">{formatCurrency(item.price)}</p>
+            {item.description ? (
+              <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>
+            ) : null}
+          </div>
+          <div className="relative flex-shrink-0">
+            <div className="block w-[88px] h-[88px] rounded-xl overflow-hidden bg-muted">
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl || "/placeholder.svg"}
+                  alt={item.name}
+                  crossOrigin="anonymous"
+                  loading="lazy"
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: `${item.imagePositionX ?? 50}% ${item.imagePositionY ?? 50}%` }}
+                />
+              ) : (
+                <span className="flex items-center justify-center w-full h-full text-muted-foreground" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
+                    <path d="M4 7h16v12H4z" stroke="currentColor" strokeWidth="1.4" />
+                    <circle cx="9" cy="11" r="1.6" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M5 18l5-4 3 2 3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              )}
+            </div>
+            {qty === 0 ? (
+              <button type="button" onClick={() => changeQuantity(1)} aria-label={`Add ${item.name}`} className="absolute -bottom-2 -right-2 grid place-items-center w-9 h-9 rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-card transition-transform duration-150 active:scale-90 cursor-pointer">
+                <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4">
+                  <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                </svg>
+              </button>
+            ) : (
+              <div className="absolute -bottom-2 -right-2 flex items-center gap-0.5 h-9 px-1 rounded-full bg-card shadow-md ring-1 ring-border animate-[badgePop_180ms_ease-out_both]">
+                <button type="button" onClick={() => changeQuantity(-1)} aria-label={`Remove one ${item.name}`} className="grid place-items-center w-7 h-7 rounded-full text-foreground hover:bg-muted transition-colors active:scale-90 cursor-pointer">
+                  <svg viewBox="0 0 14 14" fill="none" className="w-3.5 h-3.5">
+                    <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <output className="min-w-5 text-center text-sm font-semibold text-foreground font-mono" aria-live="polite">{qty}</output>
+                <button type="button" onClick={() => changeQuantity(1)} disabled={qty >= 20} aria-label={`Add one ${item.name}`} className="grid place-items-center w-7 h-7 rounded-full text-primary hover:bg-accent transition-colors active:scale-90 disabled:opacity-30 cursor-pointer">
+                  <svg viewBox="0 0 14 14" fill="none" className="w-3.5 h-3.5">
+                    <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                    <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function renderMain() {
     if (!tableQuery) {
       return (
@@ -307,24 +426,14 @@ function PublicOrderPageInner() {
     }
 
     if (displayedRoots.length) {
+      const allItems = displayedRoots.flatMap(({ node }) => node.items || []);
+      if (detailedView) {
+        return <DetailedView items={allItems} />;
+      }
       return (
-        <div className="flex flex-col gap-4">
-          {displayedRoots.map(({ node, index }) => (
-            <section
-              key={`cat-${index + 1}`}
-              id={`cat-${index + 1}`}
-              className="border border-border rounded-2xl bg-card shadow-sm overflow-hidden scroll-mt-32"
-            >
-              <div className="px-4 pt-4 pb-1">
-                {searchTerm ? (
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Results in {node.name}
-                  </p>
-                ) : null}
-                <h2 className="text-xl font-bold text-foreground">{node.name}</h2>
-              </div>
-              <MenuNode node={node} nodeId={`node-${index + 1}`} level={1} collapsible={false} hideHeader searchTerm={searchTerm} />
-            </section>
+        <div className="grid gap-3">
+          {allItems.map((item, index) => (
+            <MenuItemCard key={item.id} item={item} index={index} />
           ))}
         </div>
       );
@@ -337,63 +446,224 @@ function PublicOrderPageInner() {
     return <div className="text-center py-20 text-muted-foreground text-sm">This category has no items.</div>;
   }
 
+  function DetailedView({ items }) {
+    const [index, setIndex] = useState(0);
+    const touchStartX = useRef(0);
+    const item = items[index];
+    const itemId = item ? String(item.id) : null;
+    const qty = itemId ? Number(quantities[itemId] || 0) : 0;
+    const isSelected = qty > 0;
+    const [rotation, setRotation] = useState(0);
+
+    useEffect(() => {
+      let start = performance.now();
+      let raf = requestAnimationFrame(function tick(now) {
+        setRotation(((now - start) * 0.12) % 360);
+        raf = requestAnimationFrame(tick);
+      });
+      return () => cancelAnimationFrame(raf);
+    }, []);
+
+    useEffect(() => {
+      setIndex(0);
+    }, [items]);
+
+    useEffect(() => {
+      function handleKeyDown(e) {
+        if (e.key === "ArrowLeft") prev();
+        else if (e.key === "ArrowRight") next();
+      }
+      window.addEventListener("keydown", handleKeyDown);
+      return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [items.length]);
+
+    function prev() {
+      setIndex((i) => (i > 0 ? i - 1 : items.length - 1));
+    }
+
+    function next() {
+      setIndex((i) => (i < items.length - 1 ? i + 1 : 0));
+    }
+
+    function handleTouchStart(e) {
+      touchStartX.current = e.touches[0].clientX;
+    }
+
+    function handleTouchEnd(e) {
+      const diff = touchStartX.current - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) next();
+        else prev();
+      }
+    }
+
+    function changeQuantity(delta) {
+      if (!itemId) return;
+      setQuantities((prev) => {
+        const current = Number(prev[itemId] || 0);
+        const next = Math.max(0, Math.min(20, current + delta));
+        return { ...prev, [itemId]: next };
+      });
+    }
+
+    if (!item) return null;
+
+    return (
+      <div
+        className="rounded-2xl bg-card overflow-hidden select-none"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="relative h-[45dvh] min-h-[280px] bg-gradient-to-b from-primary/[0.04] via-background to-background overflow-visible flex items-center justify-center">
+          <div
+            className="w-64 h-64 sm:w-72 sm:h-72 rounded-full ring-[8px] ring-border/20 shadow-2xl overflow-hidden bg-muted"
+            style={{
+              transform: `rotate(${rotation}deg)`,
+            }}
+          >
+            {item.imageUrl ? (
+              <img
+                src={item.imageUrl || "/placeholder.svg"}
+                alt={item.name}
+                className="w-full h-full object-cover"
+                style={{ objectPosition: `${item.imagePositionX ?? 50}% ${item.imagePositionY ?? 50}%` }}
+              />
+            ) : (
+              <span className="flex items-center justify-center w-full h-full text-muted-foreground">
+                <svg viewBox="0 0 24 24" fill="none" className="w-12 h-12">
+                  <path d="M4 7h16v12H4z" stroke="currentColor" strokeWidth="1.4" />
+                  <circle cx="9" cy="11" r="1.6" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M5 18l5-4 3 2 3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                </svg>
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="relative -mt-20 px-5 pb-8 pt-24 bg-card">
+          <div className="text-center max-w-md mx-auto">
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground">{item.name}</h2>
+              {isSelected ? (
+                <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold font-mono animate-[badgePop_200ms_ease-out_both]">{qty}</span>
+              ) : null}
+            </div>
+            <p className="mt-1 font-mono text-lg font-semibold text-primary">{formatCurrency(item.price)}</p>
+
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+              {item.description || "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."}
+            </p>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-3">
+            {isSelected ? (
+              <div className="flex items-center gap-1.5 h-11 px-3 rounded-full bg-muted">
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(-1)}
+                  className="grid place-items-center w-9 h-9 rounded-full text-foreground hover:bg-accent transition-colors active:scale-90 cursor-pointer"
+                >
+                  <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4">
+                    <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <output className="min-w-7 text-center text-lg font-semibold text-foreground font-mono" aria-live="polite">{qty}</output>
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(1)}
+                  disabled={qty >= 20}
+                  className="grid place-items-center w-9 h-9 rounded-full text-primary hover:bg-accent transition-colors active:scale-90 disabled:opacity-30 cursor-pointer"
+                >
+                  <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4">
+                    <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                    <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => changeQuantity(1)}
+                className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all active:scale-95 cursor-pointer"
+              >
+                <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4">
+                  <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                </svg>
+                Add to order
+              </button>
+            )}
+            {qty >= 20 ? <span className="text-xs text-muted-foreground">Max 20</span> : null}
+          </div>
+
+          <div className="mt-5 flex items-center justify-center gap-1">
+            <span className="text-xs text-muted-foreground">Swipe</span>
+            <svg viewBox="0 0 14 14" fill="none" className="w-3 h-3 text-muted-foreground">
+              <path d="M5 3L2 7l3 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M9 3l3 4-3 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-xs font-medium text-muted-foreground font-mono tabular-nums">{index + 1}/{items.length}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh bg-background text-foreground font-sans text-sm leading-relaxed overflow-x-hidden">
       <FlashStack flash={flash} onDismiss={() => setFlash(null)} bottom />
 
-      <header ref={headerRef} className="fixed top-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
+      <header ref={headerRef} className="fixed top-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-md">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between h-14 px-4">
             <h1 className="text-lg font-bold tracking-tight text-foreground truncate">
               {context?.restaurant?.name || restaurantRef || "ODA"}
             </h1>
             {tableQuery ? (
-              <span className="shrink-0 text-xs font-semibold font-mono tracking-wide text-primary bg-accent rounded-full px-3 py-1">
-                Table {context?.tableNumber || tableQuery || "--"}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 text-xs font-semibold font-mono tracking-wide text-primary bg-accent rounded-full px-3 py-1">
+                  Table {context?.tableNumber || tableQuery || "--"}
+                </span>
+                {activeTab === "menu" && filteredRoots.length ? (
+                  <button
+                    type="button"
+                    onClick={() => { setDetailedView((v) => !v); setDetailIndex(0); }}
+                    className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full transition-colors cursor-pointer bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {detailedView ? "Grid" : "Browse"}
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
           {tableQuery ? (
             <div className="px-4 pb-3">
-              <TabBar activeTab={activeTab} onTabChange={setActiveTab} tableNumber={tableQuery} />
-            </div>
-          ) : null}
-
-          {menuIsReady && activeTab === "menu" ? (
-            <div className="px-4 pb-3">
-              <div className="flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-muted">
-                <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4 shrink-0 text-muted-foreground">
-                  <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.3" />
-                  <line x1="9.7" y1="9.7" x2="13" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-                </svg>
-                <Input
-                  ref={searchInputRef}
-                  type="search"
-                  placeholder="Search menu..."
-                  autoComplete="off"
-                  aria-label="Search menu"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground shadow-none focus-visible:ring-0 h-9 px-0"
-                />
-              </div>
+              <TabBar
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                searchInputRef={searchInputRef}
+              />
             </div>
           ) : null}
         </div>
+
+        {menuIsReady && activeTab === "menu" && filteredRoots.length ? (
+          <div>
+            <MenuCategoryNav
+              roots={filteredRoots}
+              selectedIndex={selectedCategoryIndex}
+              onSelectCategory={selectCategory}
+              containerRef={categoryNavRef}
+              topOffset={0}
+            />
+          </div>
+        ) : null}
       </header>
 
-      <div style={{ paddingTop: headerH }}>
-        {menuIsReady && activeTab === "menu" ? (
-          <MenuCategoryNav
-            roots={filteredRoots}
-            selectedIndex={selectedCategoryIndex}
-            onSelectCategory={selectCategory}
-            containerRef={categoryNavRef}
-            topOffset={headerH}
-          />
-        ) : null}
-
+      <div style={{ paddingTop: headerHeight }}>
         <main className="px-3 py-4 max-w-4xl mx-auto pb-28">
           {tableQuery && activeTab === "status" ? (
             <OrderStatusView

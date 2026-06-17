@@ -15,7 +15,7 @@ export default function MenuCategoryNav({ roots, selectedIndex, onSelectCategory
     <nav
       ref={containerRef}
       style={{ top: topOffset }}
-      className="sticky z-40 bg-background/85 backdrop-blur-md border-b border-border"
+      className="sticky z-40 bg-background/85 backdrop-blur-md"
       aria-label="Menu sections"
     >
       <div
