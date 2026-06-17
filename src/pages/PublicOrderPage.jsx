@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import FlashStack from "../components/FlashStack.jsx";
 import CartStrip from "../components/public-order/CartStrip.jsx";
@@ -12,15 +12,13 @@ import { Button } from "../components/ui/button.jsx";
 import { Input } from "../components/ui/input.jsx";
 import { apiRequest } from "../lib/api.js";
 import { formatCurrency } from "../lib/format.js";
-import { cn } from "../lib/utils.js";
 import { filterMenuNodes } from "../lib/public-order/filterMenuNodes.js";
 
 function PublicOrderPageInner() {
   const { restaurantRef } = useParams();
   const { context, loading, lookupError, tableQuery, menuIsReady, handleLookup: lookupByInput } =
     useTableLookup(restaurantRef);
-  const { openNodes, setOpenNodes, openItems, setOpenItems, quantities, setQuantities } =
-    useMenuInteraction();
+  const { setOpenItems, quantities, setQuantities } = useMenuInteraction();
   const { cartItems, visibleSummary, updateQuantity, clearCart } = useCart(
     context?.menuItems,
     quantities,
@@ -43,7 +41,7 @@ function PublicOrderPageInner() {
     setTableInput(tableQuery);
   }, [tableQuery]);
 
-  const headerH = menuIsReady ? 96 : 56;
+  const headerH = menuIsReady ? 104 : 56;
 
   const filteredRoots = useMemo(
     () =>
@@ -110,140 +108,136 @@ function PublicOrderPageInner() {
     }
   }
 
+  function InfoCard({ eyebrow, title, children, tone = "default" }) {
+    return (
+      <section className="mx-auto w-[calc(100%-24px)] max-w-md mt-8 p-6 rounded-2xl border border-border bg-card shadow-sm">
+        <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${tone === "error" ? "text-destructive" : "text-primary"}`}>
+          {eyebrow}
+        </p>
+        <h2 className="text-2xl font-semibold leading-tight text-foreground text-balance">{title}</h2>
+        <div className="mt-3 text-sm text-muted-foreground leading-relaxed">{children}</div>
+      </section>
+    );
+  }
+
   function renderMain() {
     if (!tableQuery) {
       return (
-        <section className="mx-auto w-[calc(100%-24px)] max-w-md p-6 rounded-2xl border border-stone-200 bg-gradient-to-b from-white to-stone-50 shadow-lg">
-          <p className="text-xs uppercase tracking-widest text-amber-700 font-mono mb-2">Welcome</p>
-          <h2 className="text-3xl font-serif italic font-normal leading-tight text-stone-800">Find your table</h2>
-          <p className="mt-3 text-sm text-stone-500 leading-relaxed">
-            Enter the table number from your table tent or ask staff.
-          </p>
-          <TableLookupForm
-            tableInput={tableInput}
-            onTableInputChange={setTableInput}
-            onSubmit={handleLookup}
-          />
-        </section>
+        <InfoCard eyebrow="Welcome" title="Find your table">
+          <p>Enter the table number from your table tent, or ask a member of staff.</p>
+          <div className="mt-4">
+            <TableLookupForm tableInput={tableInput} onTableInputChange={setTableInput} onSubmit={handleLookup} />
+          </div>
+        </InfoCard>
       );
     }
 
     if (loading) {
-      return <div className="text-center py-16 text-stone-400 text-sm tracking-wider">Getting the menu ready for table {tableQuery}…</div>;
+      return <div className="text-center py-20 text-muted-foreground text-sm">Getting the menu ready for table {tableQuery}…</div>;
     }
 
     if (lookupError) {
       return (
-        <section className="mx-auto w-[calc(100%-24px)] max-w-md p-6 rounded-2xl border border-red-200 bg-gradient-to-b from-white to-stone-50 shadow-lg">
-          <p className="text-xs uppercase tracking-widest text-amber-700 font-mono mb-2">Table lookup</p>
-          <h2 className="text-3xl font-serif italic font-normal leading-tight text-stone-800">Hmm, we could not find table {tableQuery}</h2>
-          <p className="mt-3 text-sm text-stone-500 leading-relaxed">{lookupError}</p>
-          <TableLookupForm
-            tableInput={tableInput}
-            onTableInputChange={setTableInput}
-            onSubmit={handleLookup}
-          />
-        </section>
+        <InfoCard eyebrow="Table lookup" tone="error" title={`We couldn't find table ${tableQuery}`}>
+          <p>{lookupError}</p>
+          <div className="mt-4">
+            <TableLookupForm tableInput={tableInput} onTableInputChange={setTableInput} onSubmit={handleLookup} />
+          </div>
+        </InfoCard>
       );
     }
 
     if (!menuIsReady) {
       return (
-        <section className="mx-auto w-[calc(100%-24px)] max-w-md p-6 rounded-2xl border border-stone-200 bg-gradient-to-b from-white to-stone-50 shadow-lg">
-          <p className="text-xs uppercase tracking-widest text-amber-700 font-mono mb-2">Menu unavailable</p>
-          <h2 className="text-3xl font-serif italic font-normal leading-tight text-stone-800">This table is ready, but the menu is empty</h2>
-          <p className="mt-3 text-sm text-stone-500 leading-relaxed">
-            Ask staff to publish active dishes for this restaurant, then refresh the page.
-          </p>
-        </section>
+        <InfoCard eyebrow="Menu unavailable" title="This table is ready, but the menu is empty">
+          <p>Ask staff to publish active dishes for this restaurant, then refresh the page.</p>
+        </InfoCard>
       );
     }
 
     if (displayedRoots.length) {
-      return displayedRoots.map(({ node, index }) => (
-        <section
-          key={`cat-${index + 1}`}
-          id={`cat-${index + 1}`}
-          className="grid gap-3.5 border border-stone-200 rounded-2xl bg-white shadow-sm overflow-hidden scroll-mt-32"
-        >
-          <div className="grid gap-2 px-6 pt-6">
-            <p className="text-xs uppercase tracking-widest text-amber-700 font-mono">
-              {searchTerm ? `"${searchTerm}" in ` : ""}{node.name}
-            </p>
-            <h2 className="font-serif text-[clamp(28px,4vw,38px)] italic font-normal leading-none text-stone-800">{node.name}</h2>
-          </div>
-          <MenuNode
-            node={node}
-            nodeId={`node-${index + 1}`}
-            level={1}
-            collapsible={false}
-            hideHeader
-            searchTerm={searchTerm}
-          />
-        </section>
-      ));
-    }
-
-    if (filteredRoots.length === 0 && searchTerm) {
-      return <div className="text-center py-16 text-stone-400 text-sm tracking-wider">No dishes matched "{searchTerm}". Try a broader search.</div>;
+      return (
+        <div className="flex flex-col gap-4">
+          {displayedRoots.map(({ node, index }) => (
+            <section
+              key={`cat-${index + 1}`}
+              id={`cat-${index + 1}`}
+              className="border border-border rounded-2xl bg-card shadow-sm overflow-hidden scroll-mt-32"
+            >
+              <div className="px-4 pt-4 pb-1">
+                {searchTerm ? (
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Results in {node.name}
+                  </p>
+                ) : null}
+                <h2 className="text-xl font-bold text-foreground">{node.name}</h2>
+              </div>
+              <MenuNode node={node} nodeId={`node-${index + 1}`} level={1} collapsible={false} hideHeader searchTerm={searchTerm} />
+            </section>
+          ))}
+        </div>
+      );
     }
 
     if (searchTerm) {
-      return <div className="text-center py-16 text-stone-400 text-sm tracking-wider">No dishes matched "{searchTerm}" in this category.</div>;
+      return <div className="text-center py-20 text-muted-foreground text-sm">No dishes matched “{searchTerm}”. Try a broader search.</div>;
     }
 
-    return <div className="text-center py-16 text-stone-400 text-sm tracking-wider">This category has no items.</div>;
+    return <div className="text-center py-20 text-muted-foreground text-sm">This category has no items.</div>;
   }
 
   return (
-    <div
-      className="min-h-dvh bg-stone-50 text-stone-800 font-sans text-sm leading-relaxed overflow-x-hidden"
-      style={{ '--cart-strip-h': cartItems.count > 0 ? '88px' : '0px' }}
-    >
+    <div className="min-h-dvh bg-background text-foreground font-sans text-sm leading-relaxed overflow-x-hidden">
       <FlashStack flash={flash} onDismiss={() => setFlash(null)} bottom />
 
-      <header ref={headerRef} className="fixed top-0 left-0 right-0 z-40 bg-stone-50/90 backdrop-blur-md">
-        <div className="flex items-center justify-between h-14 px-4 border-b border-stone-200">
-          <h1 className="font-serif text-xl italic font-light tracking-wide text-stone-800">
-            {context?.restaurant?.name || restaurantRef || "ODA"}
-          </h1>
-          {tableQuery ? (
-            <span className="text-[11px] font-mono tracking-wider text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-0.5">
-              TABLE {context?.tableNumber || tableQuery || "--"}
-            </span>
+      <header ref={headerRef} className="fixed top-0 left-0 right-0 z-40 bg-background/90 backdrop-blur-md border-b border-border">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between h-14 px-4">
+            <h1 className="text-lg font-bold tracking-tight text-foreground truncate">
+              {context?.restaurant?.name || restaurantRef || "ODA"}
+            </h1>
+            {tableQuery ? (
+              <span className="shrink-0 text-xs font-semibold font-mono tracking-wide text-primary bg-accent rounded-full px-3 py-1">
+                Table {context?.tableNumber || tableQuery || "--"}
+              </span>
+            ) : null}
+          </div>
+
+          {menuIsReady ? (
+            <div className="px-4 pb-3">
+              <div className="flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-muted">
+                <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4 shrink-0 text-muted-foreground">
+                  <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.3" />
+                  <line x1="9.7" y1="9.7" x2="13" y2="13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                </svg>
+                <Input
+                  ref={searchInputRef}
+                  type="search"
+                  placeholder="Search dishes..."
+                  autoComplete="off"
+                  aria-label="Search menu"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1 bg-transparent border-none text-sm text-foreground placeholder:text-muted-foreground shadow-none focus-visible:ring-0 h-9 px-0"
+                />
+              </div>
+            </div>
           ) : null}
         </div>
-
-        {menuIsReady ? (
-          <div className="flex items-center gap-2.5 px-4 h-10 border-b border-stone-200 bg-stone-100">
-            <svg viewBox="0 0 16 16" fill="none" className="w-[14px] h-[14px] shrink-0 text-stone-400">
-              <circle cx="6.5" cy="6.5" r="4" stroke="currentColor" strokeWidth="1.2" />
-              <line x1="9.7" y1="9.7" x2="13" y2="13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-            <Input
-              ref={searchInputRef}
-              type="search"
-              placeholder="Search dishes..."
-              autoComplete="off"
-              aria-label="Search menu"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 bg-transparent border-none outline-none text-sm text-stone-800 placeholder:text-stone-400 shadow-none focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-amber-200 focus-visible:outline-offset-2 rounded h-8 px-0"
-            />
-          </div>
-        ) : null}
       </header>
 
       <div style={{ paddingTop: headerH }}>
-        <MenuCategoryNav
-          roots={filteredRoots}
-          selectedIndex={selectedCategoryIndex}
-          onSelectCategory={selectCategory}
-          containerRef={categoryNavRef}
-          topOffset={headerH}
-        />
+        {menuIsReady ? (
+          <MenuCategoryNav
+            roots={filteredRoots}
+            selectedIndex={selectedCategoryIndex}
+            onSelectCategory={selectCategory}
+            containerRef={categoryNavRef}
+            topOffset={headerH}
+          />
+        ) : null}
 
-        <main className="px-3 py-5 max-w-4xl mx-auto grid gap-4 pb-[calc(var(--cart-strip-h,0px)+20px)]">
+        <main className="px-3 py-4 max-w-4xl mx-auto pb-28">
           {renderMain()}
         </main>
       </div>
@@ -298,47 +292,52 @@ function OrderResultDialog({ orderResult, onDismiss }) {
     <div
       ref={dialogRef}
       tabIndex={-1}
-      className="fixed inset-0 z-50 pointer-events-auto opacity-100 transition-opacity duration-220 focus:outline-none"
+      className="fixed inset-0 z-50 pointer-events-auto animate-[fadeIn_180ms_ease-out] focus:outline-none"
     >
       <div className="absolute inset-0 bg-black/40" onClick={onDismiss} aria-hidden="true" />
       <section
         role="dialog"
         aria-modal="true"
         aria-label="Order placed"
-        className="absolute left-1/2 top-1/2 w-[calc(100vw-24px)] max-w-md p-6 rounded-2xl border border-stone-200 bg-gradient-to-b from-white to-stone-50 shadow-2xl -translate-x-1/2 -translate-y-1/2 max-h-[calc(100vh-32px)] overflow-auto"
+        className="absolute left-1/2 top-1/2 w-[calc(100vw-24px)] max-w-md p-6 rounded-2xl border border-border bg-card shadow-2xl -translate-x-1/2 -translate-y-1/2 max-h-[calc(100vh-32px)] overflow-auto"
       >
-        <p className="text-xs uppercase tracking-widest text-amber-700 font-mono mb-2">Order placed</p>
-        <h2 className="text-3xl font-serif italic font-normal leading-tight text-stone-800">Order #{orderResult.orderId}</h2>
-        <p className="mt-3 text-sm text-stone-500 leading-relaxed">
-          Table {orderResult.tableNumber} — your order is now pending. The kitchen has been notified.
+        <div className="grid place-items-center w-12 h-12 rounded-full bg-success/15 text-success mb-4">
+          <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6">
+            <polyline points="5,13 10,18 19,7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Order placed</p>
+        <h2 className="text-2xl font-semibold leading-tight text-foreground">Order #{orderResult.orderId}</h2>
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+          Table {orderResult.tableNumber} — your order is pending. The kitchen has been notified.
         </p>
-        <div className="mt-4 p-3.5 rounded-xl bg-amber-50 grid gap-2">
-          <p className="text-xs uppercase tracking-widest text-amber-700 font-mono">{orderResult.count} item{orderResult.count !== 1 ? "s" : ""}</p>
-          <ul className="grid gap-1">
+        <div className="mt-4 p-4 rounded-xl bg-muted">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+            {orderResult.count} item{orderResult.count !== 1 ? "s" : ""}
+          </p>
+          <ul className="flex flex-col gap-1.5">
             {orderResult.items.map((item) => (
               <li key={item.id} className="flex items-center justify-between text-sm">
-                <span className="text-stone-600">
-                  <span className="font-mono text-stone-400 mr-1.5">{item.quantity}x</span>
+                <span className="text-foreground">
+                  <span className="font-mono text-muted-foreground mr-1.5">{item.quantity}×</span>
                   {item.name}
                 </span>
-                <span className="font-mono text-stone-800">{formatCurrency(item.subtotal)}</span>
+                <span className="font-mono text-foreground">{formatCurrency(item.subtotal)}</span>
               </li>
             ))}
           </ul>
-          <div className="flex items-center justify-between pt-2 border-t border-amber-200/60 text-sm">
-            <span className="text-stone-500 font-serif italic">Total</span>
-            <strong className="font-mono text-stone-800">{formatCurrency(orderResult.total)}</strong>
+          <div className="flex items-center justify-between pt-3 mt-3 border-t border-border text-sm">
+            <span className="text-muted-foreground font-medium">Total</span>
+            <strong className="font-mono text-foreground">{formatCurrency(orderResult.total)}</strong>
           </div>
         </div>
-        <div className="flex items-center gap-2.5 mt-4">
-          <Button
-            type="button"
-            onClick={onDismiss}
-            className="flex-1 h-11 rounded-xl bg-amber-700 text-stone-50 hover:bg-amber-800 cursor-pointer"
-          >
-            Back to menu
-          </Button>
-        </div>
+        <Button
+          type="button"
+          onClick={onDismiss}
+          className="w-full h-12 mt-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+        >
+          Back to menu
+        </Button>
       </section>
     </div>
   );

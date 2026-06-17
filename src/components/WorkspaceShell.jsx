@@ -152,7 +152,7 @@ export default function WorkspaceShell({
       <header className="sticky top-0 z-30 -mx-4 px-4 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between h-12">
           <div className="flex items-center gap-2 min-w-0">
-            <Link to="/" className="text-[1.95rem] font-display italic font-normal text-foreground shrink-0 no-underline">
+            <Link to="/" className="text-xl font-bold tracking-tight text-foreground shrink-0 no-underline">
               ODA
             </Link>
 

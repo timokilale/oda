@@ -166,7 +166,7 @@ export default function RestaurantLayout() {
         <section className="py-6">
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
-            <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
               Loading restaurant
             </h1>
             <p className="text-sm text-muted-foreground mt-2">Preparing the workspace and latest metrics.</p>
@@ -182,7 +182,7 @@ export default function RestaurantLayout() {
         <section className="py-6">
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
-            <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
               Restaurant unavailable
             </h1>
             <p className="text-sm text-muted-foreground mt-2">{error}</p>

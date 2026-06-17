@@ -93,7 +93,7 @@ export default function LoginPage() {
         <div className="rounded-xl border border-border bg-card p-6 grid gap-4">
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Owner</p>
-            <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
               Log in
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
@@ -154,7 +154,7 @@ export default function LoginPage() {
             ) : null}
 
             {import.meta.env.DEV && otpRequested && devOtpCode ? (
-              <div className="rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+              <div className="rounded-lg border border-warning/30 bg-warning/15 px-3 py-2 text-sm text-warning-foreground dark:text-warning">
                 Development OTP: <strong>{devOtpCode}</strong>
               </div>
             ) : null}

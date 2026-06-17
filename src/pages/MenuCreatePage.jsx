@@ -158,7 +158,7 @@ export default function MenuCreatePage() {
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Add menu items
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -177,7 +177,7 @@ export default function MenuCreatePage() {
         <section className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-[1.42rem] font-display italic text-foreground">Draft board</h2>
+              <h2 className="text-lg font-semibold text-foreground">Draft board</h2>
               <p className="text-xs text-muted-foreground mt-1">
                 {completedCount} of {itemCountLabel} ready to publish.
               </p>

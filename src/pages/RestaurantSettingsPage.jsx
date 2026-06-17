@@ -84,7 +84,7 @@ export default function RestaurantSettingsPage() {
       <section className="py-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Settings
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -96,7 +96,7 @@ export default function RestaurantSettingsPage() {
       <section className="grid grid-cols-[320px_1fr] gap-4 mb-8">
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4">
-            <h2 className="text-[1.42rem] font-display italic text-foreground">Profile</h2>
+            <h2 className="text-lg font-semibold text-foreground">Profile</h2>
             <p className="text-xs text-muted-foreground mt-1">
               Public links and existing table QR codes stay the same when you edit these details.
             </p>
@@ -257,7 +257,7 @@ export default function RestaurantSettingsPage() {
 
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4">
-            <h2 className="text-[1.42rem] font-display italic text-foreground">Status &amp; links</h2>
+            <h2 className="text-lg font-semibold text-foreground">Status &amp; links</h2>
           </div>
 
           <div className="grid gap-4">
@@ -266,8 +266,8 @@ export default function RestaurantSettingsPage() {
               <span
                 className={`inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium border uppercase tracking-wider w-fit ${
                   form.active === "true"
-                    ? "border-green-200 bg-green-50 text-green-700"
-                    : "border-red-200 bg-red-50 text-red-700"
+                    ? "border-success/30 bg-success/15 text-success"
+                    : "border-border bg-muted text-muted-foreground"
                 }`}
                 role="status"
               >

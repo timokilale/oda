@@ -221,7 +221,7 @@ export default function TablesPage() {
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Tables
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -239,19 +239,19 @@ export default function TablesPage() {
       <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Tables</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{tables.length}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{tables.length}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Open orders</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{workspaceSummary.openOrderCount}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{workspaceSummary.openOrderCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Menu items</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{workspaceSummary.menuItemCount}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{workspaceSummary.menuItemCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{restaurant.name}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{restaurant.name}</p>
         </div>
       </section>
 
@@ -286,7 +286,7 @@ export default function TablesPage() {
                         {isExpanded ? "Hide actions" : "Show actions"}
                       </span>
                     </div>
-                    <h2 className="text-2xl font-display italic text-foreground">Table {table.tableNumber}</h2>
+                    <h2 className="text-xl font-semibold text-foreground">Table {table.tableNumber}</h2>
                     <p className="text-xs text-muted-foreground mt-1">
                       QR access ready{table.createdAt ? ` since ${dateFormatter.format(new Date(table.createdAt))}` : "."}
                     </p>
@@ -341,7 +341,7 @@ export default function TablesPage() {
               <rect x="10" y="30" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
               <rect x="32" y="30" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1" />
             </svg>
-            <h2 className="text-lg font-display italic text-foreground">No tables yet</h2>
+            <h2 className="text-lg font-semibold text-foreground">No tables yet</h2>
             <p className="text-sm text-muted-foreground mt-2">
               Use Add tables to create one or many table QR entries without crowding this page.
             </p>

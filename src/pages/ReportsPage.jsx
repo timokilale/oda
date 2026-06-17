@@ -44,7 +44,7 @@ export default function ReportsPage() {
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Reports
           </h1>
           <p className="text-sm text-muted-foreground mt-2">{restaurant.name}</p>
@@ -66,23 +66,23 @@ export default function ReportsPage() {
           <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Revenue</p>
-              <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">
+              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">
                 {reports ? formatCurrency(reports.revenueTotal) : formatCurrency(0)}
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Orders today</p>
-              <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{reports?.ordersToday ?? 0}</p>
+              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.ordersToday ?? 0}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Average ticket</p>
-              <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">
+              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">
                 {reports ? formatCurrency(reports.averageTicket) : formatCurrency(0)}
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Completion</p>
-              <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">
+              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">
                 {reports ? `${Math.round(reports.completionRate)}%` : "0%"}
               </p>
             </div>
@@ -91,32 +91,32 @@ export default function ReportsPage() {
           <section className="grid grid-cols-[320px_1fr] gap-4 mb-8">
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="mb-4">
-                <h2 className="text-[1.42rem] font-display italic text-foreground">Status breakdown</h2>
+                <h2 className="text-lg font-semibold text-foreground">Status breakdown</h2>
               </div>
 
               <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
                 <div className="rounded-xl border border-border bg-card p-4">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Pending</p>
-                  <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{reports?.pendingOrders ?? 0}</p>
+                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.pendingOrders ?? 0}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-4">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Confirmed</p>
-                  <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{reports?.confirmedOrders ?? 0}</p>
+                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.confirmedOrders ?? 0}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-4">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Completed</p>
-                  <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{reports?.completedOrders ?? 0}</p>
+                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.completedOrders ?? 0}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-4">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Cancelled</p>
-                  <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{reports?.cancelledOrders ?? 0}</p>
+                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.cancelledOrders ?? 0}</p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="mb-4">
-                <h2 className="text-[1.42rem] font-display italic text-foreground">Top items</h2>
+                <h2 className="text-lg font-semibold text-foreground">Top items</h2>
               </div>
 
               {reports?.topItems?.length ? (

@@ -102,7 +102,7 @@ export default function MenuPage() {
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Menu
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
@@ -120,19 +120,19 @@ export default function MenuPage() {
       <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Active items</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{activeCount}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{activeCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Archived items</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{archivedCount}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{archivedCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Open orders</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{workspaceSummary.openOrderCount}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{workspaceSummary.openOrderCount}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Tables</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{workspaceSummary.tableCount}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{workspaceSummary.tableCount}</p>
         </div>
       </section>
 

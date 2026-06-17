@@ -5,20 +5,23 @@ export default function TableLookupForm({ tableInput, onTableInputChange, onSubm
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <label htmlFor="table-reference" className="text-xs uppercase tracking-widest text-stone-500">
+        <label htmlFor="table-reference" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Table reference
         </label>
         <Input
           id="table-reference"
           value={tableInput}
           onChange={(e) => onTableInputChange(e.target.value)}
-          placeholder="Enter table reference"
+          placeholder="e.g. 12"
           aria-label="Table reference"
-          className="h-11 rounded-xl border-stone-200 bg-white/80 text-stone-800 placeholder:text-stone-400"
+          className="h-12 rounded-xl border-border bg-background text-base text-foreground placeholder:text-muted-foreground"
         />
       </div>
-      <Button type="submit" className="h-11 rounded-xl bg-amber-700 text-stone-50 hover:bg-amber-800 cursor-pointer">
-        Load menu
+      <Button
+        type="submit"
+        className="h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold"
+      >
+        View menu
       </Button>
     </form>
   );

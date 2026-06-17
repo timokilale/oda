@@ -15,7 +15,7 @@ export default class ErrorBoundary extends Component {
       const message = this.props.fallbackMessage || "Something went wrong";
       return (
         <div className="max-w-md mx-auto my-16 p-8 rounded-xl border border-border bg-card text-center">
-          <h2 className="text-xl font-display italic text-foreground mb-2">{message}</h2>
+          <h2 className="text-xl font-semibold text-foreground mb-2">{message}</h2>
           <p className="text-sm text-muted-foreground mb-6">{this.state.error.message}</p>
           <button
             type="button"

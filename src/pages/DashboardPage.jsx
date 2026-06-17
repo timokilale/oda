@@ -45,7 +45,7 @@ export default function DashboardPage() {
       <section className="py-6">
         <div className="mb-6">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Owner</p>
-          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Restaurants
           </h1>
         </div>
@@ -73,19 +73,19 @@ export default function DashboardPage() {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[clamp(2rem,5vw,3rem)] font-display italic text-muted-foreground/40" aria-hidden="true">
+                    <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-muted-foreground/40" aria-hidden="true">
                       {restaurant.name.slice(0, 1)}
                     </div>
                   )}
                 </div>
                 <div className="p-4 grid gap-2">
                   <div className="flex items-center justify-between gap-2">
-                    <h2 className="font-display text-lg italic text-foreground truncate">{restaurant.name}</h2>
+                    <h2 className="text-lg font-semibold text-foreground truncate">{restaurant.name}</h2>
                     <span
                       className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border uppercase tracking-wider ${
                         restaurant.active
-                          ? "border-green-200 bg-green-50 text-green-700"
-                          : "border-red-200 bg-red-50 text-red-700"
+                          ? "border-success/30 bg-success/15 text-success"
+                          : "border-border bg-muted text-muted-foreground"
                       }`}
                       role="status"
                       aria-label={`Restaurant status: ${restaurant.active ? "active" : "inactive"}`}
@@ -115,7 +115,7 @@ export default function DashboardPage() {
               <rect x="18" y="6" width="12" height="14" rx="2" stroke="currentColor" strokeWidth="1.2" />
               <polyline points="24,8 24,12 27,12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <h2 className="text-lg font-display italic text-foreground">No restaurants yet</h2>
+            <h2 className="text-lg font-semibold text-foreground">No restaurants yet</h2>
             <p className="text-sm text-muted-foreground mt-2">
               Use <strong>New restaurant</strong> in the header to create your first workspace.
             </p>

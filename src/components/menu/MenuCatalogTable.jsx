@@ -21,7 +21,7 @@ export default function MenuCatalogTable({
     <section className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h2 className="text-[1.42rem] font-display italic text-foreground">Catalog</h2>
+          <h2 className="text-lg font-semibold text-foreground">Catalog</h2>
           <p className="text-xs text-muted-foreground mt-1">
             Active dishes are visible to customers. Archived dishes stay searchable here.
           </p>
@@ -73,7 +73,7 @@ export default function MenuCatalogTable({
                     <span
                       className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border uppercase tracking-wider ${
                         item.active
-                          ? "border-green-200 bg-green-50 text-green-700"
+                          ? "border-success/30 bg-success/15 text-success"
                           : "border-border bg-muted text-muted-foreground"
                       }`}
                       role="status"
@@ -123,7 +123,7 @@ export default function MenuCatalogTable({
             <line x1="20" y1="12" x2="20" y2="6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             <line x1="28" y1="12" x2="28" y2="6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           </svg>
-          <h3 className="text-lg font-display italic text-foreground">
+          <h3 className="text-lg font-semibold text-foreground">
             {filter === "archived"
               ? "No archived items"
               : filter === "all"

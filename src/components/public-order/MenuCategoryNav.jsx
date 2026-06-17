@@ -15,14 +15,29 @@ export default function MenuCategoryNav({ roots, selectedIndex, onSelectCategory
     <nav
       ref={containerRef}
       style={{ top: topOffset }}
-      className="sticky z-40 bg-stone-50/90 backdrop-blur-md border-b border-stone-200"
+      className="sticky z-40 bg-background/85 backdrop-blur-md border-b border-border"
       aria-label="Menu sections"
     >
       <div
-        className="flex gap-0 overflow-x-auto scrollbar-none px-4"
+        className="flex gap-2 overflow-x-auto scrollbar-none px-4 py-2.5 max-w-4xl mx-auto"
         role="tablist"
         aria-label="Menu categories"
       >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={selectedIndex == null}
+          onClick={() => selectedIndex != null && onSelectCategory(selectedIndex)}
+          className={cn(
+            "flex-shrink-0 px-3.5 py-2 min-h-9 rounded-full text-[13px] font-medium whitespace-nowrap",
+            "transition-colors duration-150 active:scale-[0.97] cursor-pointer",
+            selectedIndex == null
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+          )}
+        >
+          All
+        </button>
         {roots.map(({ node, index }, position) => {
           const isActive = selectedIndex === index;
 
@@ -36,12 +51,11 @@ export default function MenuCategoryNav({ roots, selectedIndex, onSelectCategory
               onClick={() => onSelectCategory(index)}
               onKeyDown={(e) => handleKeyDown(e, position)}
               className={cn(
-                "flex-shrink-0 px-4 py-3 min-h-11 text-xs font-medium tracking-wider uppercase whitespace-nowrap",
-                "border-b-2 border-transparent transition-all duration-200",
-                "hover:text-stone-700 active:scale-[0.97] cursor-pointer",
+                "flex-shrink-0 px-3.5 py-2 min-h-9 rounded-full text-[13px] font-medium whitespace-nowrap",
+                "transition-colors duration-150 active:scale-[0.97] cursor-pointer",
                 isActive
-                  ? "border-amber-700 text-amber-700"
-                  : "text-stone-400",
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground",
               )}
             >
               {node.name}

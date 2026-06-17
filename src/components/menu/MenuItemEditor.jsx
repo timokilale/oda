@@ -77,7 +77,7 @@ export default function MenuItemEditor({
     <section className="rounded-xl border border-border bg-card p-5 mb-6">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h2 className="text-[1.42rem] font-display italic text-foreground">Edit menu item</h2>
+          <h2 className="text-lg font-semibold text-foreground">Edit menu item</h2>
           <p className="text-xs text-muted-foreground mt-1">
             Update details here. New items belong in the dedicated add-items flow.
           </p>

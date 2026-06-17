@@ -5,6 +5,7 @@ import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { formatCurrency, formatDateTime } from "../lib/format.js";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
+import { orderStatusBadgeClass, statusBadge } from "../lib/status.js";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "open", label: "Open" },
@@ -26,13 +27,6 @@ const ORDER_BY_OPTIONS = [
   { value: "total_asc", label: "Total: low to high" },
   { value: "status_asc", label: "Status: A-Z" },
 ];
-
-const STATUS_STYLES = {
-  pending: "border-yellow-200 bg-yellow-50 text-yellow-700",
-  confirmed: "border-green-200 bg-green-50 text-green-700",
-  completed: "border-blue-200 bg-blue-50 text-blue-700",
-  cancelled: "border-red-200 bg-red-50 text-red-700",
-};
 
 function compareText(leftValue, rightValue, direction = "asc") {
   const nextValue = String(leftValue || "").localeCompare(String(rightValue || ""), undefined, {
@@ -180,7 +174,7 @@ export default function OrdersPage() {
       <section className="py-6">
         <div>
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-[clamp(2.15rem,4vw,3.5rem)] font-display italic font-normal leading-none text-foreground mt-1">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Orders
           </h1>
           <p className="text-sm text-muted-foreground mt-2">{restaurant.name}</p>
@@ -190,26 +184,26 @@ export default function OrdersPage() {
       <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Total orders</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{summary?.totalOrderCount ?? 0}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.totalOrderCount ?? 0}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Pending</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{summary?.pendingOrderCount ?? 0}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.pendingOrderCount ?? 0}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Confirmed</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{summary?.confirmedOrderCount ?? 0}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.confirmedOrderCount ?? 0}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Completed</p>
-          <p className="text-[2.1rem] font-display font-normal text-foreground mt-1">{summary?.completedOrderCount ?? 0}</p>
+          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.completedOrderCount ?? 0}</p>
         </div>
       </section>
 
       <section className="rounded-xl border border-border bg-card p-5 mb-8">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <h2 className="text-[1.42rem] font-display italic text-foreground">Queue</h2>
+            <h2 className="text-lg font-semibold text-foreground">Queue</h2>
             <p className="text-xs text-muted-foreground mt-1">
               Filter the queue, review what was ordered, and confirm status changes before they go through.
               {lastUpdated ? (
@@ -299,9 +293,7 @@ export default function OrdersPage() {
                     </td>
                     <td className="py-3 px-3" data-label="Status">
                       <span
-                        className={`inline-flex items-center h-5 px-2 rounded-full text-[11px] font-medium border uppercase tracking-wider ${
-                          STATUS_STYLES[order.status] || "border-border bg-muted text-muted-foreground"
-                        }`}
+                        className={statusBadge(orderStatusBadgeClass(order.status))}
                         role="status"
                         aria-label={`Order status: ${order.status}`}
                       >

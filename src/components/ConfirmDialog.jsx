@@ -84,7 +84,7 @@ export default function ConfirmDialog({
         ref={dialogRef}
       >
         <div className="p-6">
-          <h2 className={`text-xl font-display italic mb-2 ${
+          <h2 className={`text-xl font-semibold mb-2 ${
             isDestructive ? "text-destructive" : "text-foreground"
           }`}>
             {title}
