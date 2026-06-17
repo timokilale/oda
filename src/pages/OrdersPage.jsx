@@ -14,13 +14,97 @@ function statusMeta(status) {
   return ORDER_STATUSES.find((s) => s.value === status) || ORDER_STATUSES[3];
 }
 
+function parseDate(value) {
+  if (!value) return NaN;
+  const s = String(value);
+  const match = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/);
+  if (match) {
+    const [, y, m, d, hh, mm, ss, tz] = match;
+    const iso = `${y}-${m}-${d}T${hh}:${mm}:${ss}${tz || 'Z'}`;
+    return Date.parse(iso);
+  }
+  return Date.parse(s);
+}
+
 function timeAgo(date) {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
+  const ts = parseDate(date);
+  if (isNaN(ts)) { console.warn("timeAgo: invalid date", date); return ""; }
+  const diff = Date.now() - ts;
+  if (diff < 0) return "placed just now";
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "placed just now";
+  if (minutes < 60) return `placed ${minutes} minute${minutes === 1 ? "" : "s"} ago`;
   const hours = Math.floor(minutes / 60);
-  return `${hours}h ${minutes % 60}m`;
+  const remaining = minutes % 60;
+  if (hours < 24) return `placed ${hours}h ${remaining}m ago`;
+  return `placed ${Math.floor(hours / 24)}d ago`;
+}
+
+function OrderRow({ order, updatingOrderId, onAction, onCancel }) {
+  const elapsed = timeAgo(order.createdAt);
+
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors ${
+        order.status === "cancelled"
+          ? "border-border bg-muted/30 opacity-60"
+          : "border-border"
+      }`}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground truncate">
+            Table {order.tableNumber}
+          </span>
+          <span className="text-xs text-muted-foreground">{elapsed}</span>
+        </div>
+        <div className="text-sm font-semibold text-foreground tabular-nums mt-0.5">
+          {order.itemsSummary || `#${order.id}`}
+          <span className="font-semibold ml-2">{formatCurrency(order.totalAmount)}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        {order.status === "pending" ? (
+          <>
+            <button
+              type="button"
+              onClick={() => onCancel(order.id, "cancelled")}
+              disabled={updatingOrderId === order.id}
+              className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => onAction(order.id, order.status)}
+              disabled={updatingOrderId === order.id}
+              className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium bg-success text-white hover:bg-success/90 transition-colors disabled:opacity-50"
+            >
+              {updatingOrderId === order.id ? "..." : "Accept"}
+            </button>
+          </>
+        ) : order.status === "confirmed" ? (
+          <button
+            type="button"
+            onClick={() => onAction(order.id, order.status)}
+            disabled={updatingOrderId === order.id}
+            className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {updatingOrderId === order.id ? "..." : "Serve"}
+          </button>
+        ) : order.status === "completed" ? (
+          <span className="inline-flex items-center h-6 px-2.5 rounded text-xs font-medium bg-success/10 text-success">
+            Served
+          </span>
+        ) : (
+          <span className="inline-flex items-center h-6 px-2.5 rounded text-xs font-medium bg-muted text-muted-foreground">
+            Cancelled
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function playNotificationSound() {
@@ -44,17 +128,16 @@ function playNotificationSound() {
 export default function OrdersPage() {
   const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const [orders, setOrders] = useState([]);
-  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const [lastOrderIds, setLastOrderIds] = useState(new Set());
   const [acceptingOrders, setAcceptingOrders] = useState(restaurant.active);
   const [savingToggle, setSavingToggle] = useState(false);
   const [undoTarget, setUndoTarget] = useState(null);
-  const [kitchenFullscreen, setKitchenFullscreen] = useState(false);
+  const [filter, setFilter] = useState("active");
+  const [groupByTable, setGroupByTable] = useState(false);
   const undoTimeoutRef = useRef(null);
   const fallbackRef = useRef(null);
-  const fullscreenRef = useRef(null);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -62,8 +145,6 @@ export default function OrdersPage() {
       const newOrders = data.orders || [];
 
       setOrders(newOrders);
-      setSummary(data.orderSummary);
-
       const currentIds = new Set(newOrders.map((o) => o.id));
       setLastOrderIds((prev) => {
         if (prev.size > 0 && currentIds.size > prev.size) {
@@ -72,7 +153,9 @@ export default function OrdersPage() {
         return currentIds;
       });
     } catch (error) {
-      setFlash({ type: "error", message: error.message });
+      if (!error.message.includes("timed out")) {
+        setFlash({ type: "error", message: error.message });
+      }
     } finally {
       setLoading(false);
     }
@@ -85,11 +168,16 @@ export default function OrdersPage() {
     const url = `/api/restaurants/${restaurant.id}/orders/sse`;
     const es = new EventSource(url, { withCredentials: true });
 
+    const sseTimeout = setTimeout(() => {
+      if (!fallbackRef.current) {
+        fallbackRef.current = setInterval(loadOrders, 7000);
+      }
+    }, 12000);
+
     es.addEventListener("orders", (event) => {
       try {
         const data = JSON.parse(event.data);
         setOrders(data.orders);
-        setSummary(data.orderSummary);
 
         setLastOrderIds((prev) => {
           const currentIds = new Set(data.orders.map((o) => o.id));
@@ -102,6 +190,7 @@ export default function OrdersPage() {
         // ignore parse errors
       }
       setLoading(false);
+      clearTimeout(sseTimeout);
 
       if (fallbackRef.current) {
         clearInterval(fallbackRef.current);
@@ -110,6 +199,7 @@ export default function OrdersPage() {
     });
 
     es.addEventListener("error", () => {
+      clearTimeout(sseTimeout);
       if (!fallbackRef.current) {
         fallbackRef.current = setInterval(loadOrders, 7000);
       }
@@ -117,6 +207,7 @@ export default function OrdersPage() {
 
     return () => {
       es.close();
+      clearTimeout(sseTimeout);
       if (fallbackRef.current) {
         clearInterval(fallbackRef.current);
       }
@@ -205,79 +296,37 @@ export default function OrdersPage() {
     await updateOrderStatus(orderId, previousStatus);
   }
 
-  function toggleKitchenFullscreen() {
-    if (!kitchenFullscreen) {
-      setKitchenFullscreen(true);
-      try {
-        const el = fullscreenRef.current;
-        if (el && el.requestFullscreen) {
-          el.requestFullscreen();
-        }
-      } catch {
-        // fullscreen not supported
-      }
-    } else {
-      setKitchenFullscreen(false);
-      try {
-        if (document.fullscreenElement) {
-          document.exitFullscreen();
-        }
-      } catch {
-        // fullscreen not supported
-      }
-    }
-  }
-
-  useEffect(() => {
-    function onFullscreenChange() {
-      if (!document.fullscreenElement) {
-        setKitchenFullscreen(false);
-      }
-    }
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
+  const visibleOrders = useMemo(() => {
+    if (filter === "all") return orders;
+    if (filter === "served") return orders.filter((o) => ["completed", "cancelled"].includes(o.status));
+    return orders.filter((o) => ["pending", "confirmed"].includes(o.status));
+  }, [filter, orders]);
 
   const groupedOrders = useMemo(() => {
-    const active = orders.filter((o) => ["pending", "confirmed"].includes(o.status));
-    const done = orders.filter((o) => ["completed", "cancelled"].includes(o.status));
-    return { active, done };
-  }, [orders]);
+    if (!groupByTable) return null;
+    const groups = {};
+    for (const o of visibleOrders) {
+      const key = o.tableNumber || "Unknown";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(o);
+    }
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [groupByTable, visibleOrders]);
 
   return (
     <>
-      <div className="sticky top-12 z-20 -mx-4 px-4 bg-background/90 backdrop-blur-sm border-b border-border">
-        <div className="flex items-center justify-between py-3">
-          <div className="min-w-0">
-            <h1 className="text-lg font-bold text-foreground truncate">{restaurant.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              {acceptingOrders ? `${summary?.openOrderCount || 0} open orders` : "Orders paused"}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={toggleKitchenFullscreen}
-            className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors shrink-0"
-            aria-label={kitchenFullscreen ? "Exit fullscreen" : "Fullscreen mode"}
-          >
-            <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4">
-              {kitchenFullscreen ? (
-                <>
-                  <path d="M4 12h4v4M16 8h-4V4M4 8h4V4M16 12h-4v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </>
-              ) : (
-                <>
-                  <path d="M4 8V4h4M16 12v4h-4M4 12v4h4M16 8V4h-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                </>
-              )}
-            </svg>
-          </button>
+      <section className="flex items-start justify-between gap-4 py-6">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
+            Orders
+          </h1>
+        </div>
+        <div className="flex items-center gap-2 mt-6">
           <button
             type="button"
             onClick={toggleAcceptingOrders}
             disabled={savingToggle}
-            className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border transition-colors disabled:opacity-50 ${
+            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border transition-colors disabled:opacity-50 ${
               acceptingOrders
                 ? "border-success/40 bg-success text-white"
                 : "border-border bg-muted"
@@ -287,13 +336,122 @@ export default function OrdersPage() {
             aria-label="Accepting orders"
           >
             <span
-              className={`inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
-                acceptingOrders ? "translate-x-7" : "translate-x-1"
+              className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                acceptingOrders ? "translate-x-6" : "translate-x-0.5"
               }`}
             />
           </button>
         </div>
-      </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-muted p-1">
+            {[
+              { value: "active", label: "Active" },
+              { value: "served", label: "Served" },
+              { value: "all", label: "All" },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setFilter(opt.value)}
+                className={`inline-flex items-center justify-center h-7 px-2.5 rounded text-xs font-medium transition-colors ${
+                  filter === opt.value
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setGroupByTable((v) => !v)}
+              className={`inline-flex items-center justify-center h-7 px-2.5 rounded text-xs font-medium border transition-colors ${
+                groupByTable
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border hover:text-foreground"
+              }`}
+            >
+              <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5 mr-1.5">
+                <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+                <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              Group by table
+            </button>
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          {loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg border border-border p-3 animate-pulse">
+                <div className="flex-1">
+                  <div className="h-3 bg-muted rounded w-1/3 mb-2" />
+                  <div className="h-3 bg-muted rounded w-1/4" />
+                </div>
+              </div>
+            ))
+          ) : visibleOrders.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-muted-foreground/50">
+                  <path d="M3 9h18M9 3v6m6-6v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <rect x="4" y="9" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold text-foreground">
+                {filter === "active"
+                  ? "No active orders"
+                  : filter === "served"
+                    ? "No served orders"
+                    : "No orders yet"}
+              </h3>
+            </div>
+          ) : groupedOrders ? (
+            groupedOrders.map(([tableName, tableOrders]) => (
+              <div key={tableName} className="mb-4 last:mb-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4 text-muted-foreground">
+                    <rect x="2" y="3" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.3" />
+                    <line x1="5" y1="3" x2="5" y2="13" stroke="currentColor" strokeWidth="1.3" />
+                    <line x1="11" y1="3" x2="11" y2="13" stroke="currentColor" strokeWidth="1.3" />
+                    <line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" strokeWidth="1.3" />
+                  </svg>
+                  <h3 className="text-sm font-semibold text-foreground">Table {tableName}</h3>
+                  <span className="text-xs text-muted-foreground">({tableOrders.length})</span>
+                </div>
+                <div className="grid gap-2">
+                  {tableOrders.map((order) => (
+                    <OrderRow
+                      key={order.id}
+                      order={order}
+                      updatingOrderId={updatingOrderId}
+                      onAction={handleAction}
+                      onCancel={updateOrderStatus}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            visibleOrders.map((order) => (
+              <OrderRow
+                key={order.id}
+                order={order}
+                updatingOrderId={updatingOrderId}
+                onAction={handleAction}
+                onCancel={updateOrderStatus}
+              />
+            ))
+          )}
+        </div>
+      </section>
 
       {undoTarget ? (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
@@ -305,234 +463,6 @@ export default function OrdersPage() {
           >
             Undo
           </button>
-        </div>
-      ) : null}
-
-      <section className="py-4 grid gap-3">
-        {loading ? (
-          <div className="grid gap-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-5 animate-pulse">
-                <div className="h-4 bg-muted rounded w-1/3 mb-3" />
-                <div className="h-6 bg-muted rounded w-1/2 mb-2" />
-                <div className="h-4 bg-muted rounded w-2/3" />
-              </div>
-            ))}
-          </div>
-        ) : groupedOrders.active.length === 0 && groupedOrders.done.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-muted-foreground/50">
-                <path d="M3 9h18M9 3v6m6-6v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <rect x="4" y="9" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </div>
-            <h2 className="text-lg font-semibold text-foreground">No orders yet</h2>
-            <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-              {acceptingOrders
-                ? "Waiting for customers to scan a QR code and place an order. It'll show up here instantly."
-                : "Turn on accepting orders above to start receiving orders."}
-            </p>
-          </div>
-        ) : (
-          <>
-            {groupedOrders.active.map((order) => {
-              const meta = statusMeta(order.status);
-              const elapsed = timeAgo(order.createdAt);
-              const isUrgent =
-                order.status === "pending" &&
-                Date.now() - new Date(order.createdAt).getTime() > 120000;
-
-              return (
-                <div
-                  key={order.id}
-                  className={`rounded-xl border-2 p-4 transition-all ${
-                    order.status === "pending"
-                      ? isUrgent
-                        ? "border-destructive/60 bg-destructive/[0.04]"
-                        : "border-l-4 border-l-destructive border-border bg-card"
-                      : "border-l-4 border-l-warning border-border bg-card"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-foreground leading-none">
-                        Table {order.tableNumber}
-                      </span>
-                      {order.status === "pending" && isUrgent ? (
-                        <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-bold bg-destructive/10 text-destructive uppercase tracking-wider animate-pulse">
-                          Urgent
-                        </span>
-                      ) : null}
-                    </div>
-                    <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                      {elapsed}
-                    </span>
-                  </div>
-
-                  <div className="mb-3">
-                    {order.itemsSummary ? (
-                      <p className="text-sm text-foreground font-medium">
-                        {order.itemsSummary}
-                      </p>
-                    ) : null}
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-muted-foreground">#{order.id}</span>
-                      <span className="text-base font-bold text-foreground tabular-nums">
-                        {formatCurrency(order.totalAmount)}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {meta.next ? (
-                      <button
-                        type="button"
-                        onClick={() => handleAction(order.id, order.status)}
-                        disabled={updatingOrderId === order.id}
-                        className={`flex-1 inline-flex items-center justify-center h-12 rounded-xl text-base font-bold transition-colors disabled:opacity-50 ${
-                          order.status === "pending"
-                            ? "bg-success text-white hover:bg-success/90 active:bg-success/80"
-                            : "bg-warning text-white hover:bg-warning/90 active:bg-warning/80"
-                        }`}
-                      >
-                        {updatingOrderId === order.id
-                          ? "Updating..."
-                          : meta.nextLabel}
-                      </button>
-                    ) : null}
-                    {order.status === "pending" ? (
-                      <button
-                        type="button"
-                        onClick={() => updateOrderStatus(order.id, "cancelled")}
-                        disabled={updatingOrderId === order.id}
-                        className="inline-flex items-center justify-center h-12 w-12 rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                        aria-label="Cancel order"
-                      >
-                        <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5">
-                          <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-
-            {groupedOrders.done.length > 0 ? (
-              <details className="mt-4">
-                <summary className="text-sm text-muted-foreground cursor-pointer py-2 hover:text-foreground transition-colors">
-                  Completed ({groupedOrders.done.length})
-                </summary>
-                <div className="grid gap-2 mt-2">
-                  {groupedOrders.done.map((order) => (
-                    <div
-                      key={order.id}
-                      className="rounded-lg border border-border bg-muted/30 p-3 opacity-70"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-foreground">
-                          Table {order.tableNumber}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {order.status === "completed" ? "Served" : "Cancelled"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-muted-foreground">
-                          {order.itemsSummary || `#${order.id}`}
-                        </span>
-                        <span className="text-sm font-semibold text-foreground tabular-nums">
-                          {formatCurrency(order.totalAmount)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-          </>
-        )}
-      </section>
-
-      {kitchenFullscreen ? (
-        <div
-          ref={fullscreenRef}
-          className="fixed inset-0 z-50 bg-background overflow-y-auto p-4"
-        >
-          <div className="flex items-center justify-between mb-4 sticky top-0 bg-background z-10 pb-2">
-            <h2 className="text-lg font-bold text-foreground">Orders</h2>
-            <button
-              type="button"
-              onClick={toggleKitchenFullscreen}
-              className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
-            >
-              Exit fullscreen
-            </button>
-          </div>
-          <div className="grid gap-3 max-w-3xl mx-auto">
-            {groupedOrders.active.length === 0 && groupedOrders.done.length === 0 ? (
-              <p className="text-center text-muted-foreground py-16">No orders yet</p>
-            ) : (
-              <>
-                {groupedOrders.active.map((order) => {
-                  const meta = statusMeta(order.status);
-                  const elapsed = timeAgo(order.createdAt);
-                  const isUrgent =
-                    order.status === "pending" &&
-                    Date.now() - new Date(order.createdAt).getTime() > 120000;
-
-                  return (
-                    <div
-                      key={order.id}
-                      className={`rounded-xl border-2 p-4 transition-all ${
-                        order.status === "pending"
-                          ? isUrgent
-                            ? "border-destructive/60 bg-destructive/[0.04]"
-                            : "border-l-4 border-l-destructive border-border bg-card"
-                          : "border-l-4 border-l-warning border-border bg-card"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <span className="text-2xl font-bold text-foreground leading-none">
-                          Table {order.tableNumber}
-                        </span>
-                        <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                          {elapsed}
-                        </span>
-                      </div>
-                      <div className="mb-3">
-                        {order.itemsSummary ? (
-                          <p className="text-sm text-foreground font-medium">{order.itemsSummary}</p>
-                        ) : null}
-                        <div className="flex items-center gap-3 mt-1">
-                          <span className="text-base font-bold text-foreground tabular-nums">
-                            {formatCurrency(order.totalAmount)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {meta.next ? (
-                          <button
-                            type="button"
-                            onClick={() => handleAction(order.id, order.status)}
-                            disabled={updatingOrderId === order.id}
-                            className={`flex-1 inline-flex items-center justify-center h-12 rounded-xl text-base font-bold transition-colors disabled:opacity-50 ${
-                              order.status === "pending"
-                                ? "bg-success text-white hover:bg-success/90 active:bg-success/80"
-                                : "bg-warning text-white hover:bg-warning/90 active:bg-warning/80"
-                            }`}
-                          >
-                            {updatingOrderId === order.id ? "Updating..." : meta.nextLabel}
-                          </button>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-          </div>
         </div>
       ) : null}
     </>

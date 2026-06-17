@@ -54,5 +54,6 @@ Route::middleware('owner')->group(function () {
 
 Route::prefix('/public')->group(function () {
     Route::get('/restaurants/{ref}/order-context', [PublicController::class, 'orderContext']);
+    Route::get('/restaurants/{ref}/orders', [PublicController::class, 'tableOrders']);
     Route::post('/restaurants/{ref}/orders', [PublicController::class, 'placeOrder'])->middleware('throttle:10,1');
 });

@@ -40,23 +40,33 @@ class OrderController extends Controller
                 ini_set('zlib.output_compression', '0');
             }
 
+            $lastDigest = null;
             $lastHeartbeat = time();
+            $first = true;
 
             while (true) {
                 if (connection_aborted()) {
                     break;
                 }
 
-                $orders = $this->orderService->getOrders($restaurantId);
-                $summary = $this->orderService->getOrderSummary($orders);
+                $digest = $this->orderService->getOrdersDigest($restaurantId);
+                $digestHash = md5(json_encode($digest));
 
-                echo "event: orders\n";
-                echo "data: " . json_encode(['orders' => $orders, 'orderSummary' => $summary]) . "\n\n";
+                if ($first || $digestHash !== $lastDigest) {
+                    $orders = $this->orderService->getOrders($restaurantId);
+                    $summary = $this->orderService->getOrderSummary($orders);
 
-                if (ob_get_level() > 0) {
-                    ob_flush();
+                    echo "event: orders\n";
+                    echo "data: " . json_encode(['orders' => $orders, 'orderSummary' => $summary]) . "\n\n";
+
+                    $lastDigest = $digestHash;
+                    $first = false;
+
+                    if (ob_get_level() > 0) {
+                        ob_flush();
+                    }
+                    flush();
                 }
-                flush();
 
                 $now = time();
                 if ($now - $lastHeartbeat >= 15) {

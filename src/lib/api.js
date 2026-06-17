@@ -1,5 +1,12 @@
 export async function apiRequest(path, options = {}) {
-  const { method = "GET", body, formData, signal } = options;
+  const { method = "GET", body, formData, signal: externalSignal, timeout = 30000 } = options;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  const signal = externalSignal
+    ? anySignal([externalSignal, controller.signal])
+    : controller.signal;
 
   const requestOptions = {
     method,
@@ -16,19 +23,41 @@ export async function apiRequest(path, options = {}) {
     };
   }
 
-  const response = await fetch(`/api${path}`, requestOptions);
-  const contentType = response.headers.get("content-type") || "";
-  const payload = contentType.includes("application/json")
-    ? await response.json()
-    : await response.text();
+  try {
+    const response = await fetch(`/api${path}`, requestOptions);
+    const contentType = response.headers.get("content-type") || "";
+    const payload = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text();
 
-  if (!response.ok) {
-    const message =
-      typeof payload === "object" && payload && "error" in payload
-        ? payload.error
-        : "Request failed.";
-    throw new Error(message);
+    if (!response.ok) {
+      const message =
+        typeof payload === "object" && payload && "error" in payload
+          ? payload.error
+          : "Request failed.";
+      throw new Error(message);
+    }
+
+    return payload;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      console.warn(`Request to ${path} timed out after ${timeout}ms`);
+      throw new Error("Request timed out. Please check your connection and try again.");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
+}
 
-  return payload;
+function anySignal(signals) {
+  const controller = new AbortController();
+  for (const sig of signals) {
+    if (sig.aborted) {
+      controller.abort(sig.reason);
+      return controller.signal;
+    }
+    sig.addEventListener("abort", () => controller.abort(sig.reason), { once: true });
+  }
+  return controller.signal;
 }

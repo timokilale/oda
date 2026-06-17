@@ -6,10 +6,10 @@ import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 
 const SETUP_STEPS = [
-  { id: "menu", label: "Add your first menu items", description: "What's on the menu? Add a few items to get started." },
-  { id: "table", label: "Create a table", description: "Every table needs a QR code so customers can order." },
-  { id: "order", label: "Place a test order", description: "Scan your table QR and place an order to see it in action." },
-  { id: "live", label: "Go live", description: "Turn on accepting orders and share your menu." },
+  { id: "menu", label: "Add your first items", description: "What's on the menu?" },
+  { id: "table", label: "Create a table", description: "Every table needs a QR code." },
+  { id: "order", label: "Place a test order", description: "Place an order to see it in action." },
+  { id: "live", label: "Go live", description: "Turn on accepting orders." },
 ];
 
 function StepCircle({ done, current }) {
@@ -182,7 +182,7 @@ export default function SetupPage() {
           <p className="text-sm text-muted-foreground mt-2">
             {setupProgress < 4
               ? `${setupProgress} of 4 steps done`
-              : "All done! You're ready to go live."}
+              : "All done!"}
           </p>
         </div>
 
@@ -284,7 +284,7 @@ export default function SetupPage() {
                           disabled={addingItem || !newMenuItem.name.trim() || !newMenuItem.price.trim()}
                           className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 w-fit"
                         >
-                          {addingItem ? "Adding..." : "Quick add item"}
+                          {addingItem ? "Adding..." : "Add item"}
                         </button>
                       </form>
                     ) : null}
@@ -303,9 +303,6 @@ export default function SetupPage() {
 
                     {isCurrent && s.id === "order" ? (
                       <div className="mt-3 grid gap-2">
-                        <p className="text-sm text-muted-foreground">
-                          Open the customer menu and place a test order to see how it flows.
-                        </p>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -346,9 +343,9 @@ export default function SetupPage() {
 
         {setupProgress === 4 ? (
           <div className="mt-8 text-center">
-            <h2 className="text-xl font-bold text-foreground">You're live! 🎉</h2>
+            <h2 className="text-xl font-bold text-foreground">You're live!</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Your restaurant is ready to accept orders. Share your QR codes with customers.
+              Your restaurant is ready to accept orders.
             </p>
             <button
               type="button"

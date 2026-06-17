@@ -63,7 +63,7 @@ export default function TablesCreatePage() {
     if (incompleteIndex >= 0) {
       setFlash({
         type: "error",
-        message: `Open table card ${incompleteIndex + 1} from the board and complete it before creating tables.`,
+        message: `Complete table card ${incompleteIndex + 1} before creating tables.`,
       });
       return;
     }
@@ -80,7 +80,7 @@ export default function TablesCreatePage() {
     });
 
     if (duplicateIndex >= 0) {
-      setFlash({ type: "error", message: "Each table number must be unique in this batch." });
+      setFlash({ type: "error", message: "Each table number must be unique." });
       return;
     }
 
@@ -123,9 +123,6 @@ export default function TablesCreatePage() {
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
               Create tables
             </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Create table cards in a compact board, then open any card to set or change its table number.
-          </p>
         </div>
         <Link
           to={`/restaurants/${restaurant.id}/tables`}
@@ -141,7 +138,7 @@ export default function TablesCreatePage() {
             <div>
               <h2 className="text-lg font-semibold text-foreground">Table board</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                {completedCount} of {drafts.length} table card{drafts.length === 1 ? "" : "s"} ready to generate.
+                {completedCount} of {drafts.length} ready.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -151,7 +148,7 @@ export default function TablesCreatePage() {
                 onClick={createDraft}
                 disabled={submitting}
               >
-                Add table card
+                Add table
               </button>
               <button
                 type="submit"
@@ -185,18 +182,16 @@ export default function TablesCreatePage() {
                 onClick={() => setEditingDraftId(draft.id)}
               >
                 <span className="text-xs font-mono text-muted-foreground block mb-3">
-                  Table card {index + 1}
+                  Table {index + 1}
                 </span>
                 {tableNumber ? (
                   <>
                     <strong className="block text-sm font-medium text-foreground">Table {tableNumber}</strong>
-                    <span className="block text-xs text-muted-foreground mt-1">QR access will be generated when you publish this board.</span>
                   </>
                 ) : (
                   <>
                     <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-lg mb-2" aria-hidden="true">+</span>
-                    <strong className="block text-sm font-medium text-foreground">Configure table</strong>
-                    <span className="block text-xs text-muted-foreground mt-1">Tap to set the table number for this card.</span>
+                    <strong className="block text-sm font-medium text-foreground">Set table number</strong>
                   </>
                 )}
               </button>
@@ -208,7 +203,6 @@ export default function TablesCreatePage() {
       <WorkspaceDialog
         open={Boolean(editingDraft)}
         title={editingDraft?.tableNumber ? `Table ${editingDraft.tableNumber}` : "Table details"}
-        description="Set the table number here, then close the popup to return to the board."
         onClose={() => setEditingDraftId(null)}
         footer={
           editingDraft ? (
@@ -220,7 +214,7 @@ export default function TablesCreatePage() {
                   onClick={() => removeDraft(editingDraft.id)}
                   disabled={submitting}
                 >
-                  Remove card
+                  Remove
                 </button>
               ) : <span />}
               <button
@@ -247,7 +241,6 @@ export default function TablesCreatePage() {
               value={editingDraft.tableNumber}
               onChange={(event) => updateDraft(editingDraft.id, { tableNumber: event.target.value })}
             />
-            <p className="text-xs text-muted-foreground">Keep each number unique so staff can match the right QR card to the right table.</p>
           </div>
         ) : null}
       </WorkspaceDialog>

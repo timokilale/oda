@@ -21,13 +21,10 @@ export default function MenuCatalogTable({
     <section className="rounded-xl border border-border bg-card p-5">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Menu items</h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Available items are shown to customers. Sold out items are hidden from today's menu.
-          </p>
+          <h2 className="text-lg font-semibold text-foreground">Items</h2>
         </div>
         <SegmentedControl
-          label="Menu item filter"
+          label="Filter"
           options={MENU_FILTER_OPTIONS}
           value={filter}
           onChange={onFilterChange}
@@ -106,14 +103,9 @@ export default function MenuCatalogTable({
             {filter === "archived"
               ? "No sold out items"
               : filter === "all"
-                ? "No menu items yet"
+                ? "No items yet"
                 : "No available items"}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            {filter === "archived"
-              ? "Items you mark as sold out will appear here."
-              : "Add items to your menu so customers can see what's available."}
-          </p>
         </div>
       )}
     </section>

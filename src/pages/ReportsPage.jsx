@@ -69,7 +69,7 @@ export default function ReportsPage() {
           </div>
           <h2 className="text-lg font-semibold text-foreground">Not enough data yet</h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-            Reports unlock after 10 completed orders. Right now, focus on getting orders through — the numbers will follow.
+            Reports unlock after 10 completed orders.
           </p>
         </section>
       </>
@@ -100,11 +100,10 @@ export default function ReportsPage() {
         <>
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs text-muted-foreground font-medium">Order revenue *</p>
+              <p className="text-xs text-muted-foreground font-medium">Revenue</p>
               <p className="text-2xl font-bold tabular-nums text-foreground mt-1">
                 {reports ? formatCurrency(reports.revenueTotal) : formatCurrency(0)}
               </p>
-              <p className="text-[11px] text-muted-foreground/60 mt-1">* Total order value before payouts or fees</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-xs text-muted-foreground font-medium">Orders</p>

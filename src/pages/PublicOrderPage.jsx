@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import FlashStack from "../components/FlashStack.jsx";
 import CartStrip from "../components/public-order/CartStrip.jsx";
@@ -13,6 +13,156 @@ import { Input } from "../components/ui/input.jsx";
 import { apiRequest } from "../lib/api.js";
 import { formatCurrency } from "../lib/format.js";
 import { filterMenuNodes } from "../lib/public-order/filterMenuNodes.js";
+
+const ORDER_LABELS = {
+  pending: { label: "Waiting", icon: "🕐", color: "text-amber-600 bg-amber-50 border-amber-200" },
+  confirmed: { label: "Cooking", icon: "👨‍🍳", color: "text-orange-600 bg-orange-50 border-orange-200" },
+  completed: { label: "Served", icon: "✅", color: "text-green-600 bg-green-50 border-green-200" },
+  cancelled: { label: "Cancelled", icon: "—", color: "text-gray-500 bg-gray-50 border-gray-200" },
+};
+
+function orderStatusMeta(status) {
+  return ORDER_LABELS[status] || ORDER_LABELS.pending;
+}
+
+function TabBar({ activeTab, onTabChange, tableNumber }) {
+  return (
+    <div className="flex items-center gap-1 rounded-lg border border-border bg-muted p-1">
+      {[
+        { value: "menu", label: "Menu" },
+        { value: "status", label: "Status" },
+      ].map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          onClick={() => onTabChange(tab.value)}
+          className={`inline-flex items-center justify-center h-8 px-4 rounded text-sm font-medium transition-colors ${
+            activeTab === tab.value
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {tab.label}
+          {tab.value === "status" && tableNumber ? (
+            <LiveDot />
+          ) : null}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function LiveDot() {
+  return (
+    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+  );
+}
+
+function OrderStatusView({ restaurantRef, tableQuery, onNewOrder }) {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadOrders = useCallback(async () => {
+    try {
+      const data = await apiRequest(
+        `/public/restaurants/${encodeURIComponent(restaurantRef)}/orders?table=${encodeURIComponent(tableQuery)}`
+      );
+      setOrders(data.orders || []);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, [restaurantRef, tableQuery]);
+
+  useEffect(() => {
+    setLoading(true);
+    loadOrders();
+    const interval = setInterval(loadOrders, 5000);
+    return () => clearInterval(interval);
+  }, [loadOrders]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12 text-muted-foreground text-sm">
+        Loading orders...
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-muted-foreground/50">
+            <path d="M3 9h18M9 3v6m6-6v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <rect x="4" y="9" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </div>
+        <h3 className="text-base font-semibold text-foreground">No orders yet</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Place an order from the Menu tab and it will appear here.
+        </p>
+        <button
+          type="button"
+          onClick={onNewOrder}
+          className="mt-4 inline-flex items-center justify-center h-10 px-5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Browse menu
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {orders.map((order) => (
+        <OrderCard key={order.id} order={order} />
+      ))}
+    </div>
+  );
+}
+
+function OrderCard({ order }) {
+  const orderMeta = orderStatusMeta(order.status);
+  const created = order.createdAt
+    ? new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "";
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Order #{order.id}
+          <span className="ml-2 font-mono font-normal normal-case">{created}</span>
+        </div>
+        <span
+          className={`inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-xs font-medium border ${orderMeta.color}`}
+        >
+          <span>{orderMeta.icon}</span>
+          <span>{orderMeta.label}</span>
+        </span>
+      </div>
+      <ul className="flex flex-col gap-2">
+        {order.items.map((item, idx) => (
+          <li key={idx} className="flex items-center justify-between text-sm">
+            <span className="text-foreground">
+              <span className="font-mono text-muted-foreground mr-1.5">{item.quantity}×</span>
+              {item.name}
+            </span>
+            <span className="font-mono text-foreground">{formatCurrency(item.price * item.quantity)}</span>
+          </li>
+        ))}
+      </ul>
+      {order.totalAmount > 0 ? (
+        <div className="flex items-center justify-between pt-3 mt-3 border-t border-border text-sm">
+          <span className="text-muted-foreground font-medium">Total</span>
+          <strong className="font-mono text-foreground">{formatCurrency(order.totalAmount)}</strong>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function PublicOrderPageInner() {
   const { restaurantRef } = useParams();
@@ -32,6 +182,7 @@ function PublicOrderPageInner() {
   const [selectedCategoryIndex, setSelectedCategoryIndex] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [orderResult, setOrderResult] = useState(null);
+  const [activeTab, setActiveTab] = useState("menu");
   const headerRef = useRef(null);
   const categoryNavRef = useRef(null);
   const cartRef = useRef(null);
@@ -41,7 +192,7 @@ function PublicOrderPageInner() {
     setTableInput(tableQuery);
   }, [tableQuery]);
 
-  const headerH = menuIsReady ? 104 : 56;
+  const headerH = menuIsReady ? 134 : 56;
 
   const filteredRoots = useMemo(
     () =>
@@ -124,7 +275,7 @@ function PublicOrderPageInner() {
     if (!tableQuery) {
       return (
         <InfoCard eyebrow="Welcome" title="Find your table">
-          <p>Enter the table number from your table tent, or ask a member of staff.</p>
+          <p>Enter the table number from your table tent.</p>
           <div className="mt-4">
             <TableLookupForm tableInput={tableInput} onTableInputChange={setTableInput} onSubmit={handleLookup} />
           </div>
@@ -150,7 +301,7 @@ function PublicOrderPageInner() {
     if (!menuIsReady) {
       return (
         <InfoCard eyebrow="Menu unavailable" title="This table is ready, but the menu is empty">
-          <p>Ask staff to publish active dishes for this restaurant, then refresh the page.</p>
+          <p>Ask staff to add items to the menu, then refresh the page.</p>
         </InfoCard>
       );
     }
@@ -180,7 +331,7 @@ function PublicOrderPageInner() {
     }
 
     if (searchTerm) {
-      return <div className="text-center py-20 text-muted-foreground text-sm">No dishes matched “{searchTerm}”. Try a broader search.</div>;
+      return <div className="text-center py-20 text-muted-foreground text-sm">No items matched “{searchTerm}”. Try a broader search.</div>;
     }
 
     return <div className="text-center py-20 text-muted-foreground text-sm">This category has no items.</div>;
@@ -203,7 +354,13 @@ function PublicOrderPageInner() {
             ) : null}
           </div>
 
-          {menuIsReady ? (
+          {tableQuery ? (
+            <div className="px-4 pb-3">
+              <TabBar activeTab={activeTab} onTabChange={setActiveTab} tableNumber={tableQuery} />
+            </div>
+          ) : null}
+
+          {menuIsReady && activeTab === "menu" ? (
             <div className="px-4 pb-3">
               <div className="flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-muted">
                 <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4 shrink-0 text-muted-foreground">
@@ -213,7 +370,7 @@ function PublicOrderPageInner() {
                 <Input
                   ref={searchInputRef}
                   type="search"
-                  placeholder="Search dishes..."
+                  placeholder="Search menu..."
                   autoComplete="off"
                   aria-label="Search menu"
                   value={searchTerm}
@@ -227,7 +384,7 @@ function PublicOrderPageInner() {
       </header>
 
       <div style={{ paddingTop: headerH }}>
-        {menuIsReady ? (
+        {menuIsReady && activeTab === "menu" ? (
           <MenuCategoryNav
             roots={filteredRoots}
             selectedIndex={selectedCategoryIndex}
@@ -238,7 +395,15 @@ function PublicOrderPageInner() {
         ) : null}
 
         <main className="px-3 py-4 max-w-4xl mx-auto pb-28">
-          {renderMain()}
+          {tableQuery && activeTab === "status" ? (
+            <OrderStatusView
+              restaurantRef={restaurantRef}
+              tableQuery={context?.tableNumber || tableQuery}
+              onNewOrder={() => setActiveTab("menu")}
+            />
+          ) : (
+            renderMain()
+          )}
         </main>
       </div>
 
@@ -309,7 +474,7 @@ function OrderResultDialog({ orderResult, onDismiss }) {
         <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Order placed</p>
         <h2 className="text-2xl font-semibold leading-tight text-foreground">Order #{orderResult.orderId}</h2>
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          Table {orderResult.tableNumber} — your order is pending. The kitchen has been notified.
+          Table {orderResult.tableNumber} — your order is pending.
         </p>
         <div className="mt-4 p-4 rounded-xl bg-muted">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">

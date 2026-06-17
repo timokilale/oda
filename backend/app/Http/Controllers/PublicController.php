@@ -41,4 +41,16 @@ class PublicController extends Controller
             'successMessage' => 'Order placed successfully.',
         ], 201);
     }
+
+    public function tableOrders(Request $request, string $ref)
+    {
+        $tableRef = trim($request->input('table', ''));
+        if (!$tableRef) {
+            return response()->json(['error' => 'Table is required.'], 400);
+        }
+
+        return response()->json(
+            $this->publicService->getTableOrders($ref, $tableRef)
+        );
+    }
 }

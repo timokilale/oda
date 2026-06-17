@@ -112,6 +112,74 @@ class PublicService
         });
     }
 
+    public function getTableOrders(string $ref, string $tableRef): array
+    {
+        $restaurant = $this->resolveRestaurant($ref);
+        $tableNumber = $this->resolveTable($restaurant->id, $tableRef);
+        if (!$tableNumber) {
+            abort(404, 'Table not found.');
+        }
+
+        $orders = DB::table('orders')
+            ->where('restaurant_id', $restaurant->id)
+            ->where('table_number', $tableNumber)
+            ->orderByDesc('id')
+            ->get();
+
+        if ($orders->isEmpty()) {
+            return ['orders' => []];
+        }
+
+        $orderIds = $orders->pluck('id');
+
+        $items = DB::table('order_items')
+            ->join('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
+            ->whereIn('order_items.order_id', $orderIds)
+            ->select(
+                'order_items.order_id',
+                'order_items.quantity',
+                'menu_items.id as menu_item_id',
+                'menu_items.name',
+                'menu_items.price',
+            )
+            ->get()
+            ->groupBy('order_id');
+
+        $menuItemNames = [];
+        foreach ($items as $orderId => $orderItems) {
+            $menuItemNames[$orderId] = $orderItems->map(fn($i) => [
+                'name' => $i->name,
+                'quantity' => (int) $i->quantity,
+                'price' => (float) $i->price,
+            ]);
+        }
+
+        $orderStatuses = DB::table('orders')
+            ->whereIn('id', $orderIds)
+            ->select('id', 'status', 'created_at')
+            ->get()
+            ->keyBy('id');
+
+        $mapped = $orders->map(function ($order) use ($menuItemNames, $orderStatuses) {
+            $orderId = $order->id;
+            $status = $orderStatuses[$orderId]->status ?? 'pending';
+            $created = $orderStatuses[$orderId]->created_at ?? $order->created_at;
+            $orderItems = $menuItemNames[$orderId] ?? collect();
+
+            $total = $orderItems->sum(fn($i) => $i['price'] * $i['quantity']);
+
+            return [
+                'id' => $orderId,
+                'status' => $status,
+                'createdAt' => $created,
+                'totalAmount' => $total,
+                'items' => $orderItems->toArray(),
+            ];
+        });
+
+        return ['orders' => $mapped->toArray()];
+    }
+
     private function resolveRestaurant(string $ref): Restaurant
     {
         $restaurant = Restaurant::where('public_slug', $ref)->orWhere('id', $ref)->first();

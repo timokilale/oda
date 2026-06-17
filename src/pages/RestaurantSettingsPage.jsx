@@ -71,7 +71,7 @@ export default function RestaurantSettingsPage() {
         formData,
       });
       await refreshWorkspace();
-      setFlash({ type: "success", message: "Restaurant settings saved." });
+      setFlash({ type: "success", message: "Settings saved." });
     } catch (error) {
       setFlash({ type: "error", message: error.message });
     } finally {
@@ -138,9 +138,6 @@ export default function RestaurantSettingsPage() {
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
               Settings
             </h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            Update the details customers and staff rely on every day.
-          </p>
         </div>
       </section>
 
@@ -148,9 +145,6 @@ export default function RestaurantSettingsPage() {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-foreground">Profile</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Public links and existing table QR codes stay the same when you edit these details.
-            </p>
           </div>
 
           <form className="grid gap-3" onSubmit={handleSubmit}>
@@ -183,9 +177,6 @@ export default function RestaurantSettingsPage() {
                 <option value="true">Active</option>
                 <option value="false">Inactive</option>
               </select>
-              <p className="text-xs text-muted-foreground">
-                Inactive restaurants stay in your workspace but should be treated as paused.
-              </p>
             </div>
 
             <div className="grid gap-1.5">
@@ -210,7 +201,6 @@ export default function RestaurantSettingsPage() {
                 className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                 id="restaurant_settings_city"
                 type="text"
-                placeholder="e.g. Nairobi"
                 value={form.city}
                 onChange={(event) => setForm((current) => ({ ...current, city: event.target.value }))}
               />
@@ -224,7 +214,6 @@ export default function RestaurantSettingsPage() {
                 className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                 id="restaurant_settings_country"
                 type="text"
-                placeholder="e.g. Kenya"
                 value={form.country}
                 onChange={(event) =>
                   setForm((current) => ({ ...current, country: event.target.value }))
@@ -241,7 +230,6 @@ export default function RestaurantSettingsPage() {
                 id="restaurant_settings_phone"
                 type="tel"
                 inputMode="tel"
-                placeholder="+254700000000"
                 value={form.phone}
                 onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
               />
@@ -288,9 +276,6 @@ export default function RestaurantSettingsPage() {
                 >
                   {form.removeImage ? "Keep image" : "Remove image"}
                 </button>
-                {form.removeImage ? (
-                  <span className="text-xs text-muted-foreground">The current image will be removed when you save.</span>
-                ) : null}
               </div>
             ) : null}
 
@@ -300,7 +285,7 @@ export default function RestaurantSettingsPage() {
                 className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 disabled={submitting}
               >
-                {submitting ? "Saving" : "Save settings"}
+                {submitting ? "Saving" : "Save"}
               </button>
             </div>
           </form>
@@ -408,7 +393,7 @@ export default function RestaurantSettingsPage() {
                 }`}
                 role="status"
               >
-                {form.active === "true" ? "Active - accepting orders" : "Inactive - ordering paused"}
+                {form.active === "true" ? "Active" : "Inactive"}
               </span>
             </div>
 
@@ -420,15 +405,6 @@ export default function RestaurantSettingsPage() {
                 </p>
               </div>
             ) : null}
-
-            <div className="grid gap-1.5">
-              <span className="text-sm font-medium text-foreground">How changes take effect</span>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                The dashboard card, workspace header, and reports update after save.
-                Customers see the latest restaurant name and photo the next time they open a table link.
-                Existing QR codes and table links are not affected.
-              </p>
-            </div>
           </div>
         </div>
       </section>

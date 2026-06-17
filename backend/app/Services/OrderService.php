@@ -4,14 +4,18 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Models\Order;
+use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
+    private const MAX_ORDERS = 100;
+
     public function getOrders(string $restaurantId): array
     {
         $orders = Order::where('restaurant_id', $restaurantId)
             ->with(['items.menuItem'])
             ->orderByDesc('id')
+            ->take(self::MAX_ORDERS)
             ->get();
 
         return $orders->map(function ($order) {
@@ -35,12 +39,25 @@ class OrderService
 
     public function getOrderSummary(array $orders): array
     {
+        $pending = 0;
+        $confirmed = 0;
+        $completed = 0;
+        $cancelled = 0;
+        foreach ($orders as $o) {
+            match ($o['status']) {
+                'pending' => $pending++,
+                'confirmed' => $confirmed++,
+                'completed' => $completed++,
+                'cancelled' => $cancelled++,
+                default => null,
+            };
+        }
         return [
             'totalOrderCount' => count($orders),
-            'pendingOrderCount' => count(array_filter($orders, fn($o) => $o['status'] === 'pending')),
-            'confirmedOrderCount' => count(array_filter($orders, fn($o) => $o['status'] === 'confirmed')),
-            'completedOrderCount' => count(array_filter($orders, fn($o) => $o['status'] === 'completed')),
-            'cancelledOrderCount' => count(array_filter($orders, fn($o) => $o['status'] === 'cancelled')),
+            'pendingOrderCount' => $pending,
+            'confirmedOrderCount' => $confirmed,
+            'completedOrderCount' => $completed,
+            'cancelledOrderCount' => $cancelled,
         ];
     }
 
@@ -63,5 +80,17 @@ class OrderService
 
         $order->update(['status' => $nextStatus->value]);
         return $nextStatus->value;
+    }
+
+    public function getOrdersDigest(string $restaurantId): array
+    {
+        $rows = DB::table('orders')
+            ->select('id', 'status', 'created_at')
+            ->where('restaurant_id', $restaurantId)
+            ->orderByDesc('id')
+            ->take(self::MAX_ORDERS)
+            ->get()
+            ->toArray();
+        return $rows;
     }
 }

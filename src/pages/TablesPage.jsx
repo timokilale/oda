@@ -229,8 +229,8 @@ export default function TablesPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
             {tables.length
-              ? `${tables.length} table${tables.length !== 1 ? "s" : ""} · Customers scan to view menu & order`
-              : "Create tables so customers can scan and order from their phone."}
+              ? `${tables.length} table${tables.length !== 1 ? "s" : ""}`
+              : ""}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0 mt-6">
@@ -332,7 +332,7 @@ export default function TablesPage() {
             </div>
             <h2 className="text-lg font-semibold text-foreground">No tables yet</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Add a table to generate its QR code. Customers scan to view your menu and order.
+              Add a table to generate its QR code.
             </p>
           </div>
         )}
@@ -342,8 +342,8 @@ export default function TablesPage() {
         open={Boolean(deleteTarget)}
         title={`Delete Table ${deleteTarget?.tableNumber || ""}?`}
         message="This will permanently delete the QR code for this table. Any printed copies will stop working."
-        confirmLabel="Delete table"
-        cancelLabel="Keep table"
+        confirmLabel="Delete"
+        cancelLabel="Keep"
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

@@ -79,7 +79,6 @@ export default function MenuItemEditor({
       <SheetContent side="right" className="w-full sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Edit {editingItem.name}</SheetTitle>
-          <SheetDescription>Update the item details below.</SheetDescription>
         </SheetHeader>
 
         <form className="flex flex-col gap-4 p-4 overflow-y-auto flex-1" onSubmit={handleSubmit}>
@@ -108,7 +107,6 @@ export default function MenuItemEditor({
                   id="menu_item_price"
                   type="text"
                   inputMode="decimal"
-                  placeholder="e.g. 2500"
                   value={form.price}
                   onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
                   required
@@ -123,7 +121,6 @@ export default function MenuItemEditor({
                   className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                   id="menu_item_category"
                   list="menu-category-suggestions"
-                  placeholder="e.g. Drinks"
                   value={form.category}
                   onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
                   required
@@ -148,7 +145,7 @@ export default function MenuItemEditor({
                   }
                 >
                   <option value="available">Available</option>
-                  <option value="archived">Archived (hidden permanently)</option>
+                  <option value="archived">Archived</option>
                 </select>
               </div>
             </div>
@@ -200,9 +197,6 @@ export default function MenuItemEditor({
                 >
                   {form.removeImage ? "Keep image" : "Remove image"}
                 </button>
-                {form.removeImage ? (
-                  <span className="text-xs text-muted-foreground">Will be removed when you save.</span>
-                ) : null}
               </div>
             ) : null}
 
