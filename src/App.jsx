@@ -12,6 +12,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import RestaurantSettingsPage from "./pages/RestaurantSettingsPage.jsx";
 import ReportsPage from "./pages/ReportsPage.jsx";
 import RestaurantLayout from "./pages/RestaurantLayout.jsx";
+import SetupPage from "./pages/SetupPage.jsx";
 import TablesCreatePage from "./pages/TablesCreatePage.jsx";
 import TablesPage from "./pages/TablesPage.jsx";
 
@@ -60,6 +61,14 @@ export default function App() {
             element={
               <ErrorBoundary fallbackMessage="Dashboard crashed">
                 <DashboardPage />
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/setup"
+            element={
+              <ErrorBoundary fallbackMessage="Setup crashed">
+                <SetupPage />
               </ErrorBoundary>
             }
           />

@@ -8,10 +8,9 @@ export default function NotFoundPage() {
     <div className="min-h-dvh flex items-center justify-center bg-background">
       <div className="w-full max-w-[520px] mx-auto px-4 text-center">
         <div className="rounded-xl border border-border bg-card p-6 grid gap-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">404</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground">
-            Page not found
-          </h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
+              Page not found
+            </h1>
           <p className="text-sm text-muted-foreground">
             The page you're looking for doesn't exist or has been moved.
           </p>

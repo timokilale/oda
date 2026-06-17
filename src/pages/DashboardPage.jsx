@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
 import WorkspaceShell from "../components/WorkspaceShell.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
@@ -31,6 +31,10 @@ export default function DashboardPage() {
     loadRestaurants();
   }, [loadRestaurants]);
 
+  if (!loading && restaurants.length === 1) {
+    return <Navigate to={`/restaurants/${restaurants[0].id}/orders`} replace />;
+  }
+
   return (
     <WorkspaceShell
       currentSection="restaurants"
@@ -44,9 +48,8 @@ export default function DashboardPage() {
     >
       <section className="py-6">
         <div className="mb-6">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Owner</p>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
-            Restaurants
+            Your restaurants
           </h1>
         </div>
       </section>
@@ -107,14 +110,13 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="rounded-xl border border-border bg-card p-10 text-center">
-            <svg viewBox="0 0 48 48" fill="none" className="w-14 h-14 mx-auto mb-4 text-muted-foreground/30">
-              <rect x="6" y="18" width="36" height="24" rx="2" stroke="currentColor" strokeWidth="1.5" />
-              <rect x="10" y="22" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
-              <rect x="26" y="22" width="12" height="8" rx="1" stroke="currentColor" strokeWidth="1.2" />
-              <line x1="20" y1="38" x2="28" y2="38" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              <rect x="18" y="6" width="12" height="14" rx="2" stroke="currentColor" strokeWidth="1.2" />
-              <polyline points="24,8 24,12 27,12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-muted-foreground/50">
+                <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </div>
             <h2 className="text-lg font-semibold text-foreground">No restaurants yet</h2>
             <p className="text-sm text-muted-foreground mt-2">
               Use <strong>New restaurant</strong> in the header to create your first workspace.

@@ -53,6 +53,20 @@ export function AuthProvider({ children }) {
       setOwner(data.owner);
       return data;
     },
+    async requestChangePhoneOtp(newPhoneNumber) {
+      return apiRequest("/auth/change-phone/request-otp", {
+        method: "POST",
+        body: { newPhoneNumber },
+      });
+    },
+    async verifyChangePhoneOtp(payload) {
+      const data = await apiRequest("/auth/change-phone/verify-otp", {
+        method: "POST",
+        body: payload,
+      });
+      setOwner(data.owner);
+      return data;
+    },
     async logout() {
       try {
         await apiRequest("/auth/logout", {

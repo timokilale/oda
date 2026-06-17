@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ImagePositionField from "../ImagePositionField.jsx";
 import { createCroppedUpload, MENU_IMAGE_TARGET } from "../../lib/cropImage.js";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "../ui/sheet.jsx";
 
 function buildEmptyForm(defaultCategory = "") {
   return {
@@ -74,176 +75,167 @@ export default function MenuItemEditor({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 mb-6">
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Edit menu item</h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Update details here. New items belong in the dedicated add-items flow.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-          onClick={onCancel}
-          disabled={submitting}
-        >
-          Close editor
-        </button>
-      </div>
+    <Sheet open onOpenChange={(open) => { if (!open) onCancel(); }}>
+      <SheetContent side="right" className="w-full sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>Edit {editingItem.name}</SheetTitle>
+          <SheetDescription>Update the item details below.</SheetDescription>
+        </SheetHeader>
 
-      <form className="grid gap-3" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="grid gap-1.5">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="menu_item_name">
-              Name
-            </label>
-            <input
-              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-              id="menu_item_name"
-              type="text"
-              value={form.name}
-              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-              required
-            />
-          </div>
+        <form className="flex flex-col gap-4 p-4 overflow-y-auto flex-1" onSubmit={handleSubmit}>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="menu_item_name">
+                  Name
+                </label>
+                <input
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
+                  id="menu_item_name"
+                  type="text"
+                  value={form.name}
+                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                  required
+                />
+              </div>
 
-          <div className="grid gap-1.5">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="menu_item_price">
-              Price
-            </label>
-            <input
-              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-              id="menu_item_price"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.price}
-              onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
-              required
-            />
-          </div>
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="menu_item_price">
+                  Price
+                </label>
+                <input
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
+                  id="menu_item_price"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="e.g. 2500"
+                  value={form.price}
+                  onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))}
+                  required
+                />
+              </div>
 
-          <div className="grid gap-1.5">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="menu_item_category">
-              Category
-            </label>
-            <input
-              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-              id="menu_item_category"
-              list="menu-category-suggestions"
-              placeholder="e.g. Drinks or Drinks > Hot Drinks"
-              value={form.category}
-              onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-              required
-            />
-            <p className="text-xs text-muted-foreground">Use " &gt; " to create sub-categories visible to customers.</p>
-            <datalist id="menu-category-suggestions">
-              {categorySuggestions.map((category) => (
-                <option key={category} value={category} />
-              ))}
-            </datalist>
-          </div>
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="menu_item_category">
+                  Category
+                </label>
+                <input
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
+                  id="menu_item_category"
+                  list="menu-category-suggestions"
+                  placeholder="e.g. Drinks"
+                  value={form.category}
+                  onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
+                  required
+                />
+                <datalist id="menu-category-suggestions">
+                  {categorySuggestions.map((category) => (
+                    <option key={category} value={category} />
+                  ))}
+                </datalist>
+              </div>
 
-          <div className="grid gap-1.5">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="menu_item_status">
-              Availability
-            </label>
-            <select
-              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-              id="menu_item_status"
-              value={String(form.active)}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, active: event.target.value === "true" }))
-              }
-            >
-              <option value="true">Active</option>
-              <option value="false">Archived</option>
-            </select>
-          </div>
-        </div>
+              <div className="grid gap-1.5">
+                <label className="text-sm font-medium text-foreground" htmlFor="menu_item_status">
+                  Status
+                </label>
+                <select
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
+                  id="menu_item_status"
+                  value={form.active ? "available" : "archived"}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, active: event.target.value === "available" }))
+                  }
+                >
+                  <option value="available">Available</option>
+                  <option value="archived">Archived (hidden permanently)</option>
+                </select>
+              </div>
+            </div>
 
-        <ImagePositionField
-          inputId="menu_item_image"
-          label="Image"
-          file={form.image}
-          previewUrl={form.image ? "" : form.removeImage ? "" : form.previewUrl}
-          positionX={form.imagePositionX}
-          positionY={form.imagePositionY}
-          aspectRatio={MENU_IMAGE_TARGET.aspectRatio}
-          disabled={submitting}
-          onFileChange={(file) =>
-            setForm((current) => ({
-              ...current,
-              image: file,
-              removeImage: false,
-              imagePositionX: file ? 50 : current.imagePositionX,
-              imagePositionY: file ? 50 : current.imagePositionY,
-            }))
-          }
-          onPositionChange={({ x, y }) =>
-            setForm((current) => ({
-              ...current,
-              imagePositionX: x,
-              imagePositionY: y,
-            }))
-          }
-        />
-
-        {(form.previewUrl || form.image) ? (
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className={`inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
-                form.removeImage
-                  ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
-                  : "border-border bg-background text-foreground hover:bg-muted"
-              }`}
-              onClick={() =>
+            <ImagePositionField
+              inputId="menu_item_image"
+              label="Image"
+              file={form.image}
+              previewUrl={form.image ? "" : form.removeImage ? "" : form.previewUrl}
+              positionX={form.imagePositionX}
+              positionY={form.imagePositionY}
+              aspectRatio={MENU_IMAGE_TARGET.aspectRatio}
+              disabled={submitting}
+              onFileChange={(file) =>
                 setForm((current) => ({
                   ...current,
-                  removeImage: !current.removeImage,
-                  image: null,
+                  image: file,
+                  removeImage: false,
+                  imagePositionX: file ? 50 : current.imagePositionX,
+                  imagePositionY: file ? 50 : current.imagePositionY,
                 }))
               }
+              onPositionChange={({ x, y }) =>
+                setForm((current) => ({
+                  ...current,
+                  imagePositionX: x,
+                  imagePositionY: y,
+                }))
+              }
+            />
+
+            {(form.previewUrl || form.image) ? (
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  className={`inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
+                    form.removeImage
+                      ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
+                      : "border-border bg-background text-foreground hover:bg-muted"
+                  }`}
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      removeImage: !current.removeImage,
+                      image: null,
+                    }))
+                  }
+                  disabled={submitting}
+                >
+                  {form.removeImage ? "Keep image" : "Remove image"}
+                </button>
+                {form.removeImage ? (
+                  <span className="text-xs text-muted-foreground">Will be removed when you save.</span>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="grid gap-1.5">
+              <label className="text-sm font-medium text-foreground" htmlFor="menu_item_description">
+                Description
+              </label>
+              <textarea
+                className="h-10 min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition-colors resize-y"
+                id="menu_item_description"
+                value={form.description}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, description: event.target.value }))
+                }
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-4 border-t border-border">
+            <button type="submit" className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50" disabled={submitting}>
+              {submitting ? "Saving..." : "Save changes"}
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              onClick={onCancel}
               disabled={submitting}
             >
-              {form.removeImage ? "Keep image" : "Remove image"}
+              Cancel
             </button>
-            {form.removeImage ? (
-              <span className="text-xs text-muted-foreground">The current image will be removed when you save.</span>
-            ) : null}
           </div>
-        ) : null}
-
-        <div className="grid gap-1.5">
-          <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="menu_item_description">
-            Description
-          </label>
-          <textarea
-            className="h-8 min-h-[80px] w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm text-foreground transition-colors resize-y"
-            id="menu_item_description"
-            value={form.description}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, description: event.target.value }))
-            }
-          />
-        </div>
-
-        <div className="flex items-center gap-2 pt-2">
-          <button type="submit" className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50" disabled={submitting}>
-            {submitting ? "Saving" : "Save item"}
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-            onClick={onCancel}
-            disabled={submitting}
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </section>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }

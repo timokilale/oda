@@ -1,49 +1,44 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import ConfirmDialog from "../components/ConfirmDialog.jsx";
-import LoadingSkeleton from "../components/LoadingSkeleton.jsx";
-import usePageTitle from "../hooks/usePageTitle.js";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiRequest } from "../lib/api.js";
-import { formatCurrency, formatDateTime } from "../lib/format.js";
+import { formatCurrency } from "../lib/format.js";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
-import { orderStatusBadgeClass, statusBadge } from "../lib/status.js";
 
-const STATUS_FILTER_OPTIONS = [
-  { value: "open", label: "Open" },
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "all", label: "All" },
+const ORDER_STATUSES = [
+  { value: "pending", label: "New", next: "confirmed", nextLabel: "Accept", color: "red" },
+  { value: "confirmed", label: "Cooking", next: "completed", nextLabel: "Serve", color: "amber" },
+  { value: "completed", label: "Served", next: null, nextLabel: null, color: "green" },
+  { value: "cancelled", label: "Cancelled", next: null, nextLabel: null, color: "neutral" },
 ];
 
-const ORDER_BY_OPTIONS = [
-  { value: "placed_desc", label: "Placed: newest first" },
-  { value: "placed_asc", label: "Placed: oldest first" },
-  { value: "order_desc", label: "Order #: highest first" },
-  { value: "order_asc", label: "Order #: lowest first" },
-  { value: "table_asc", label: "Table: A-Z" },
-  { value: "table_desc", label: "Table: Z-A" },
-  { value: "total_desc", label: "Total: high to low" },
-  { value: "total_asc", label: "Total: low to high" },
-  { value: "status_asc", label: "Status: A-Z" },
-];
-
-function compareText(leftValue, rightValue, direction = "asc") {
-  const nextValue = String(leftValue || "").localeCompare(String(rightValue || ""), undefined, {
-    numeric: true,
-    sensitivity: "base",
-  });
-  return direction === "asc" ? nextValue : nextValue * -1;
+function statusMeta(status) {
+  return ORDER_STATUSES.find((s) => s.value === status) || ORDER_STATUSES[3];
 }
 
-function compareNumber(leftValue, rightValue, direction = "asc") {
-  const nextValue = Number(leftValue || 0) - Number(rightValue || 0);
-  return direction === "asc" ? nextValue : nextValue * -1;
+function timeAgo(date) {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m`;
 }
 
-function compareDate(leftValue, rightValue, direction = "desc") {
-  const nextValue = new Date(leftValue).getTime() - new Date(rightValue).getTime();
-  return direction === "asc" ? nextValue : nextValue * -1;
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+    oscillator.frequency.value = 880;
+    oscillator.type = "sine";
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.4);
+  } catch {
+    // Audio not available
+  }
 }
 
 export default function OrdersPage() {
@@ -51,22 +46,31 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("open");
-  const [tableFilter, setTableFilter] = useState("");
-  const [orderBy, setOrderBy] = useState("placed_desc");
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null);
-
-  usePageTitle(`Orders - ${restaurant.name}`);
+  const [lastOrderIds, setLastOrderIds] = useState(new Set());
+  const [acceptingOrders, setAcceptingOrders] = useState(restaurant.active);
+  const [savingToggle, setSavingToggle] = useState(false);
+  const [undoTarget, setUndoTarget] = useState(null);
+  const [kitchenFullscreen, setKitchenFullscreen] = useState(false);
+  const undoTimeoutRef = useRef(null);
+  const fallbackRef = useRef(null);
+  const fullscreenRef = useRef(null);
 
   const loadOrders = useCallback(async () => {
     try {
       const data = await apiRequest(`/restaurants/${restaurant.id}/orders`);
-      setOrders(data.orders);
+      const newOrders = data.orders || [];
+
+      setOrders(newOrders);
       setSummary(data.orderSummary);
-      setLastUpdated(new Date());
+
+      const currentIds = new Set(newOrders.map((o) => o.id));
+      setLastOrderIds((prev) => {
+        if (prev.size > 0 && currentIds.size > prev.size) {
+          playNotificationSound();
+        }
+        return currentIds;
+      });
     } catch (error) {
       setFlash({ type: "error", message: error.message });
     } finally {
@@ -77,309 +81,460 @@ export default function OrdersPage() {
   useEffect(() => {
     setLoading(true);
     loadOrders();
-  }, [loadOrders]);
+
+    const url = `/api/restaurants/${restaurant.id}/orders/sse`;
+    const es = new EventSource(url, { withCredentials: true });
+
+    es.addEventListener("orders", (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setOrders(data.orders);
+        setSummary(data.orderSummary);
+
+        setLastOrderIds((prev) => {
+          const currentIds = new Set(data.orders.map((o) => o.id));
+          if (prev.size > 0 && currentIds.size > prev.size) {
+            playNotificationSound();
+          }
+          return currentIds;
+        });
+      } catch {
+        // ignore parse errors
+      }
+      setLoading(false);
+
+      if (fallbackRef.current) {
+        clearInterval(fallbackRef.current);
+        fallbackRef.current = null;
+      }
+    });
+
+    es.addEventListener("error", () => {
+      if (!fallbackRef.current) {
+        fallbackRef.current = setInterval(loadOrders, 7000);
+      }
+    });
+
+    return () => {
+      es.close();
+      if (fallbackRef.current) {
+        clearInterval(fallbackRef.current);
+      }
+    };
+  }, [restaurant.id, loadOrders]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      loadOrders();
-    }, 15000);
+    setAcceptingOrders(restaurant.active);
+  }, [restaurant.active]);
 
-    return () => window.clearInterval(interval);
-  }, [loadOrders]);
+  useEffect(() => {
+    return () => {
+      if (undoTimeoutRef.current) {
+        clearTimeout(undoTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  function requestStatusUpdate(orderId, status) {
-    const actionLabel =
-      status === "confirmed"
-        ? "confirm this order"
-        : status === "completed"
-          ? "mark this order as completed"
-          : "cancel this order";
+  async function toggleAcceptingOrders() {
+    setSavingToggle(true);
+    const newValue = !acceptingOrders;
 
-    setConfirmAction({ orderId, status, actionLabel });
-    setConfirmOpen(true);
+    try {
+      const formData = new FormData();
+      formData.set("active", String(newValue));
+      await apiRequest(`/restaurants/${restaurant.id}`, {
+        method: "PATCH",
+        formData,
+      });
+      setAcceptingOrders(newValue);
+      await refreshWorkspace();
+    } catch (error) {
+      setFlash({ type: "error", message: error.message });
+    } finally {
+      setSavingToggle(false);
+    }
   }
 
-  async function executeStatusUpdate() {
-    if (!confirmAction) {
-      return;
-    }
-
-    const { orderId, status } = confirmAction;
-    setConfirmOpen(false);
-    setConfirmAction(null);
+  async function updateOrderStatus(orderId, newStatus) {
     clearFlash();
     setUpdatingOrderId(orderId);
+
+    const previousOrders = [...orders];
+
+    setOrders((current) =>
+      current.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
+    );
 
     try {
       await apiRequest(`/restaurants/${restaurant.id}/orders/${orderId}/status`, {
         method: "PATCH",
-        body: { status },
+        body: { status: newStatus },
       });
-      setFlash({ type: "success", message: "Order updated." });
       await Promise.all([loadOrders(), refreshWorkspace()]);
     } catch (error) {
+      setOrders(previousOrders);
       setFlash({ type: "error", message: error.message });
     } finally {
       setUpdatingOrderId(null);
     }
   }
 
-  const visibleOrders = useMemo(() => {
-    const filteredOrders = orders.filter((order) => {
-      if (statusFilter === "open" && !["pending", "confirmed"].includes(order.status)) {
-        return false;
-      }
+  async function handleAction(orderId, currentStatus) {
+    const meta = statusMeta(currentStatus);
+    if (!meta.next) return;
 
-      if (statusFilter !== "all" && statusFilter !== "open" && order.status !== statusFilter) {
-        return false;
-      }
+    await updateOrderStatus(orderId, meta.next);
 
-      if (tableFilter.trim()) {
-        const search = tableFilter.trim().toLowerCase();
-        if (!String(order.tableNumber).toLowerCase().includes(search)) {
-          return false;
+    if (currentStatus === "pending") {
+      setUndoTarget({ orderId, previousStatus: "pending" });
+      if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = setTimeout(() => {
+        setUndoTarget(null);
+      }, 4000);
+    }
+  }
+
+  async function handleUndo() {
+    if (!undoTarget) return;
+    const { orderId, previousStatus } = undoTarget;
+    setUndoTarget(null);
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+    await updateOrderStatus(orderId, previousStatus);
+  }
+
+  function toggleKitchenFullscreen() {
+    if (!kitchenFullscreen) {
+      setKitchenFullscreen(true);
+      try {
+        const el = fullscreenRef.current;
+        if (el && el.requestFullscreen) {
+          el.requestFullscreen();
         }
+      } catch {
+        // fullscreen not supported
       }
-
-      return true;
-    });
-
-    return [...filteredOrders].sort((left, right) => {
-      switch (orderBy) {
-        case "placed_asc":
-          return compareDate(left.createdAt, right.createdAt, "asc");
-        case "order_desc":
-          return compareNumber(left.id, right.id, "desc");
-        case "order_asc":
-          return compareNumber(left.id, right.id, "asc");
-        case "table_asc":
-          return compareText(left.tableNumber, right.tableNumber, "asc");
-        case "table_desc":
-          return compareText(left.tableNumber, right.tableNumber, "desc");
-        case "total_desc":
-          return compareNumber(left.totalAmount, right.totalAmount, "desc");
-        case "total_asc":
-          return compareNumber(left.totalAmount, right.totalAmount, "asc");
-        case "status_asc":
-          return compareText(left.status, right.status, "asc");
-        case "placed_desc":
-        default:
-          return compareDate(left.createdAt, right.createdAt, "desc");
+    } else {
+      setKitchenFullscreen(false);
+      try {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        }
+      } catch {
+        // fullscreen not supported
       }
-    });
-  }, [orderBy, orders, statusFilter, tableFilter]);
+    }
+  }
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      if (!document.fullscreenElement) {
+        setKitchenFullscreen(false);
+      }
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  const groupedOrders = useMemo(() => {
+    const active = orders.filter((o) => ["pending", "confirmed"].includes(o.status));
+    const done = orders.filter((o) => ["completed", "cancelled"].includes(o.status));
+    return { active, done };
+  }, [orders]);
 
   return (
     <>
-      <section className="py-6">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
-            Orders
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2">{restaurant.name}</p>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Total orders</p>
-          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.totalOrderCount ?? 0}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Pending</p>
-          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.pendingOrderCount ?? 0}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Confirmed</p>
-          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.confirmedOrderCount ?? 0}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Completed</p>
-          <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{summary?.completedOrderCount ?? 0}</p>
-        </div>
-      </section>
-
-      <section className="rounded-xl border border-border bg-card p-5 mb-8">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Queue</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              Filter the queue, review what was ordered, and confirm status changes before they go through.
-              {lastUpdated ? (
-                <span className="ml-2 text-muted-foreground/60">Last updated: {lastUpdated.toLocaleTimeString()}</span>
-              ) : null}
+      <div className="sticky top-12 z-20 -mx-4 px-4 bg-background/90 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between py-3">
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-foreground truncate">{restaurant.name}</h1>
+            <p className="text-xs text-muted-foreground">
+              {acceptingOrders ? `${summary?.openOrderCount || 0} open orders` : "Orders paused"}
             </p>
           </div>
-        </div>
 
-        <div className="grid grid-cols-[1.4fr_0.8fr_0.8fr] gap-3 mb-4">
-          <div className="grid gap-1.5">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="order_table_filter">
-              Filter by table name
-            </label>
-            <input
-              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-              id="order_table_filter"
-              type="text"
-              placeholder="e.g. A4"
-              value={tableFilter}
-              onChange={(event) => setTableFilter(event.target.value)}
+          <button
+            type="button"
+            onClick={toggleKitchenFullscreen}
+            className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors shrink-0"
+            aria-label={kitchenFullscreen ? "Exit fullscreen" : "Fullscreen mode"}
+          >
+            <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4">
+              {kitchenFullscreen ? (
+                <>
+                  <path d="M4 12h4v4M16 8h-4V4M4 8h4V4M16 12h-4v4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </>
+              ) : (
+                <>
+                  <path d="M4 8V4h4M16 12v4h-4M4 12v4h4M16 8V4h-4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                </>
+              )}
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={toggleAcceptingOrders}
+            disabled={savingToggle}
+            className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border transition-colors disabled:opacity-50 ${
+              acceptingOrders
+                ? "border-success/40 bg-success text-white"
+                : "border-border bg-muted"
+            }`}
+            role="switch"
+            aria-checked={acceptingOrders}
+            aria-label="Accepting orders"
+          >
+            <span
+              className={`inline-block h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
+                acceptingOrders ? "translate-x-7" : "translate-x-1"
+              }`}
             />
-          </div>
-
-          <div className="grid gap-1.5">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="order_status_filter">
-              Status
-            </label>
-            <select
-              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-              id="order_status_filter"
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
-            >
-              {STATUS_FILTER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid gap-1.5">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="order_sort">
-              Order by
-            </label>
-            <select
-              className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-              id="order_sort"
-              value={orderBy}
-              onChange={(event) => setOrderBy(event.target.value)}
-            >
-              {ORDER_BY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          </button>
         </div>
+      </div>
 
+      {undoTarget ? (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-lg">
+          <span className="text-sm text-foreground">Order accepted</span>
+          <button
+            type="button"
+            className="text-sm font-medium text-primary hover:underline"
+            onClick={handleUndo}
+          >
+            Undo
+          </button>
+        </div>
+      ) : null}
+
+      <section className="py-4 grid gap-3">
         {loading ? (
-          <LoadingSkeleton variant="table-row" count={5} />
-        ) : visibleOrders.length ? (
-            <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm responsive-table">
-              <thead>
-                <tr className="border-b border-border">
-                  <th scope="col" className="text-left py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Order</th>
-                  <th scope="col" className="text-left py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Placed</th>
-                  <th scope="col" className="text-left py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Table</th>
-                  <th scope="col" className="text-left py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Items</th>
-                  <th scope="col" className="text-right py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Total</th>
-                  <th scope="col" className="text-left py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Status</th>
-                  <th scope="col" className="text-right py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                    <td className="py-3 px-3" data-label="Order">#{order.id}</td>
-                    <td className="py-3 px-3 text-muted-foreground" data-label="Placed">{formatDateTime(order.createdAt)}</td>
-                    <td className="py-3 px-3" data-label="Table">{order.tableNumber}</td>
-                    <td className="py-3 px-3 text-muted-foreground max-w-[200px] truncate" data-label="Items">{order.itemsSummary || "-"}</td>
-                    <td className="py-3 px-3 text-right font-mono tabular-nums" data-label="Total">
-                      {formatCurrency(order.totalAmount)}
-                    </td>
-                    <td className="py-3 px-3" data-label="Status">
-                      <span
-                        className={statusBadge(orderStatusBadgeClass(order.status))}
-                        role="status"
-                        aria-label={`Order status: ${order.status}`}
-                      >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3" data-label="Action">
-                      <div className="flex items-center justify-end gap-2">
-                        {order.status === "pending" ? (
-                          <>
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                              onClick={() => requestStatusUpdate(order.id, "confirmed")}
-                              disabled={updatingOrderId === order.id}
-                            >
-                              {updatingOrderId === order.id ? "Updating" : "Confirm"}
-                            </button>
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
-                              onClick={() => requestStatusUpdate(order.id, "cancelled")}
-                              disabled={updatingOrderId === order.id}
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : null}
-
-                        {order.status === "confirmed" ? (
-                          <>
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                              onClick={() => requestStatusUpdate(order.id, "completed")}
-                              disabled={updatingOrderId === order.id}
-                            >
-                              {updatingOrderId === order.id ? "Updating" : "Complete"}
-                            </button>
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
-                              onClick={() => requestStatusUpdate(order.id, "cancelled")}
-                              disabled={updatingOrderId === order.id}
-                            >
-                              Cancel
-                            </button>
-                          </>
-                        ) : null}
-
-                        {!["pending", "confirmed"].includes(order.status) ? (
-                          <span className="text-xs text-muted-foreground">No action</span>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid gap-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-5 animate-pulse">
+                <div className="h-4 bg-muted rounded w-1/3 mb-3" />
+                <div className="h-6 bg-muted rounded w-1/2 mb-2" />
+                <div className="h-4 bg-muted rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+        ) : groupedOrders.active.length === 0 && groupedOrders.done.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+              <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-muted-foreground/50">
+                <path d="M3 9h18M9 3v6m6-6v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <rect x="4" y="9" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">No orders yet</h2>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+              {acceptingOrders
+                ? "Waiting for customers to scan a QR code and place an order. It'll show up here instantly."
+                : "Turn on accepting orders above to start receiving orders."}
+            </p>
           </div>
         ) : (
-          <div className="text-center py-10">
-            <svg viewBox="0 0 48 48" fill="none" className="w-14 h-14 mx-auto mb-3 text-muted-foreground/30">
-              <rect x="8" y="6" width="32" height="36" rx="3" stroke="currentColor" strokeWidth="1.5" />
-              <line x1="14" y1="16" x2="34" y2="16" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              <line x1="14" y1="23" x2="28" y2="23" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-              <path d="M32 30l-5 5-3-2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <p className="text-sm text-muted-foreground">No orders match the current filter.</p>
-          </div>
+          <>
+            {groupedOrders.active.map((order) => {
+              const meta = statusMeta(order.status);
+              const elapsed = timeAgo(order.createdAt);
+              const isUrgent =
+                order.status === "pending" &&
+                Date.now() - new Date(order.createdAt).getTime() > 120000;
+
+              return (
+                <div
+                  key={order.id}
+                  className={`rounded-xl border-2 p-4 transition-all ${
+                    order.status === "pending"
+                      ? isUrgent
+                        ? "border-destructive/60 bg-destructive/[0.04]"
+                        : "border-l-4 border-l-destructive border-border bg-card"
+                      : "border-l-4 border-l-warning border-border bg-card"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-foreground leading-none">
+                        Table {order.tableNumber}
+                      </span>
+                      {order.status === "pending" && isUrgent ? (
+                        <span className="inline-flex items-center h-5 px-2 rounded-full text-[11px] font-bold bg-destructive/10 text-destructive uppercase tracking-wider animate-pulse">
+                          Urgent
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="text-xs font-mono text-muted-foreground tabular-nums">
+                      {elapsed}
+                    </span>
+                  </div>
+
+                  <div className="mb-3">
+                    {order.itemsSummary ? (
+                      <p className="text-sm text-foreground font-medium">
+                        {order.itemsSummary}
+                      </p>
+                    ) : null}
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-muted-foreground">#{order.id}</span>
+                      <span className="text-base font-bold text-foreground tabular-nums">
+                        {formatCurrency(order.totalAmount)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {meta.next ? (
+                      <button
+                        type="button"
+                        onClick={() => handleAction(order.id, order.status)}
+                        disabled={updatingOrderId === order.id}
+                        className={`flex-1 inline-flex items-center justify-center h-12 rounded-xl text-base font-bold transition-colors disabled:opacity-50 ${
+                          order.status === "pending"
+                            ? "bg-success text-white hover:bg-success/90 active:bg-success/80"
+                            : "bg-warning text-white hover:bg-warning/90 active:bg-warning/80"
+                        }`}
+                      >
+                        {updatingOrderId === order.id
+                          ? "Updating..."
+                          : meta.nextLabel}
+                      </button>
+                    ) : null}
+                    {order.status === "pending" ? (
+                      <button
+                        type="button"
+                        onClick={() => updateOrderStatus(order.id, "cancelled")}
+                        disabled={updatingOrderId === order.id}
+                        className="inline-flex items-center justify-center h-12 w-12 rounded-xl border border-border bg-background text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                        aria-label="Cancel order"
+                      >
+                        <svg viewBox="0 0 20 20" fill="none" className="w-5 h-5">
+                          <path d="M5 5l10 10M15 5l-10 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+
+            {groupedOrders.done.length > 0 ? (
+              <details className="mt-4">
+                <summary className="text-sm text-muted-foreground cursor-pointer py-2 hover:text-foreground transition-colors">
+                  Completed ({groupedOrders.done.length})
+                </summary>
+                <div className="grid gap-2 mt-2">
+                  {groupedOrders.done.map((order) => (
+                    <div
+                      key={order.id}
+                      className="rounded-lg border border-border bg-muted/30 p-3 opacity-70"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground">
+                          Table {order.tableNumber}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {order.status === "completed" ? "Served" : "Cancelled"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {order.itemsSummary || `#${order.id}`}
+                        </span>
+                        <span className="text-sm font-semibold text-foreground tabular-nums">
+                          {formatCurrency(order.totalAmount)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
+          </>
         )}
       </section>
 
-      <ConfirmDialog
-        open={confirmOpen}
-        title={`${confirmAction?.status === "cancelled" ? "Cancel" : confirmAction?.status === "completed" ? "Complete" : "Confirm"} order?`}
-        message={`Are you sure you want to ${confirmAction?.actionLabel || "update this order"}?`}
-        confirmLabel={confirmAction?.status === "cancelled" ? "Cancel order" : confirmAction?.status === "completed" ? "Mark complete" : "Confirm order"}
-        cancelLabel="Go back"
-        variant={confirmAction?.status === "cancelled" ? "danger" : "confirm"}
-        onConfirm={executeStatusUpdate}
-        onCancel={() => {
-          setConfirmOpen(false);
-          setConfirmAction(null);
-        }}
-      />
+      {kitchenFullscreen ? (
+        <div
+          ref={fullscreenRef}
+          className="fixed inset-0 z-50 bg-background overflow-y-auto p-4"
+        >
+          <div className="flex items-center justify-between mb-4 sticky top-0 bg-background z-10 pb-2">
+            <h2 className="text-lg font-bold text-foreground">Orders</h2>
+            <button
+              type="button"
+              onClick={toggleKitchenFullscreen}
+              className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
+            >
+              Exit fullscreen
+            </button>
+          </div>
+          <div className="grid gap-3 max-w-3xl mx-auto">
+            {groupedOrders.active.length === 0 && groupedOrders.done.length === 0 ? (
+              <p className="text-center text-muted-foreground py-16">No orders yet</p>
+            ) : (
+              <>
+                {groupedOrders.active.map((order) => {
+                  const meta = statusMeta(order.status);
+                  const elapsed = timeAgo(order.createdAt);
+                  const isUrgent =
+                    order.status === "pending" &&
+                    Date.now() - new Date(order.createdAt).getTime() > 120000;
+
+                  return (
+                    <div
+                      key={order.id}
+                      className={`rounded-xl border-2 p-4 transition-all ${
+                        order.status === "pending"
+                          ? isUrgent
+                            ? "border-destructive/60 bg-destructive/[0.04]"
+                            : "border-l-4 border-l-destructive border-border bg-card"
+                          : "border-l-4 border-l-warning border-border bg-card"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="text-2xl font-bold text-foreground leading-none">
+                          Table {order.tableNumber}
+                        </span>
+                        <span className="text-xs font-mono text-muted-foreground tabular-nums">
+                          {elapsed}
+                        </span>
+                      </div>
+                      <div className="mb-3">
+                        {order.itemsSummary ? (
+                          <p className="text-sm text-foreground font-medium">{order.itemsSummary}</p>
+                        ) : null}
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-base font-bold text-foreground tabular-nums">
+                            {formatCurrency(order.totalAmount)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {meta.next ? (
+                          <button
+                            type="button"
+                            onClick={() => handleAction(order.id, order.status)}
+                            disabled={updatingOrderId === order.id}
+                            className={`flex-1 inline-flex items-center justify-center h-12 rounded-xl text-base font-bold transition-colors disabled:opacity-50 ${
+                              order.status === "pending"
+                                ? "bg-success text-white hover:bg-success/90 active:bg-success/80"
+                                : "bg-warning text-white hover:bg-warning/90 active:bg-warning/80"
+                            }`}
+                          >
+                            {updatingOrderId === order.id ? "Updating..." : meta.nextLabel}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

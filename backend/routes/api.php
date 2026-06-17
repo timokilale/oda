@@ -20,6 +20,8 @@ Route::prefix('/auth')->group(function () {
     Route::post('/register/verify-otp', [AuthController::class, 'verifyRegisterOtp']);
     Route::post('/login/request-otp', [AuthController::class, 'requestLoginOtp']);
     Route::post('/login/verify-otp', [AuthController::class, 'verifyLoginOtp']);
+    Route::post('/change-phone/request-otp', [AuthController::class, 'requestChangePhoneOtp'])->middleware('owner');
+    Route::post('/change-phone/verify-otp', [AuthController::class, 'verifyChangePhoneOtp'])->middleware('owner');
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('owner');
 });
 
@@ -39,6 +41,7 @@ Route::middleware('owner')->group(function () {
     Route::delete('/restaurants/{restaurant}/tables/{table}', [TableController::class, 'destroy']);
 
     Route::get('/restaurants/{restaurant}/orders', [OrderController::class, 'index']);
+    Route::get('/restaurants/{restaurant}/orders/sse', [OrderController::class, 'stream']);
     Route::patch('/restaurants/{restaurant}/orders/{order}/status', [OrderController::class, 'updateStatus']);
 
     Route::get('/restaurants/{restaurant}/reports', [ReportController::class, 'show']);

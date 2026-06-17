@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\RequestChangePhoneOtpRequest;
 use App\Http\Requests\Auth\RequestLoginOtpRequest;
 use App\Http\Requests\Auth\RequestRegisterOtpRequest;
+use App\Http\Requests\Auth\VerifyChangePhoneOtpRequest;
 use App\Http\Requests\Auth\VerifyLoginOtpRequest;
 use App\Http\Requests\Auth\VerifyRegisterOtpRequest;
 use App\Http\Resources\OwnerResource;
@@ -75,6 +77,25 @@ class AuthController extends Controller
         $this->authService->setAuthCookie($response, $result['token']['raw'], $result['token']['expires_at']);
 
         return $response;
+    }
+
+    public function requestChangePhoneOtp(RequestChangePhoneOtpRequest $request)
+    {
+        $result = $this->authService->handleChangePhoneOtp($request);
+
+        $payload = ['message' => 'OTP sent to new phone number.'];
+        if (config('app.env') !== 'production' && config('app.debug')) {
+            $payload['devOtpCode'] = $result['otpCode'];
+        }
+
+        return response()->json($payload, 202);
+    }
+
+    public function verifyChangePhoneOtp(VerifyChangePhoneOtpRequest $request)
+    {
+        $result = $this->authService->verifyChangePhoneOtp($request);
+
+        return response()->json(['owner' => new OwnerResource($result['owner'])]);
     }
 
     public function logout(Request $request)

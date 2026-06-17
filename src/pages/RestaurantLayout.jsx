@@ -165,11 +165,10 @@ export default function RestaurantLayout() {
       <WorkspaceShell currentSection={currentSection} restaurant={restaurant}>
         <section className="py-6">
           <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
               Loading restaurant
             </h1>
-            <p className="text-sm text-muted-foreground mt-2">Preparing the workspace and latest metrics.</p>
+            <p className="text-sm text-muted-foreground mt-2">Preparing your workspace...</p>
           </div>
         </section>
       </WorkspaceShell>
@@ -181,7 +180,6 @@ export default function RestaurantLayout() {
       <WorkspaceShell currentSection={currentSection} restaurant={restaurant}>
         <section className="py-6">
           <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Workspace</p>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
               Restaurant unavailable
             </h1>

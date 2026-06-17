@@ -239,6 +239,75 @@ class AuthService
         });
     }
 
+    public function handleChangePhoneOtp(Request $request): array
+    {
+        $currentOwner = $request->user();
+        $newPhoneNumber = $this->normalizePhoneNumber($request->input('newPhoneNumber'));
+
+        if (!$this->isValidPhoneNumber($newPhoneNumber)) {
+            abort(400, 'Enter a valid phone number.');
+        }
+
+        if ($newPhoneNumber === $currentOwner->phone_number) {
+            abort(400, 'This is already your current phone number.');
+        }
+
+        if (Owner::where('phone_number', $newPhoneNumber)->where('id', '!=', $currentOwner->id)->exists()) {
+            abort(409, 'This phone number is already in use by another account.');
+        }
+
+        $otpCode = $this->generateOtpCode();
+        $expiresAt = now()->addMinutes(10);
+
+        OwnerAuthOtp::where('phone_number', $newPhoneNumber)
+            ->where('purpose', 'change_phone')
+            ->whereNull('consumed_at')
+            ->update(['consumed_at' => now()]);
+
+        OwnerAuthOtp::create([
+            'phone_number' => $newPhoneNumber,
+            'purpose' => 'change_phone',
+            'request_ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'code_hash' => $this->hashOtpCode($newPhoneNumber, 'change_phone', $otpCode),
+            'expires_at' => $expiresAt,
+        ]);
+
+        return [
+            'otpCode' => $otpCode,
+            'phoneNumber' => $newPhoneNumber,
+        ];
+    }
+
+    public function verifyChangePhoneOtp(Request $request): array
+    {
+        $newPhoneNumber = $this->normalizePhoneNumber($request->input('newPhoneNumber'));
+        $otpCode = trim($request->input('otpCode', ''));
+        $currentOwner = $request->user();
+
+        return DB::transaction(function () use ($newPhoneNumber, $otpCode, $currentOwner) {
+            $this->consumeOtp($newPhoneNumber, 'change_phone', $otpCode);
+
+            $owner = Owner::where('id', $currentOwner->id)->lockForUpdate()->first();
+            if (!$owner) {
+                abort(401, 'Owner not found.');
+            }
+
+            if (Owner::where('phone_number', $newPhoneNumber)->where('id', '!=', $owner->id)->exists()) {
+                abort(409, 'This phone number is already in use by another account.');
+            }
+
+            $owner->update([
+                'phone_number' => $newPhoneNumber,
+                'phone_verified_at' => now(),
+            ]);
+
+            return [
+                'owner' => $owner->fresh(),
+            ];
+        });
+    }
+
     public function revokeToken(?string $cookieValue): void
     {
         if (!$cookieValue) return;

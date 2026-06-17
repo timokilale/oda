@@ -39,15 +39,50 @@ export default function ReportsPage() {
     loadReports();
   }, [loadReports]);
 
+  const totalOrders = reports?.pendingOrders + reports?.confirmedOrders + reports?.completedOrders || 0;
+
+  if (!loading && totalOrders < 10) {
+    return (
+      <>
+        <section className="flex items-start justify-between gap-4 py-6">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
+              Reports
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2">Insights appear after 10 orders</p>
+          </div>
+          <SegmentedControl
+            label="Report period"
+            options={PERIOD_OPTIONS}
+            value={period}
+            onChange={setPeriod}
+          />
+        </section>
+
+        <section className="rounded-xl border border-border bg-card p-10 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-muted-foreground/50">
+              <rect x="3" y="12" width="4" height="9" rx="1" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="10" y="8" width="4" height="13" rx="1" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="17" y="4" width="4" height="17" rx="1" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold text-foreground">Not enough data yet</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+            Reports unlock after 10 completed orders. Right now, focus on getting orders through — the numbers will follow.
+          </p>
+        </section>
+      </>
+    );
+  }
+
   return (
     <>
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
             Reports
           </h1>
-          <p className="text-sm text-muted-foreground mt-2">{restaurant.name}</p>
         </div>
         <SegmentedControl
           label="Report period"
@@ -63,53 +98,54 @@ export default function ReportsPage() {
         </section>
       ) : (
         <>
-          <section className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 mb-6">
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Revenue</p>
-              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">
+              <p className="text-xs text-muted-foreground font-medium">Order revenue *</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground mt-1">
                 {reports ? formatCurrency(reports.revenueTotal) : formatCurrency(0)}
               </p>
+              <p className="text-[11px] text-muted-foreground/60 mt-1">* Total order value before payouts or fees</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Orders today</p>
-              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.ordersToday ?? 0}</p>
+              <p className="text-xs text-muted-foreground font-medium">Orders</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{reports?.ordersToday ?? 0}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Average ticket</p>
-              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">
+              <p className="text-xs text-muted-foreground font-medium">Avg. ticket</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground mt-1">
                 {reports ? formatCurrency(reports.averageTicket) : formatCurrency(0)}
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Completion</p>
-              <p className="text-3xl font-bold tabular-nums text-foreground mt-1">
+              <p className="text-xs text-muted-foreground font-medium">Completion</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground mt-1">
                 {reports ? `${Math.round(reports.completionRate)}%` : "0%"}
               </p>
             </div>
           </section>
 
-          <section className="grid grid-cols-[320px_1fr] gap-4 mb-8">
+          <section className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-4 mb-8">
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="mb-4">
                 <h2 className="text-lg font-semibold text-foreground">Status breakdown</h2>
               </div>
 
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Pending</p>
-                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.pendingOrders ?? 0}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground">Pending</p>
+                  <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{reports?.pendingOrders ?? 0}</p>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Confirmed</p>
-                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.confirmedOrders ?? 0}</p>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground">Confirmed</p>
+                  <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{reports?.confirmedOrders ?? 0}</p>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Completed</p>
-                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.completedOrders ?? 0}</p>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{reports?.completedOrders ?? 0}</p>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Cancelled</p>
-                  <p className="text-3xl font-bold tabular-nums text-foreground mt-1">{reports?.cancelledOrders ?? 0}</p>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-xs text-muted-foreground">Cancelled</p>
+                  <p className="text-2xl font-bold tabular-nums text-foreground mt-1">{reports?.cancelledOrders ?? 0}</p>
                 </div>
               </div>
             </div>
@@ -120,37 +156,23 @@ export default function ReportsPage() {
               </div>
 
               {reports?.topItems?.length ? (
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm responsive-table">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th scope="col" className="text-left py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Item</th>
-                        <th scope="col" className="text-right py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Qty</th>
-                        <th scope="col" className="text-right py-3 px-3 text-xs uppercase tracking-widest text-muted-foreground font-mono font-medium">Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reports.topItems.map((item, idx) => (
-                        <tr key={`${item.name}-${idx}`} className="border-b border-border hover:bg-muted/30 transition-colors">
-                          <td className="py-3 px-3" data-label="Item">{item.name}</td>
-                          <td className="py-3 px-3 text-right" data-label="Qty">{item.quantitySold}</td>
-                          <td className="py-3 px-3 text-right font-mono tabular-nums" data-label="Revenue">
-                            {formatCurrency(item.revenue)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="grid gap-2">
+                  {reports.topItems.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground font-mono w-5">{idx + 1}.</span>
+                        <span className="text-sm font-medium text-foreground">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="text-muted-foreground">x{item.quantitySold}</span>
+                        <span className="font-semibold tabular-nums text-foreground">{formatCurrency(item.revenue)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="text-center py-10">
-                  <svg viewBox="0 0 48 48" fill="none" className="w-14 h-14 mx-auto mb-3 text-muted-foreground/30">
-                    <rect x="6" y="28" width="8" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                    <rect x="20" y="18" width="8" height="24" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                    <rect x="34" y="8" width="8" height="34" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
-                    <line x1="6" y1="42" x2="42" y2="42" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                  </svg>
-                  <p className="text-sm text-muted-foreground">No completed orders in this period</p>
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  No completed orders in this period
                 </div>
               )}
             </div>

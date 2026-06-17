@@ -2,9 +2,58 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiRequest } from "../lib/api.js";
-import ConfirmDialog from "./ConfirmDialog.jsx";
 import FlashStack from "./FlashStack.jsx";
 import QuickCreateRestaurant from "./QuickCreateRestaurant.jsx";
+
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      if (typeof document === "undefined") return false;
+      return document.documentElement.classList.contains("dark");
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("theme");
+      if (stored === "dark") {
+        document.documentElement.classList.add("dark");
+        setIsDark(true);
+        return;
+      }
+      if (stored === "light") {
+        document.documentElement.classList.remove("dark");
+        setIsDark(false);
+        return;
+      }
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (prefersDark) {
+        document.documentElement.classList.add("dark");
+        setIsDark(true);
+      }
+    } catch {
+      // localStorage unavailable
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+      }
+    } catch {
+      // localStorage unavailable
+    }
+  }, [isDark]);
+
+  return [isDark, setIsDark];
+}
 
 const RESTAURANT_TABS = [
   { section: "orders", label: "Orders" },
@@ -35,11 +84,11 @@ export default function WorkspaceShell({
 }) {
   const navigate = useNavigate();
   const { owner, logout } = useAuth();
+  const [isDark, setIsDark] = useDarkMode();
   const [ownedRestaurants, setOwnedRestaurants] = useState([]);
   const [resolvedCanAddRestaurant, setResolvedCanAddRestaurant] = useState(
     Boolean(ownerCanAddRestaurant),
   );
-  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const activeRestaurantSection = useMemo(
     () => (RESTAURANT_TABS.some((tab) => tab.section === currentSection) ? currentSection : "orders"),
     [currentSection],
@@ -90,7 +139,6 @@ export default function WorkspaceShell({
   }, [ownerCanAddRestaurant]);
 
   async function handleLogout() {
-    setLogoutConfirmOpen(false);
     await logout();
     navigate("/login");
   }
@@ -158,16 +206,18 @@ export default function WorkspaceShell({
 
             {owner ? (
               <nav className="flex items-center gap-0 overflow-x-auto scrollbar-none" aria-label="Workspace">
-                <Link
-                  to="/dashboard"
-                  className={`shrink-0 px-3 py-3 text-xs font-medium tracking-wider uppercase whitespace-nowrap border-b-2 transition-colors no-underline ${
-                    currentSection === "restaurants"
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Restaurants
-                </Link>
+                {ownedRestaurants.length > 1 ? (
+                  <Link
+                    to="/dashboard"
+                    className={`shrink-0 px-3 py-3 text-xs font-medium tracking-wider uppercase whitespace-nowrap border-b-2 transition-colors no-underline ${
+                      currentSection === "restaurants"
+                        ? "border-primary text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Restaurants
+                  </Link>
+                ) : null}
 
                 {restaurantTabs.length ? (
                   <div
@@ -227,11 +277,27 @@ export default function WorkspaceShell({
                     Limit: {ownedRestaurants.length} restaurant{ownedRestaurants.length !== 1 ? "s" : ""}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground">{owner.phoneNumber}</span>
+                <button
+                  type="button"
+                  onClick={() => setIsDark((prev) => !prev)}
+                  className="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                  aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {isDark ? (
+                    <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4">
+                      <circle cx="10" cy="10" r="3.5" stroke="currentColor" strokeWidth="1.3" />
+                      <path d="M10 2v1.5M10 16.5V18M4.05 4.05l1.06 1.06M14.89 14.89l1.06 1.06M2 10h1.5M16.5 10H18M4.05 15.95l1.06-1.06M14.89 5.11l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4">
+                      <path d="M15.5 11.5A6.5 6.5 0 0 1 8.5 4.5 6.5 6.5 0 1 0 15.5 11.5z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </button>
                 <button
                   type="button"
                   className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
-                  onClick={() => setLogoutConfirmOpen(true)}
+                  onClick={handleLogout}
                 >
                   Log out
                 </button>
@@ -258,17 +324,6 @@ export default function WorkspaceShell({
       >
         {children}
       </main>
-
-      <ConfirmDialog
-        open={logoutConfirmOpen}
-        title="Log out?"
-        message="Any unsaved changes will be lost."
-        confirmLabel="Log out"
-        cancelLabel="Cancel"
-        variant="danger"
-        onConfirm={handleLogout}
-        onCancel={() => setLogoutConfirmOpen(false)}
-      />
     </div>
   );
 }

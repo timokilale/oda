@@ -157,17 +157,16 @@ export default function MenuCreatePage() {
     <>
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
-            Add menu items
-          </h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
+              Menu editor
+            </h1>
           <p className="text-sm text-muted-foreground mt-2">
             Build a batch with compact cards, then open a card only when you want to edit its details.
           </p>
         </div>
         <Link
           to={`/restaurants/${restaurant.id}/menu`}
-          className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors no-underline shrink-0 mt-6"
+          className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors no-underline shrink-0 mt-6"
         >
           Back to menu
         </Link>
@@ -185,7 +184,7 @@ export default function MenuCreatePage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                 onClick={createDraft}
                 disabled={submitting}
               >
@@ -193,7 +192,7 @@ export default function MenuCreatePage() {
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 disabled={submitting}
               >
                 {submitting ? "Saving items" : `Create ${itemCountLabel}`}
@@ -258,7 +257,7 @@ export default function MenuCreatePage() {
               {drafts.length > 1 ? (
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                   onClick={() => removeDraft(editingDraft.id)}
                   disabled={submitting}
                 >
@@ -267,7 +266,7 @@ export default function MenuCreatePage() {
               ) : <span />}
               <button
                 type="button"
-                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={() => setEditingDraftId(null)}
               >
                 Done
@@ -280,11 +279,11 @@ export default function MenuCreatePage() {
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_name">
+                <label className="text-sm font-medium text-foreground" htmlFor="create_menu_name">
                   Name
                 </label>
                 <input
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                   id="create_menu_name"
                   type="text"
                   placeholder="e.g. Grilled Tilapia"
@@ -294,27 +293,27 @@ export default function MenuCreatePage() {
               </div>
 
                 <div className="grid gap-1.5">
-                  <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_price">
+                  <label className="text-sm font-medium text-foreground" htmlFor="create_menu_price">
                     Price
                   </label>
-                  <input
-                    className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
-                    id="create_menu_price"
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="e.g. 2500"
-                    value={editingDraft.price}
-                    onChange={(event) => updateDraft(editingDraft.id, { price: event.target.value })}
-                  />
+<input
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
+                  id="create_menu_price"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="e.g. 2500"
+                  value={editingDraft.price}
+                  onChange={(event) => updateDraft(editingDraft.id, { price: event.target.value })}
+                />
                   <p className="text-xs text-muted-foreground/70">Number only — currency formatting is applied automatically.</p>
                 </div>
 
               <div className="grid gap-1.5">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_category">
+                <label className="text-sm font-medium text-foreground" htmlFor="create_menu_category">
                   Category
                 </label>
                 <select
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                   id="create_menu_category"
                   value={editingDraft.category}
                   onChange={(event) => updateDraft(editingDraft.id, { category: event.target.value })}
@@ -328,29 +327,29 @@ export default function MenuCreatePage() {
               </div>
 
               <div className="grid gap-1.5">
-                <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_status">
-                  Availability
+                <label className="text-sm font-medium text-foreground" htmlFor="create_menu_status">
+                  Status
                 </label>
                 <select
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                   id="create_menu_status"
                   value={String(editingDraft.active)}
                   onChange={(event) =>
                     updateDraft(editingDraft.id, { active: event.target.value === "true" })
                   }
                 >
-                  <option value="true">Active</option>
-                  <option value="false">Archived</option>
+                  <option value="true">Available</option>
+                  <option value="false">Archived (hidden)</option>
                 </select>
               </div>
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_image">
+              <label className="text-sm font-medium text-foreground" htmlFor="create_menu_image">
                 Image
               </label>
                 <input
-                  className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:mr-2"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:mr-2"
                   id="create_menu_image"
                   type="file"
                   accept="image/*"
@@ -374,11 +373,11 @@ export default function MenuCreatePage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="create_menu_description">
+              <label className="text-sm font-medium text-foreground" htmlFor="create_menu_description">
                 Description
               </label>
                 <textarea
-                  className="h-8 min-h-[80px] w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm text-foreground transition-colors resize-y"
+                  className="h-10 min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition-colors resize-y"
                   id="create_menu_description"
                   placeholder="Briefly describe the dish…"
                   value={editingDraft.description}

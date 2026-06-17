@@ -120,10 +120,9 @@ export default function TablesCreatePage() {
     <>
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
-            Add tables
-          </h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
+              Create tables
+            </h1>
           <p className="text-sm text-muted-foreground mt-2">
             Create table cards in a compact board, then open any card to set or change its table number.
           </p>

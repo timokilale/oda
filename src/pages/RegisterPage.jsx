@@ -1,14 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import ImagePositionField from "../components/ImagePositionField.jsx";
-import { createCroppedUpload, RESTAURANT_IMAGE_TARGET } from "../lib/cropImage.js";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
+import AuthShell from "../components/AuthShell.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
+
+const COUNTRY_CODES = [
+  { code: "+255", label: "Tanzania", example: "7XX XXX XXX" },
+  { code: "+254", label: "Kenya", example: "7XX XXX XXX" },
+  { code: "+256", label: "Uganda", example: "7XX XXX XXX" },
+  { code: "+250", label: "Rwanda", example: "7XX XXX XXX" },
+  { code: "+257", label: "Burundi", example: "7X XX XX XX" },
+  { code: "+211", label: "South Sudan", example: "9XX XXX XXX" },
+  { code: "+251", label: "Ethiopia", example: "9XX XXX XXX" },
+  { code: "+252", label: "Somalia", example: "6X XXX XXX" },
+  { code: "+243", label: "DR Congo", example: "8XX XXX XXX" },
+];
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { owner, requestRegisterOtp, verifyRegisterOtp } = useAuth();
+  const [countryCode, setCountryCode] = useState("+255");
+  const [localNumber, setLocalNumber] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [restaurantName, setRestaurantName] = useState("");
   const [flash, setFlash] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [otpRequested, setOtpRequested] = useState(false);
@@ -16,16 +30,8 @@ export default function RegisterPage() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   usePageTitle("Create account");
-  const [form, setForm] = useState({
-    phoneNumber: "",
-    otpCode: "",
-    restaurantName: "",
-    city: "",
-    country: "",
-    restaurantImage: null,
-    restaurantImagePositionX: 50,
-    restaurantImagePositionY: 50,
-  });
+
+  const fullNumber = `${countryCode}${localNumber.replace(/[^\d]/g, "")}`;
 
   useEffect(() => {
     if (!resendCooldown) {
@@ -47,38 +53,7 @@ export default function RegisterPage() {
     setOtpRequested(false);
     setDevOtpCode("");
     setResendCooldown(0);
-    setForm((current) => ({
-      ...current,
-      otpCode: "",
-    }));
-  }
-
-  function updateForm(patch) {
-    setForm((current) => ({
-      ...current,
-      ...patch,
-      otpCode: patch.otpCode ?? current.otpCode,
-    }));
-  }
-
-  async function buildRegistrationFormData() {
-    const formData = new FormData();
-    formData.set("phoneNumber", form.phoneNumber);
-    formData.set("restaurantName", form.restaurantName);
-    formData.set("city", form.city);
-    formData.set("country", form.country);
-    formData.set("restaurantImagePositionX", String(form.restaurantImagePositionX));
-    formData.set("restaurantImagePositionY", String(form.restaurantImagePositionY));
-    if (form.restaurantImage) {
-      const croppedImage = await createCroppedUpload(form.restaurantImage, {
-        ...RESTAURANT_IMAGE_TARGET,
-        positionX: form.restaurantImagePositionX,
-        positionY: form.restaurantImagePositionY,
-      });
-      formData.set("restaurantImage", croppedImage);
-    }
-
-    return formData;
+    setOtpCode("");
   }
 
   async function handleRequestOtp(event) {
@@ -87,7 +62,13 @@ export default function RegisterPage() {
     setFlash(null);
 
     try {
-      const data = await requestRegisterOtp(await buildRegistrationFormData());
+      const formData = new FormData();
+      formData.set("phoneNumber", fullNumber);
+      formData.set("restaurantName", restaurantName);
+      formData.set("city", "");
+      formData.set("country", "");
+
+      const data = await requestRegisterOtp(formData);
       setOtpRequested(true);
       setDevOtpCode(data.devOtpCode || "");
       setResendCooldown(30);
@@ -106,8 +87,8 @@ export default function RegisterPage() {
 
     try {
       await verifyRegisterOtp({
-        phoneNumber: form.phoneNumber,
-        otpCode: form.otpCode,
+        phoneNumber: fullNumber,
+        otpCode,
       });
       navigate("/dashboard");
     } catch (submitError) {
@@ -117,129 +98,94 @@ export default function RegisterPage() {
     }
   }
 
+  const selectedCountry = COUNTRY_CODES.find((c) => c.code === countryCode);
+
   return (
-    <WorkspaceShell flash={flash} onClearFlash={() => setFlash(null)}>
+    <AuthShell flash={flash} onClearFlash={() => setFlash(null)}>
       <section className="w-full max-w-[520px] mx-auto px-4 py-12">
         <div className="rounded-xl border border-border bg-card p-6 grid gap-4">
           <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Owner</p>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
-              Create account
+              {otpRequested ? "Check your phone" : "Create your account"}
             </h1>
             <p className="text-sm text-muted-foreground mt-2">
               {otpRequested
-                ? `Confirm the code sent to ${form.phoneNumber}, then we'll finish creating ${form.restaurantName || "your restaurant"}.`
-                : "Set up the first restaurant now. You can refine the details later in settings."}
+                ? `Enter the code sent to ${fullNumber}`
+                : "Phone number and name — that's all you need to start."}
             </p>
           </div>
 
           <form className="grid gap-3" onSubmit={otpRequested ? handleVerifyOtp : handleRequestOtp}>
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="phone_number">
+              <label className="text-sm font-medium text-foreground" htmlFor="phone_number">
                 Phone number
               </label>
-              <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
-                id="phone_number"
-                type="tel"
-                inputMode="tel"
-                placeholder="+254700000000"
-                value={form.phoneNumber}
-                onChange={(event) => updateForm({ phoneNumber: event.target.value })}
-                disabled={otpRequested || submitting}
-                required
-              />
+              <div className="flex gap-2">
+                <select
+                  className="h-10 rounded-lg border border-input bg-background px-2 text-sm text-foreground transition-colors w-28 shrink-0"
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  disabled={otpRequested || submitting}
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-base text-foreground transition-colors disabled:opacity-50"
+                  id="phone_number"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder={selectedCountry?.example || "7XX XXX XXX"}
+                  value={localNumber}
+                  onChange={(event) => setLocalNumber(event.target.value.replace(/[^\d]/g, ""))}
+                  disabled={otpRequested || submitting}
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_name">
+              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_name">
                 Restaurant name
               </label>
               <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground transition-colors disabled:opacity-50"
                 id="restaurant_name"
                 type="text"
-                value={form.restaurantName}
-                onChange={(event) => updateForm({ restaurantName: event.target.value })}
+                placeholder="e.g. Mama's Kitchen"
+                value={restaurantName}
+                onChange={(event) => setRestaurantName(event.target.value)}
                 disabled={otpRequested || submitting}
                 required
               />
             </div>
-
-            <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="city">
-                City
-              </label>
-              <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
-                id="city"
-                type="text"
-                value={form.city}
-                onChange={(event) => updateForm({ city: event.target.value })}
-                disabled={otpRequested || submitting}
-              />
-            </div>
-
-            <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="country">
-                Country
-              </label>
-              <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors disabled:opacity-50"
-                id="country"
-                type="text"
-                value={form.country}
-                onChange={(event) => updateForm({ country: event.target.value })}
-                disabled={otpRequested || submitting}
-              />
-            </div>
-
-            <ImagePositionField
-              inputId="restaurant_image"
-              label="Restaurant image"
-              file={form.restaurantImage}
-              positionX={form.restaurantImagePositionX}
-              positionY={form.restaurantImagePositionY}
-              aspectRatio={RESTAURANT_IMAGE_TARGET.aspectRatio}
-              disabled={otpRequested || submitting}
-              onFileChange={(file) =>
-                updateForm({
-                  restaurantImage: file,
-                  restaurantImagePositionX: 50,
-                  restaurantImagePositionY: 50,
-                })
-              }
-              onPositionChange={({ x, y }) =>
-                updateForm({
-                  restaurantImagePositionX: x,
-                  restaurantImagePositionY: y,
-                })
-              }
-            />
 
             {otpRequested ? (
               <>
                 <div className="grid gap-1.5">
-                  <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="otp_code">
-                    OTP code
+                  <label className="text-sm font-medium text-foreground" htmlFor="otp_code">
+                    Confirmation code
                   </label>
                   <input
-                    className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                    className="h-10 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground transition-colors"
                     id="otp_code"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    value={form.otpCode}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, otpCode: event.target.value }))
-                    }
+                    placeholder="Enter the 6-digit code"
+                    value={otpCode}
+                    onChange={(event) => setOtpCode(event.target.value.replace(/[^\d]/g, ""))}
                     required
+                    autoFocus
                   />
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                    className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                     onClick={resetOtpFlow}
                     disabled={submitting}
                   >
@@ -258,8 +204,8 @@ export default function RegisterPage() {
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="submit"
-                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
-                disabled={submitting}
+                className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                disabled={submitting || localNumber.length < 6}
               >
                 {submitting
                   ? otpRequested
@@ -272,7 +218,7 @@ export default function RegisterPage() {
               {otpRequested ? (
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center h-10 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
                   onClick={handleRequestOtp}
                   disabled={submitting || resendCooldown > 0}
                 >
@@ -290,6 +236,6 @@ export default function RegisterPage() {
           </p>
         </div>
       </section>
-    </WorkspaceShell>
+    </AuthShell>
   );
 }

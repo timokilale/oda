@@ -3,6 +3,7 @@ import ImagePositionField from "../components/ImagePositionField.jsx";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { createCroppedUpload, RESTAURANT_IMAGE_TARGET } from "../lib/cropImage.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 
 function buildInitialForm(restaurant) {
@@ -23,8 +24,15 @@ function buildInitialForm(restaurant) {
 
 export default function RestaurantSettingsPage() {
   const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
+  const { owner, requestChangePhoneOtp, verifyChangePhoneOtp } = useAuth();
   const [form, setForm] = useState(() => buildInitialForm(restaurant));
   const [submitting, setSubmitting] = useState(false);
+  const [changingPhone, setChangingPhone] = useState(false);
+  const [newPhoneNumber, setNewPhoneNumber] = useState("");
+  const [phoneOtpCode, setPhoneOtpCode] = useState("");
+  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
+  const [phoneSubmitting, setPhoneSubmitting] = useState(false);
+  const [devPhoneOtp, setDevPhoneOtp] = useState("");
 
   usePageTitle(`Settings - ${restaurant.name}`);
 
@@ -71,6 +79,50 @@ export default function RestaurantSettingsPage() {
     }
   }
 
+  function resetPhoneFlow() {
+    setPhoneOtpSent(false);
+    setDevPhoneOtp("");
+    setPhoneOtpCode("");
+  }
+
+  async function handleRequestPhoneOtp(event) {
+    event?.preventDefault();
+    setPhoneSubmitting(true);
+    clearFlash();
+
+    try {
+      const data = await requestChangePhoneOtp(newPhoneNumber);
+      setPhoneOtpSent(true);
+      setDevPhoneOtp(data.devOtpCode || "");
+      setFlash({ type: "success", message: data.message });
+    } catch (error) {
+      setFlash({ type: "error", message: error.message });
+    } finally {
+      setPhoneSubmitting(false);
+    }
+  }
+
+  async function handleVerifyPhoneOtp(event) {
+    event.preventDefault();
+    setPhoneSubmitting(true);
+    clearFlash();
+
+    try {
+      await verifyChangePhoneOtp({
+        newPhoneNumber,
+        otpCode: phoneOtpCode,
+      });
+      setFlash({ type: "success", message: "Phone number updated." });
+      setChangingPhone(false);
+      resetPhoneFlow();
+      setNewPhoneNumber("");
+    } catch (error) {
+      setFlash({ type: "error", message: error.message });
+    } finally {
+      setPhoneSubmitting(false);
+    }
+  }
+
   function handleRemoveImageToggle() {
     setForm((current) => ({
       ...current,
@@ -83,10 +135,9 @@ export default function RestaurantSettingsPage() {
     <>
       <section className="py-6">
         <div>
-          <p className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Restaurant</p>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
-            Settings
-          </h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
+              Settings
+            </h1>
           <p className="text-sm text-muted-foreground mt-2">
             Update the details customers and staff rely on every day.
           </p>
@@ -104,11 +155,11 @@ export default function RestaurantSettingsPage() {
 
           <form className="grid gap-3" onSubmit={handleSubmit}>
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_name">
+              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_settings_name">
                 Restaurant name
               </label>
               <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                 id="restaurant_settings_name"
                 type="text"
                 value={form.restaurantName}
@@ -120,11 +171,11 @@ export default function RestaurantSettingsPage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_status">
+              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_settings_status">
                 Visibility
               </label>
               <select
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                 id="restaurant_settings_status"
                 value={form.active}
                 onChange={(event) => setForm((current) => ({ ...current, active: event.target.value }))}
@@ -138,11 +189,11 @@ export default function RestaurantSettingsPage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_address">
+              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_settings_address">
                 Address
               </label>
               <textarea
-                className="h-8 min-h-[60px] w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-sm text-foreground transition-colors resize-y"
+                className="h-10 min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition-colors resize-y"
                 id="restaurant_settings_address"
                 value={form.address}
                 onChange={(event) =>
@@ -152,11 +203,11 @@ export default function RestaurantSettingsPage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_city">
+              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_settings_city">
                 City
               </label>
               <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                 id="restaurant_settings_city"
                 type="text"
                 placeholder="e.g. Nairobi"
@@ -166,11 +217,11 @@ export default function RestaurantSettingsPage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_country">
+              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_settings_country">
                 Country
               </label>
               <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                 id="restaurant_settings_country"
                 type="text"
                 placeholder="e.g. Kenya"
@@ -182,11 +233,11 @@ export default function RestaurantSettingsPage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-xs uppercase tracking-widest text-muted-foreground font-mono" htmlFor="restaurant_settings_phone">
+              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_settings_phone">
                 Service phone
               </label>
               <input
-                className="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm text-foreground transition-colors"
+                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
                 id="restaurant_settings_phone"
                 type="tel"
                 inputMode="tel"
@@ -227,7 +278,7 @@ export default function RestaurantSettingsPage() {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className={`inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
+                  className={`inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
                     form.removeImage
                       ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20"
                       : "border-border bg-background text-foreground hover:bg-muted"
@@ -246,7 +297,7 @@ export default function RestaurantSettingsPage() {
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="submit"
-                className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
                 disabled={submitting}
               >
                 {submitting ? "Saving" : "Save settings"}
@@ -262,7 +313,93 @@ export default function RestaurantSettingsPage() {
 
           <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Visibility</span>
+              <span className="text-sm font-medium text-foreground">Phone number</span>
+              <p className="text-sm text-foreground">{owner?.phoneNumber}</p>
+              {!changingPhone ? (
+                <button
+                  type="button"
+                  onClick={() => setChangingPhone(true)}
+                  className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors w-fit mt-1"
+                >
+                  Change phone number
+                </button>
+              ) : (
+                <form className="grid gap-3 mt-2" onSubmit={phoneOtpSent ? handleVerifyPhoneOtp : handleRequestPhoneOtp}>
+                  <div className="grid gap-1.5">
+                    <label className="text-sm font-medium text-foreground" htmlFor="new_phone_number">
+                      New phone number
+                    </label>
+                    <input
+                      className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
+                      id="new_phone_number"
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="+2557XXXXXXXX"
+                      value={newPhoneNumber}
+                      onChange={(e) => {
+                        setNewPhoneNumber(e.target.value);
+                        if (phoneOtpSent) resetPhoneFlow();
+                      }}
+                      disabled={phoneOtpSent || phoneSubmitting}
+                      required
+                    />
+                  </div>
+
+                  {phoneOtpSent ? (
+                    <div className="grid gap-1.5">
+                      <label className="text-sm font-medium text-foreground" htmlFor="phone_otp_code">
+                        Confirmation code
+                      </label>
+                      <input
+                        className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors"
+                        id="phone_otp_code"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="Enter the 6-digit code"
+                        value={phoneOtpCode}
+                        onChange={(e) => setPhoneOtpCode(e.target.value.replace(/[^\d]/g, ""))}
+                        required
+                        autoFocus
+                      />
+                    </div>
+                  ) : null}
+
+                  {import.meta.env.DEV && phoneOtpSent && devPhoneOtp ? (
+                    <div className="rounded-lg border border-warning/30 bg-warning/15 px-3 py-2 text-sm text-warning-foreground">
+                      Dev OTP: <strong>{devPhoneOtp}</strong>
+                    </div>
+                  ) : null}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      disabled={phoneSubmitting || newPhoneNumber.length < 6}
+                    >
+                      {phoneSubmitting
+                        ? phoneOtpSent ? "Verifying" : "Sending"
+                        : phoneOtpSent ? "Verify & update" : "Send OTP"}
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors"
+                      onClick={() => {
+                        setChangingPhone(false);
+                        resetPhoneFlow();
+                        setNewPhoneNumber("");
+                      }}
+                      disabled={phoneSubmitting}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            <div className="grid gap-1.5">
+              <span className="text-sm font-medium text-foreground">Visibility</span>
               <span
                 className={`inline-flex items-center h-6 px-2.5 rounded-full text-[11px] font-medium border uppercase tracking-wider w-fit ${
                   form.active === "true"
@@ -277,7 +414,7 @@ export default function RestaurantSettingsPage() {
 
             {restaurant.ref ? (
               <div className="grid gap-1.5">
-                <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono">Customer menu link</span>
+                <span className="text-sm font-medium text-foreground">Customer menu link</span>
                 <p className="text-sm text-foreground break-all">
                   {`${window.location.origin}/order/${restaurant.ref}`}
                 </p>
@@ -285,7 +422,7 @@ export default function RestaurantSettingsPage() {
             ) : null}
 
             <div className="grid gap-1.5">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground font-mono">How changes take effect</span>
+              <span className="text-sm font-medium text-foreground">How changes take effect</span>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 The dashboard card, workspace header, and reports update after save.
                 Customers see the latest restaurant name and photo the next time they open a table link.
