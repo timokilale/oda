@@ -85,7 +85,7 @@ class AuthService
         if ($request->hasFile('restaurantImage')) {
             $file = $request->file('restaurantImage');
             $path = $file->store('restaurants', 'uploads');
-            $imagePath = '/uploads/' . $path;
+            $imagePath = '/storage/' . $path;
         }
 
         if (!$this->isValidPhoneNumber($phoneNumber) || !$restaurantName) {

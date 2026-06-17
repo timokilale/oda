@@ -39,7 +39,7 @@ class MenuItemController extends Controller
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $path = $file->store('menu-items', 'uploads');
-            $imagePath = '/uploads/' . $path;
+            $imagePath = '/storage/' . $path;
         }
 
         $item = $this->menuItemService->createMenuItem($restaurantId, [
@@ -80,7 +80,7 @@ class MenuItemController extends Controller
         if ($request->hasFile('image')) {
             $file = $request->file('image');
             $path = $file->store('menu-items', 'uploads');
-            $data['imagePath'] = '/uploads/' . $path;
+            $data['imagePath'] = '/storage/' . $path;
         } elseif ($removeImage) {
             $data['imagePath'] = null;
         }

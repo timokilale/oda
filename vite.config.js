@@ -15,10 +15,11 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:8000",
       "/uploads": "http://localhost:8000",
+      "/storage": "http://localhost:8000",
     },
   },
   build: {
-    outDir: "backend/public/dist",
+    outDir: "dist",
     emptyOutDir: true,
   },
   test: {

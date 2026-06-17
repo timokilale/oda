@@ -43,7 +43,7 @@ class RestaurantController extends Controller
         if ($request->hasFile('restaurantImage')) {
             $file = $request->file('restaurantImage');
             $path = $file->store('restaurants', 'uploads');
-            $imagePath = '/uploads/' . $path;
+            $imagePath = '/storage/' . $path;
         }
 
         $restaurant = $this->restaurantService->createRestaurant($owner, [
@@ -100,7 +100,7 @@ class RestaurantController extends Controller
         if ($request->hasFile('restaurantImage')) {
             $file = $request->file('restaurantImage');
             $path = $file->store('restaurants', 'uploads');
-            $data['imagePath'] = '/uploads/' . $path;
+            $data['imagePath'] = '/storage/' . $path;
         } elseif ($removeImage) {
             $data['imagePath'] = null;
         }
