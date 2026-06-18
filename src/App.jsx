@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
-import { apiRequest } from "./lib/api.js";
 import ApiLogPanel from "./components/ApiLogPanel.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
@@ -28,19 +27,14 @@ function RedirectToCanonicalOrder() {
 
 function ProtectedOutlet() {
   const { owner, loading, refreshSession } = useAuth();
-  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    if (checking) {
-      if (owner) {
-        setChecking(false);
-      } else {
-        refreshSession().finally(() => setChecking(false));
-      }
+    if (!owner) {
+      refreshSession();
     }
-  }, [checking, owner, refreshSession]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (checking || loading) {
+  if (loading) {
     return <div className="mx-auto max-w-[1280px] px-4 py-8 text-muted-foreground">Loading your workspace...</div>;
   }
 
@@ -53,14 +47,15 @@ function ProtectedOutlet() {
 
 function HomeRedirect() {
   const navigate = useNavigate();
+  const { refreshSession } = useAuth();
 
   useEffect(() => {
-    apiRequest("/auth/me").then((data) => {
-      navigate(data.owner ? "/dashboard" : "/login", { replace: true });
+    refreshSession().then(() => {
+      navigate("/dashboard", { replace: true });
     }).catch(() => {
       navigate("/login", { replace: true });
     });
-  }, [navigate]);
+  }, [navigate, refreshSession]);
 
   return <div className="mx-auto max-w-[1280px] px-4 py-8 text-muted-foreground">Loading...</div>;
 }

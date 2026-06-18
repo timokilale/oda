@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import { apiRequest } from "../lib/api.js";
 
 const AuthContext = createContext(null);
@@ -7,7 +7,7 @@ export function AuthProvider({ children }) {
   const [owner, setOwner] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  async function refreshSession() {
+  const refreshSession = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiRequest("/auth/me");
@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   const value = {
     owner,

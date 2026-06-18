@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { IMAGE_PRESETS, BADGE_OPTIONS } from '../../types/managementTypes.js';
 
-export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteItem, restaurantId }) {
+export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteItem }) {
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewStyle, setViewStyle] = useState('list');

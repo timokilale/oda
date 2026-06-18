@@ -53,8 +53,6 @@ export default function RestomanageHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        <span className={`w-2 h-2 rounded-full ${ordersActive ? 'bg-[#10B981] animate-pulse' : 'bg-amber-500'}`} />
-
         <button
           onClick={onToggleOrders}
           className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${

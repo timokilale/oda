@@ -6,6 +6,11 @@ const logStyles = {
 };
 
 let requestId = 0;
+const inflightCache = new Map();
+
+function inflightKey(method, path, body) {
+  return `${method}:${path}:${body ? JSON.stringify(body) : ""}`;
+}
 
 /* ── In-memory log store (shared with ApiLogPanel) ── */
 let _log = [];
@@ -59,6 +64,11 @@ function truncate(v, max = 500) {
 export async function apiRequest(path, options = {}) {
   const { method = "GET", body, formData, signal: externalSignal, timeout = 30000 } = options;
 
+  const key = inflightKey(method, path, body);
+  if (method === "GET" && !externalSignal && inflightCache.has(key)) {
+    return inflightCache.get(key);
+  }
+
   const id = ++requestId;
   const start = performance.now();
   const ts = new Date().toISOString();
@@ -95,64 +105,73 @@ export async function apiRequest(path, options = {}) {
     };
   }
 
-  try {
-    const response = await fetch(`/api${path}`, requestOptions);
-    const elapsed = Math.round(performance.now() - start);
-    const contentType = response.headers.get("content-type") || "";
-    const payload = contentType.includes("application/json")
-      ? await response.json()
-      : await response.text();
+  const promise = (async () => {
+    try {
+      const response = await fetch(`/api${path}`, requestOptions);
+      const elapsed = Math.round(performance.now() - start);
+      const contentType = response.headers.get("content-type") || "";
+      const payload = contentType.includes("application/json")
+        ? await response.json()
+        : await response.text();
 
-    logData.status = response.ok ? "success" : "error";
-    logData.elapsed = elapsed;
-    logData.statusCode = response.status;
+      logData.status = response.ok ? "success" : "error";
+      logData.elapsed = elapsed;
+      logData.statusCode = response.status;
 
-    if (!response.ok) {
-      const message =
-        typeof payload === "object" && payload && "error" in payload
-          ? payload.error
-          : `HTTP ${response.status}`;
-      logData.error = message;
-      logData.payload = payload;
+      if (!response.ok) {
+        const message =
+          typeof payload === "object" && payload && "error" in payload
+            ? payload.error
+            : `HTTP ${response.status}`;
+        logData.error = message;
+        logData.payload = payload;
 
-      console.log(`%c✗ ${response.status} %c${elapsed}ms`, logStyles.err, logStyles.dim);
+        console.log(`%c✗ ${response.status} %c${elapsed}ms`, logStyles.err, logStyles.dim);
+        console.log("Response:", truncate(payload));
+        console.groupEnd();
+        pushLog(logData);
+
+        throw new Error(message);
+      }
+
+      console.log(`%c✓ ${response.status} %c${elapsed}ms`, logStyles.ok, logStyles.dim);
       console.log("Response:", truncate(payload));
       console.groupEnd();
+      logData.elapsed = elapsed;
       pushLog(logData);
 
-      throw new Error(message);
-    }
+      return payload;
+    } catch (error) {
+      const elapsed = Math.round(performance.now() - start);
 
-    console.log(`%c✓ ${response.status} %c${elapsed}ms`, logStyles.ok, logStyles.dim);
-    console.log("Response:", truncate(payload));
-    console.groupEnd();
-    logData.elapsed = elapsed;
-    pushLog(logData);
+      if (error.name === "AbortError") {
+        logData.status = "timeout";
+        logData.elapsed = elapsed;
+        console.log(`%c✗ TIMEOUT %c${elapsed}ms`, logStyles.err, logStyles.dim);
+        console.groupEnd();
+        pushLog(logData);
+        throw new Error("Request timed out. Please check your connection and try again.");
+      }
 
-    return payload;
-  } catch (error) {
-    const elapsed = Math.round(performance.now() - start);
-
-    if (error.name === "AbortError") {
-      logData.status = "timeout";
+      logData.status = "error";
       logData.elapsed = elapsed;
-      console.log(`%c✗ TIMEOUT %c${elapsed}ms`, logStyles.err, logStyles.dim);
+      logData.error = error.message;
+      console.log(`%c✗ FAILED %c${elapsed}ms`, logStyles.err, logStyles.dim);
+      console.log("Error:", error);
       console.groupEnd();
       pushLog(logData);
-      throw new Error("Request timed out. Please check your connection and try again.");
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
+  })();
 
-    logData.status = "error";
-    logData.elapsed = elapsed;
-    logData.error = error.message;
-    console.log(`%c✗ FAILED %c${elapsed}ms`, logStyles.err, logStyles.dim);
-    console.log("Error:", error);
-    console.groupEnd();
-    pushLog(logData);
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
+  if (method === "GET") {
+    inflightCache.set(key, promise);
+    promise.finally(() => inflightCache.delete(key));
   }
+
+  return promise;
 }
 
 function anySignal(signals) {
