@@ -1,52 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
-import MenuItemEditor from "../components/menu/MenuItemEditor.jsx";
-import MenuCatalogTable from "../components/menu/MenuCatalogTable.jsx";
+import MenuView from "../components/management/MenuView.jsx";
+import { transformApiMenuItemToView, transformViewItemToApiPayload } from "../types/managementTypes.js";
 
 export default function MenuPage() {
-  const {
-    restaurant,
-    workspaceSummary,
-    refreshWorkspace,
-    setFlash,
-    clearFlash,
-    scrollActiveViewToTop,
-  } = useRestaurantWorkspace();
+  const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const [items, setItems] = useState([]);
-  const [categorySuggestions, setCategorySuggestions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedItemId, setSelectedItemId] = useState(null);
-  const [filter, setFilter] = useState("active");
 
   usePageTitle(`Menu - ${restaurant.name}`);
 
-  const editingItem = useMemo(
-    () => items.find((item) => item.id === selectedItemId) || null,
-    [items, selectedItemId],
-  );
-
-  const visibleItems = useMemo(() => {
-    if (filter === "all") return items;
-    if (filter === "archived") return items.filter((item) => !item.active);
-    return items.filter((item) => item.active);
-  }, [filter, items]);
-
-  const activeCount = items.filter((item) => item.active).length;
-  const archivedCount = items.filter((item) => !item.active).length;
-
   const loadMenu = useCallback(async () => {
-    setLoading(true);
     try {
       const data = await apiRequest(`/restaurants/${restaurant.id}/menu-items`);
-      setItems(data.items);
-      setCategorySuggestions(data.categorySuggestions);
+      setItems((data.items || []).map(transformApiMenuItemToView));
     } catch (error) {
       setFlash({ type: "error", message: error.message });
-    } finally {
-      setLoading(false);
     }
   }, [restaurant.id, setFlash]);
 
@@ -54,46 +25,39 @@ export default function MenuPage() {
     loadMenu();
   }, [loadMenu]);
 
-  function startEditing(item) {
-    setSelectedItemId(item.id);
-    clearFlash();
-    scrollActiveViewToTop();
-  }
-
-  function cancelEditing() {
-    setSelectedItemId(null);
-  }
-
-  async function handleSave(itemId, formData) {
+  async function handleAddItem(itemData) {
     clearFlash();
     try {
-      await apiRequest(`/restaurants/${restaurant.id}/menu-items/${itemId}`, {
-        method: "PATCH",
-        formData,
+      await apiRequest(`/restaurants/${restaurant.id}/menu-items`, {
+        method: "POST",
+        body: transformViewItemToApiPayload(itemData),
       });
-      setFlash({ type: "success", message: "Item updated." });
-      cancelEditing();
+      setFlash({ type: "success", message: "Item added." });
       await Promise.all([loadMenu(), refreshWorkspace()]);
     } catch (error) {
       setFlash({ type: "error", message: error.message });
-      throw error;
     }
   }
 
-  async function toggleItemAvailability(item, nextActive) {
+  async function setMenuItems(updater) {
+    const next = typeof updater === 'function' ? updater(items) : updater;
+    setItems(next);
     clearFlash();
     try {
-      await apiRequest(`/restaurants/${restaurant.id}/menu-items/${item.id}`, {
-        method: "PATCH",
-        body: { active: nextActive },
+      const changed = next.find((n) => {
+        const old = items.find((o) => o.id === n.id);
+        return old && (old.status !== n.status || old.name !== n.name || old.price !== n.price);
       });
-      setFlash({
-        type: "success",
-        message: nextActive ? "Item restored." : "Item archived.",
-      });
-      await Promise.all([loadMenu(), refreshWorkspace()]);
+      if (changed) {
+        await apiRequest(`/restaurants/${restaurant.id}/menu-items/${changed.id}`, {
+          method: "PATCH",
+          body: transformViewItemToApiPayload(changed),
+        });
+        await Promise.all([loadMenu(), refreshWorkspace()]);
+      }
     } catch (error) {
       setFlash({ type: "error", message: error.message });
+      loadMenu();
     }
   }
 
@@ -101,41 +65,21 @@ export default function MenuPage() {
     <>
       <section className="flex items-start justify-between gap-4 py-6">
         <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
-              Menu
-            </h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">Menu</h1>
         </div>
         <Link
           to={`/restaurants/${restaurant.id}/menu/new`}
           className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors no-underline shrink-0 mt-6"
         >
-          Add items
+          Add items (bulk)
         </Link>
       </section>
 
-      <div className="flex items-center gap-2 mb-4">
-        <p className="text-xs text-muted-foreground">
-          {activeCount} active{archivedCount ? ` · ${archivedCount} archived` : ""}
-        </p>
-      </div>
-
-      {editingItem ? (
-        <MenuItemEditor
-          editingItem={editingItem}
-          categorySuggestions={categorySuggestions}
-          onSave={handleSave}
-          onCancel={cancelEditing}
-        />
-      ) : null}
-
-      <MenuCatalogTable
-        items={items}
-        visibleItems={visibleItems}
-        filter={filter}
-        onFilterChange={setFilter}
-        loading={loading}
-        onEdit={startEditing}
-        onToggleAvailability={toggleItemAvailability}
+      <MenuView
+        menuItems={items}
+        setMenuItems={setMenuItems}
+        onAddItem={handleAddItem}
+        restaurantId={restaurant.id}
       />
     </>
   );

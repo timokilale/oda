@@ -1,0 +1,178 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Lora:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", "Cormorant Garamond", "Lora", Georgia, serif;
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  /* Primary Indigo theme colors dynamically transformed to Editorial Luxury */
+  --color-indigo-brand: #8C2D19;            /* Luxurious Terracotta Red */
+  --color-indigo-container: #1C1917;        /* Matte Ink Charcoal */
+  --color-on-indigo-container: #FCFAF7;     /* High-contrast Warm Cream */
+  --color-accent-secondary: #6B5E59;        /* Warm Stone/Taupe */
+  
+  /* Status Colors: Muted Editorial Tones */
+  --color-success-brand: #415E4A;           /* Sage green */
+  --color-pending-brand: #BF7E22;           /* Amber ochre */
+  --color-destructive-brand: #A33526;       /* Madder/Deep red */
+}
+
+/* Base resets & Editorial Canvas overrides */
+body {
+  font-family: var(--font-sans);
+  background-color: #FCFAF7 !important;
+  color: #1A1513 !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Beautiful Serif overrides for headings to establish high-end editorial feel */
+h1, h2, h3, h4, 
+.font-bold, 
+[id*="header-page-title"], 
+.font-sans.text-xl, 
+.font-sans.text-lg {
+  font-family: var(--font-serif) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  color: #1A1513 !important;
+}
+
+/* Re-style tables to look like clean editorial ledgers */
+table, th, td {
+  font-family: var(--font-sans);
+  border-collapse: collapse;
+}
+
+thead, th {
+  font-family: var(--font-serif) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  background-color: #FAF6F0 !important;
+  border-bottom: 2px solid #E3DCD1 !important;
+}
+
+/* Map hardcoded background classes to luxurious editorial textures */
+.bg-white {
+  background-color: #FFFFFF !important;
+}
+
+.bg-\[\#f8f9fa\] {
+  background-color: #FCFAF7 !important;
+}
+
+.bg-\[\#f3f4f5\] {
+  background-color: #FAF6F0 !important; /* Muted taupe/paper panel */
+}
+
+/* Refined borders: replace modern light grey grids with delicate historical paper rules */
+.border, 
+.border-b, 
+.border-t, 
+.border-l, 
+.border-r, 
+.border-\[\#E5E7EB\], 
+.border-neutral-200 {
+  border-color: #E6DFD4 !important;
+}
+
+.dark .border, 
+.dark .border-b, 
+.dark .border-t, 
+.dark .border-[#E5E7EB] {
+  border-color: #38332F !important;
+}
+
+/* Redefine shadow depth to thin hairline frames */
+.shadow-xs, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+  box-shadow: none !important;
+  border: 1px solid #E6DFD4 !important;
+}
+
+/* Style Buttons: high-contrast text and clean borders */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Remap hardcoded index buttons */
+.bg-\[\#2a14b4\] {
+  background-color: #8C2D19 !important; /* Primary Brand */
+  color: #FFFFFF !important;
+}
+.bg-\[\#2a14b4\]:hover {
+  background-color: #702313 !important;
+}
+
+.text-\[\#2a14b4\] {
+  color: #8C2D19 !important;
+}
+
+.bg-\[\#4338ca\] {
+  background-color: #1C1917 !important; /* Secondary container matte block */
+  color: #FCFAF7 !important;
+}
+
+.text-\[\#5b598c\] {
+  color: #6B5E59 !important;
+}
+
+.bg-\[\#edeeef\] {
+  background-color: #FAF6F0 !important;
+}
+
+.bg-\[\#10B981\] {
+  background-color: #415E4A !important;
+}
+
+.text-\[\#10B981\] {
+  color: #415E4A !important;
+}
+
+.bg-amber-500 {
+  background-color: #BF7E22 !important;
+}
+
+/* Badge highlights */
+.indigo-badge {
+  background-color: #F7EFE9 !important;
+  color: #8C2D19 !important;
+  border-color: #EADCD0 !important;
+}
+
+/* Scrollbar customizations to look like book margins */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #FCFAF7;
+}
+::-webkit-scrollbar-thumb {
+  background: #E3DCD1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #CFC5B6;
+}
+
+.frosted-header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(252, 250, 247, 0.85) !important;
+}
+
+.qr-pattern {
+  background-color: #FFFFFF;
+  background-image: radial-gradient(#8C2D19 0.5px, transparent 0.5px);
+  background-size: 8px 8px;
+}
+
+/* Animations and transitions */
+.order-card-transition {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, border-color 0.2s ease;
+}
+.order-card-transition:active {
+  transform: scale(0.99);
+}
+

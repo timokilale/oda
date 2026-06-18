@@ -1,0 +1,6 @@
+{
+  "name": "RestoManage",
+  "description": "High-fidelity restaurant operations management dashboard with live orders tracking, table QR control, menu catalog editor, and multi-dimensional sales reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

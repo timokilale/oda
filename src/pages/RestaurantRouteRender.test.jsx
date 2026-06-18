@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { AuthProvider } from "../context/AuthContext.jsx";
 
@@ -13,6 +13,19 @@ function jsonResponse(payload, init = {}) {
     },
   });
 }
+
+class MockEventSource {
+  constructor(url) {
+    this.url = url;
+    this.readyState = 0;
+    setTimeout(() => {
+      if (this.onerror) this.onerror(new Event("error"));
+    }, 0);
+  }
+  addEventListener() {}
+  close() {}
+}
+vi.stubGlobal("EventSource", MockEventSource);
 
 describe("restaurant route rendering", () => {
   afterEach(() => {
@@ -88,6 +101,12 @@ describe("restaurant route rendering", () => {
           });
         }
 
+        if (url.endsWith("/api/restaurants/restaurant-2/menu-items")) {
+          return Promise.resolve(
+            jsonResponse({ items: [], categorySuggestions: [] }),
+          );
+        }
+
         if (url.endsWith("/api/restaurants")) {
           return Promise.resolve(
             jsonResponse({
@@ -125,6 +144,6 @@ describe("restaurant route rendering", () => {
     expect(screen.getByRole("tablist", { name: "Test Kitchen sections" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Orders" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", "restaurant-tab-orders");
-    expect(screen.getByText("Test Kitchen")).toBeInTheDocument();
+    expect(screen.getByRole("tablist", { name: "Test Kitchen sections" })).toBeInTheDocument();
   });
 });

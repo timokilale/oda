@@ -1,0 +1,852 @@
+import { useState, useMemo } from 'react';
+import { MenuItem, MenuItemInput } from '../types';
+import { 
+  Plus, 
+  Search, 
+  MoreVertical, 
+  Eye, 
+  Trash2, 
+  Flame, 
+  Clock, 
+  Sparkles,
+  Leaf,
+  CheckCircle,
+  X,
+  FileEdit,
+  FolderMinus,
+  Utensils,
+  Maximize2
+} from 'lucide-react';
+
+interface MenuViewProps {
+  menuItems: MenuItem[];
+  setMenuItems: (items: MenuItem[] | ((prev: MenuItem[]) => MenuItem[])) => void;
+}
+
+export default function MenuView({
+  menuItems,
+  setMenuItems
+}: MenuViewProps) {
+  const [activeTab, setActiveTab] = useState<'All' | 'Available' | 'Archived'>('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewStyle, setViewStyle] = useState<'list' | 'grid'>('list');
+  
+  // Slide-over states
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+
+  // Form input states
+  const [formName, setFormName] = useState('');
+  const [formPrice, setFormPrice] = useState('24.00');
+  const [formCategory, setFormCategory] = useState('Main Courses');
+  const [formDescription, setFormDescription] = useState('');
+  const [formImage, setFormImage] = useState('');
+  const [formBadges, setFormBadges] = useState<string[]>(['Popular', 'Vegan']);
+  const [formIngredients, setFormIngredients] = useState('');
+  const [formCalories, setFormCalories] = useState('650');
+  const [formPrepTime, setFormPrepTime] = useState('15');
+  const [formSpiciness, setFormSpiciness] = useState(1);
+  const [formAvailable, setFormAvailable] = useState(true);
+
+  // Option dropdown states
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  // High-fidelity image options for easy selection inside sheet
+  const IMAGE_PRESETS = [
+    { label: 'Burger', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiu__j1Ve9suXJmSB64pBXfJWPggANsiYebEW-80OCmSiyGQo1k2b8yDYVZc8TUjzWPPesuDQ2rhMZbkhQXouZDSoPGqC9Qh5wpsZ40TVc-AxyyyTuly7cjZIXQaMczbUvw58J8gR97bczYH3RuN1RLk7K4XdC1xPXrW7yL6SaXBner1Zpe0KfGtl8nJAZesF0JT6maAISzBPrbTES0nrdM3qEyKS275AZckiTri-VmKBfHaXuLBoK0gVNrC0seAlJVwTB9HYGcqI' },
+    { label: 'Truffle Pasta', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMOBS-P8b6kn5ZTPEEDXaiEKl1oAvAzPuVu4k7GK7QqRkx3jeFW5-gPS-2K0DGMMk6fJbQU6iFMZvUfyC6JcgIzhvMp4KUnAFerUb9muaqxFy5kzwzwfzpmXoOUNjfIlnrlBtfJuTDwWZSasHIH5HXdSthiiRaknLy65v8wOTby79dL4xD3--e2YM5ffubxMws58ZXegNfUV9vPZk7HmjUzv0jpwc0Z2jjyLLNGNS9tUNtXIf-mDi6fozpHlVT1bCqjRc1FsGP56w' },
+    { label: 'Salad', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDYEW7lpuX8ovh0QAifeOxbir1opRfUtKEPYZKkTeJj3-DEdjtw19c5-5tUziFajUg_7Ngw0kAWkvSQgoAlCeQ6IYuucaL8lZFN9qclXkQ1NVbuNDngLLeuOpwEa07Yuay_mg5mNOC6uZk-B6vthUmD6sOREDaSA-xRkqh8tcP5PsOsZzgoQOnAAUk2LOkR7h-slXgkHoduzj6bt3x5zL2kjfolo9e5-XHt0p01f-3ajYnm2busuMMr5LUz5Rws3YCDWvg7BZgp3_E' },
+    { label: 'Hibiscus Drink', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAX_fN4zaz9c89WnUWZI7U-eDVOJxLAm9Ep-MrLC338ykUAgvMarNPMtwUVHN2bay3iG5JDTct7gvqP25OksmZvh7GgTRQgFzFM1WpD9vWnFUy6OdSrGW2Ee9uAkza2uRXdfDMdAcaqxMaDjMyubBPYk8Z6X17MWzHG7uvCUmx7X9qwn5ByKVQ3M48CPCzzufe_5J5XKB3XlVWCPR3VLuhnOI3rysCKvMDKM1pQERp1iJyqi3_eSZAkwq9Mcuf43jZGrAi3A3aV1j8' },
+    { label: 'Classic Pizza', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA4kwJhJ0mlCvLP4ktsdmr4PevsDj9DZCix8kSLtQ97wCdjdAV46LmCmavo85dMavZ0zEMGx5BPVSAwpYlDxIG0s8ntS59zay_u-xSwMJLlozjHx5PK1olRHKV0CFxQHGIzLTt0L51AAWZ72JuOEcKiOZNx6OtigtYFig7OUSnCCeLOtW5kLJfajNkWtlQSQJ549jzCWBLwGhGF5NI3hg26y3YJUc6ZoEPOzR0ugB2OqNfBe9rSkcnYBkVVD-rLVtmzc3Ky4ojuGXM' }
+  ];
+
+  // Calculated back of house analytic metrics
+  const activeCount = useMemo(() => {
+    return menuItems.filter(m => m.status === 'Available').length;
+  }, [menuItems]);
+
+  const avgPrepTime = useMemo(() => {
+    const available = menuItems.filter(m => m.status === 'Available');
+    if (available.length === 0) return 0;
+    const sum = available.reduce((acc, current) => acc + current.prepTime, 0);
+    return parseFloat((sum / available.length).toFixed(1));
+  }, [menuItems]);
+
+  const topCategory = useMemo(() => {
+    const counts: { [cat: string]: number } = {};
+    menuItems.forEach((m) => {
+      counts[m.category] = (counts[m.category] || 0) + 1;
+    });
+    let maxCat = 'Main Dishes';
+    let maxVal = 0;
+    Object.entries(counts).forEach(([cat, val]) => {
+      if (val > maxVal) {
+        maxVal = val;
+        maxCat = cat;
+      }
+    });
+    return maxCat;
+  }, [menuItems]);
+
+  // Handle slide-over triggers
+  const handleOpenAdd = () => {
+    setEditingItemId(null);
+    setFormName('');
+    setFormPrice('15.00');
+    setFormCategory('Mains');
+    setFormDescription('');
+    setFormImage(IMAGE_PRESETS[1].url); // pre-populate with beautiful truffle pasta link
+    setFormBadges(['Popular']);
+    setFormIngredients('Quality grains, fresh herbs, butter, seasoning');
+    setFormCalories('480');
+    setFormPrepTime('12');
+    setFormSpiciness(0);
+    setFormAvailable(true);
+    
+    setIsEditorOpen(true);
+  };
+
+  const handleOpenEdit = (item: MenuItem) => {
+    setEditingItemId(item.id);
+    setFormName(item.name);
+    setFormPrice(item.price.toFixed(2));
+    setFormCategory(item.category);
+    setFormDescription(item.description);
+    setFormImage(item.image);
+    setFormBadges(item.badges);
+    setFormIngredients(item.ingredients);
+    setFormCalories(String(item.calories));
+    setFormPrepTime(String(item.prepTime));
+    setFormSpiciness(item.spiciness);
+    setFormAvailable(item.status === 'Available');
+    
+    setOpenDropdownId(null);
+    setIsEditorOpen(true);
+  };
+
+  const handleDeleteItem = (itemId: string) => {
+    if (confirm('Are you sure you want to delete this menu item permanently?')) {
+      setMenuItems((prev) => prev.filter((m) => m.id !== itemId));
+      setOpenDropdownId(null);
+    }
+  };
+
+  const handleToggleBadge = (badge: string) => {
+    if (formBadges.includes(badge)) {
+      setFormBadges(formBadges.filter((b) => b !== badge));
+    } else {
+      setFormBadges([...formBadges, badge]);
+    }
+  };
+
+  // Submit edits or new item to parents
+  const handleSaveItemSubmit = () => {
+    if (!formName.trim()) {
+      alert('Item name cannot be empty.');
+      return;
+    }
+
+    const priceNum = parseFloat(formPrice);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      alert('Please enter a valid price.');
+      return;
+    }
+
+    if (editingItemId) {
+      // Edit existing
+      setMenuItems((prev) =>
+        prev.map((m) => {
+          if (m.id === editingItemId) {
+            return {
+              ...m,
+              name: formName,
+              price: priceNum,
+              category: formCategory,
+              description: formDescription,
+              image: formImage,
+              badges: formBadges,
+              ingredients: formIngredients,
+              calories: parseInt(formCalories) || 400,
+              prepTime: parseInt(formPrepTime) || 15,
+              spiciness: formSpiciness,
+              status: formAvailable ? 'Available' : 'Archived',
+            };
+          }
+          return m;
+        })
+      );
+    } else {
+      // Add new
+      const randId = 'menu-' + Math.floor(Math.random() * 10000);
+      const metricsList = [
+        { label: 'High Margin', value: 85, color: 'success' },
+        { label: 'Avg Demand', value: 50, color: 'pending' },
+        { label: 'High Velocity', value: 75, color: 'success' },
+        { label: 'Low Stock', value: 15, color: 'outline' }
+      ];
+      // Assign arbitrary metric based on category
+      const selectedMetric = metricsList[Math.floor(Math.random() * metricsList.length)];
+      
+      const newItem: MenuItem = {
+        id: randId,
+        name: formName,
+        price: priceNum,
+        category: formCategory,
+        description: formDescription,
+        image: formImage || IMAGE_PRESETS[0].url,
+        badges: formBadges,
+        ingredients: formIngredients,
+        calories: parseInt(formCalories) || 440,
+        prepTime: parseInt(formPrepTime) || 12,
+        spiciness: formSpiciness,
+        status: formAvailable ? 'Available' : 'Archived',
+        metrics: selectedMetric
+      };
+
+      setMenuItems((prev) => [newItem, ...prev]);
+    }
+
+    setIsEditorOpen(false);
+  };
+
+  // Filter list by tab select and query
+  const filteredItems = useMemo(() => {
+    return menuItems.filter((item) => {
+      // Tab matching
+      if (activeTab === 'Available' && item.status !== 'Available') return false;
+      if (activeTab === 'Archived' && item.status !== 'Archived') return false;
+
+      // Search matching
+      if (searchQuery.trim() !== '') {
+        const query = searchQuery.toLowerCase();
+        const matchName = item.name.toLowerCase().includes(query);
+        const matchCat = item.category.toLowerCase().includes(query);
+        const matchBadge = item.badges.some((b) => b.toLowerCase().includes(query));
+        return matchName || matchCat || matchBadge;
+      }
+
+      return true;
+    });
+  }, [menuItems, activeTab, searchQuery]);
+
+  return (
+    <div id="menu-management-view" className="space-y-6">
+      
+      {/* Top action block */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="font-sans text-xl font-bold text-neutral-800 dark:text-neutral-100">
+            Main Course Catalog & Items
+          </h2>
+          <p className="font-sans text-xs text-neutral-500">
+            Control items pricing, tag markings, and immediate table availability.
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="bg-[#edeeef] dark:bg-neutral-800 rounded-lg p-1 flex gap-1">
+            <button
+              onClick={() => setViewStyle('list')}
+              className={`px-3 py-1.5 rounded-md font-sans text-xs font-bold transition-all ${
+                viewStyle === 'list'
+                  ? 'bg-white shadow-xs text-neutral-800'
+                  : 'text-neutral-500'
+              }`}
+            >
+              List Mode
+            </button>
+            <button
+              onClick={() => setViewStyle('grid')}
+              className={`px-3 py-1.5 rounded-md font-sans text-xs font-bold transition-all ${
+                viewStyle === 'grid'
+                  ? 'bg-white shadow-xs text-neutral-800'
+                  : 'text-neutral-500'
+              }`}
+            >
+              Grid Cards
+            </button>
+          </div>
+
+          <button
+            id="openEditor"
+            onClick={handleOpenAdd}
+            className="bg-[#2a14b4] text-white px-5 py-2.5 rounded-xl font-sans text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:opacity-90 transition-all active:scale-95 cursor-pointer shadow-md"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Item</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filter and Search bars */}
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-[#E5E7EB] dark:border-neutral-800 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="flex gap-1 bg-[#f3f4f5] dark:bg-neutral-850 p-1 rounded-xl w-full md:w-auto">
+          <button
+            onClick={() => setActiveTab('All')}
+            className={`flex-1 md:flex-none px-6 py-2 rounded-lg transition-all font-sans text-xs font-bold uppercase tracking-wider ${
+              activeTab === 'All'
+                ? 'bg-white dark:bg-neutral-800 text-[#2a14b4] dark:text-white shadow-xs font-semibold'
+                : 'text-neutral-500 hover:bg-white/50'
+            }`}
+          >
+            All Items
+          </button>
+          <button
+            onClick={() => setActiveTab('Available')}
+            className={`flex-1 md:flex-none px-6 py-2 rounded-lg transition-all font-sans text-xs font-bold uppercase tracking-wider ${
+              activeTab === 'Available'
+                ? 'bg-white dark:bg-neutral-800 text-[#2a14b4] dark:text-white shadow-xs font-semibold'
+                : 'text-neutral-500 hover:bg-white/50'
+            }`}
+          >
+            Available
+          </button>
+          <button
+            onClick={() => setActiveTab('Archived')}
+            className={`flex-1 md:flex-none px-6 py-2 rounded-lg transition-all font-sans text-xs font-bold uppercase tracking-wider ${
+              activeTab === 'Archived'
+                ? 'bg-white dark:bg-neutral-800 text-[#2a14b4] dark:text-white shadow-xs font-semibold'
+                : 'text-neutral-500 hover:bg-white/50'
+            }`}
+          >
+            Archived
+          </button>
+        </div>
+
+        <div className="relative w-full md:w-80">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <input
+            type="text"
+            placeholder="Search menu items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-[#f3f4f5] dark:bg-neutral-850 border-transparent rounded-lg focus:ring-2 focus:ring-[#4338ca] outline-none text-xs dark:text-white"
+          />
+        </div>
+      </div>
+
+      {/* Grid or Table listing based on state viewStyle */}
+      {viewStyle === 'grid' ? (
+        /* GRID DECORATIVE CARD LAYOUT (Mockup 2 Style) */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fadeIn">
+          {filteredItems.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => handleOpenEdit(item)}
+              className={`bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-xl transition-all cursor-pointer group flex flex-col justify-between ${
+                item.status === 'Archived' ? 'opacity-70 grayscale-[0.2]' : ''
+              }`}
+            >
+              <div>
+                {/* Photo aspect 4:3 */}
+                <div 
+                  className="h-48 w-full bg-neutral-100 dark:bg-neutral-850 bg-cover bg-center transition-transform group-hover:scale-101 relative"
+                  style={{ backgroundImage: `url('${item.image}')` }}
+                >
+                  {item.status === 'Archived' && (
+                    <div className="absolute top-2 right-2 bg-neutral-800/80 text-white font-sans text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                      Archived
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-sans font-bold text-base text-neutral-850 dark:text-white group-hover:text-[#2a14b4] dark:group-hover:text-[#c3c0ff]">
+                      {item.name}
+                    </h3>
+                    <span className="font-mono text-base font-bold text-[#2a14b4] dark:text-[#c1beff]">
+                      ${item.price.toFixed(2)}
+                    </span>
+                  </div>
+                  
+                  <p className="font-sans text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 mb-4 leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Badges footer */}
+              <div className="px-4 pb-4 pt-1 border-t border-neutral-50 dark:border-neutral-800 flex justify-between items-center">
+                <span className="font-sans text-[10px] uppercase font-bold text-[#5b598c] dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 rounded-full">
+                  {item.category}
+                </span>
+
+                <div className="flex gap-1.5 flex-wrap justify-end">
+                  {item.badges.slice(0, 2).map((badge, idx) => (
+                    <span 
+                      key={idx}
+                      className="bg-[#EEF2FF] text-[#2a14b4] px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                  {item.spiciness > 0 && (
+                    <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                      <Flame className="w-2.5 h-2.5 fill-red-500 text-red-500" />
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* TABLE BENTO CONTAINER ROW LIST LAYOUT (Mockup 5 Style) */
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-[#E5E7EB] dark:border-neutral-800 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f3f4f5]/65 dark:bg-neutral-950/20 border-b border-[#E5E7EB] dark:border-neutral-850">
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Item Details</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Price</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Prep Time</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Metrics</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E7EB] dark:divide-neutral-850">
+                {filteredItems.map((item) => (
+                  <tr 
+                    key={item.id} 
+                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/10 transition-colors group cursor-pointer"
+                    onClick={(e) => {
+                      // Avoid click triggered when clicking context dots/buttons
+                      if ((e.target as HTMLElement).closest('.action-dropdown-btn') || (e.target as HTMLElement).closest('.action-menu-dropdown')) {
+                        return;
+                      }
+                      handleOpenEdit(item);
+                    }}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        {/* Rounded Thumbnail */}
+                        <div className="w-16 h-16 rounded-xl bg-neutral-100 overflow-hidden flex-shrink-0 border border-neutral-100 dark:border-neutral-800">
+                          <img 
+                            className="w-full h-full object-cover" 
+                            alt={item.name} 
+                            referrerPolicy="no-referrer"
+                            src={item.image} 
+                          />
+                        </div>
+                        <div>
+                          <p className="font-sans font-bold text-sm text-neutral-800 dark:text-neutral-100">
+                            {item.name}
+                          </p>
+                          <div className="flex gap-1.5 flex-wrap mt-1">
+                            {item.badges.map((badge, idx) => (
+                              <span 
+                                key={idx}
+                                className="bg-[#EEF2FF] dark:bg-[#4338ca]/20 text-[#2a14b4] dark:text-[#c1beff] px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider inline-flex items-center"
+                              >
+                                {badge === 'Vegan' && <Leaf className="w-3 h-3 text-[#10B981] mr-0.5 inline" />}
+                                {badge === 'New' && <Sparkles className="w-3 h-3 text-[#2a14b4] mr-0.5 inline" />}
+                                <span>{badge}</span>
+                              </span>
+                            ))}
+                            {item.spiciness > 0 && (
+                              <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-0.5">
+                                <Flame className="w-3 h-3 text-red-500 fill-red-500" />
+                                <span>Spicy</span>
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-4 font-sans text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                      {item.category}
+                    </td>
+                    
+                    <td className="px-6 py-4 font-mono text-sm font-bold text-[#2a14b4] dark:text-[#c3c0ff]">
+                      ${item.price.toFixed(2)}
+                    </td>
+                    
+                    <td className="px-6 py-4 font-sans text-xs text-neutral-500 dark:text-neutral-400">
+                      {item.prepTime} min
+                    </td>
+                    
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1 w-24">
+                        <div className="h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${
+                              item.metrics.color === 'success' 
+                                ? 'bg-[#10B981]' 
+                                : item.metrics.color === 'pending'
+                                ? 'bg-[#F59E0B]'
+                                : 'bg-neutral-400'
+                            }`}
+                            style={{ width: `${item.metrics.value}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-neutral-400 tracking-tight leading-none">
+                          {item.metrics.label}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {item.status === 'Available' ? (
+                        <span className="bg-emerald-50 text-[#10B981] dark:bg-emerald-900/10 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                          Available
+                        </span>
+                      ) : (
+                        <span className="bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                          Archived
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      {/* Dropdown triggers */}
+                      <div className="relative inline-block text-left">
+                        <button
+                          onClick={() => setOpenDropdownId(openDropdownId === item.id ? null : item.id)}
+                          className="action-dropdown-btn p-1.5 hover:bg-neutral-150 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <MoreVertical className="w-5 h-5 text-neutral-400" />
+                        </button>
+
+                        {openDropdownId === item.id && (
+                          <div className="action-menu-dropdown absolute right-0 mt-1 w-36 bg-white dark:bg-neutral-850 rounded-lg shadow-lg border border-[#E5E7EB] dark:border-neutral-800 py-1 z-20 font-sans text-xs">
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              className="w-full text-left px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-850 text-neutral-700 dark:text-white flex items-center gap-2 font-medium"
+                            >
+                              <FileEdit className="w-4 h-4 text-neutral-400" />
+                              <span>Edit Details</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setMenuItems(prev => prev.map(m => m.id === item.id ? { ...m, status: m.status === 'Available' ? 'Archived' : 'Available' } : m));
+                                setOpenDropdownId(null);
+                              }}
+                              className="w-full text-left px-4 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-850 text-neutral-700 dark:text-white flex items-center gap-2 font-medium"
+                            >
+                              <FolderMinus className="w-4 h-4 text-neutral-400" />
+                              <span>{item.status === 'Available' ? 'Archive' : 'Activate'}</span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(item.id)}
+                              className="w-full text-left px-4 py-2 hover:bg-red-50 text-[#ba1a1a] flex items-center gap-2 font-bold"
+                            >
+                              <Trash2 className="w-4 h-4 text-[#ba1a1a]" />
+                              <span>Delete item</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics block */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#2a14b4]">
+            <Utensils className="w-5 h-5 text-[#2a14b4]" />
+          </div>
+          <div>
+            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Active Items</span>
+            <p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{activeCount}</p>
+          </div>
+        </div>
+        
+        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[#f3f4f5] flex items-center justify-center text-[#5b598c]">
+            <Clock className="w-5 h-5 text-[#5b598c]" />
+          </div>
+          <div>
+            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg Prep Time</span>
+            <p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{avgPrepTime} min</p>
+          </div>
+        </div>
+        
+        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[#dec0ff]/20 flex items-center justify-center text-[#4338ca]">
+            <Sparkles className="w-5 h-5 text-[#4338ca]" />
+          </div>
+          <div>
+            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Top Category</span>
+            <p className="font-sans text-lg font-bold text-[#2a14b4] dark:text-[#c3c0ff] mt-0.5">{topCategory}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* MenuItemEditor Drawer Overlay (Slideover Panel) */}
+      {isEditorOpen && (
+        <div className="fixed inset-0 bg-neutral-950/20 backdrop-blur-sm z-50 flex justify-end">
+          {/* Transparent click overlay to dismiss */}
+          <div className="absolute inset-0" onClick={() => setIsEditorOpen(false)} />
+          
+          <div className="relative w-full max-w-xl bg-white dark:bg-neutral-900 h-full shadow-2xl flex flex-col justify-between z-10 animate-slideLeft">
+            
+            {/* Editor Header */}
+            <div className="px-6 py-5 border-b border-[#E5E7EB] dark:border-neutral-850 flex items-center justify-between">
+              <div>
+                <h2 className="font-sans text-lg font-bold text-neutral-800 dark:text-white">
+                  {editingItemId ? 'Edit Menu Item' : 'Add New Menu Item'}
+                </h2>
+                <p className="font-sans text-xs text-neutral-400">
+                  Update your restaurant digital menu specs.
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsEditorOpen(false)}
+                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-neutral-400" />
+              </button>
+            </div>
+
+            {/* Editor Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+              
+              {/* Image selection and preset preview options */}
+              <section className="space-y-2">
+                <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest font-semibold">
+                  Item Photography
+                </label>
+                <div 
+                  className="relative h-48 w-full bg-neutral-100 dark:bg-neutral-800 rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 flex flex-col items-center justify-center overflow-hidden transition-all bg-cover bg-center"
+                  style={{ backgroundImage: `url('${formImage || IMAGE_PRESETS[0].url}')` }}
+                >
+                  <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2 text-center text-white text-[10px] font-sans">
+                    Photography Preset Loaded
+                  </div>
+                </div>
+                
+                {/* Image selection preset anchors */}
+                <div className="flex flex-wrap items-center gap-2 pt-1 font-sans text-xs">
+                  <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider">Select Preset:</span>
+                  {IMAGE_PRESETS.map((preset, pidx) => (
+                    <button
+                      key={pidx}
+                      onClick={() => setFormImage(preset.url)}
+                      className={`px-2.5 py-1 rounded bg-[#f3f4f5] dark:bg-neutral-800 border text-[11px] cursor-pointer hover:border-[#2a14b4] ${
+                        formImage === preset.url ? 'border-[#2a14b4] font-bold text-[#2a14b4]' : 'border-transparent'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {/* Name & price metadata fields */}
+              <div className="grid grid-cols-12 gap-4">
+                <div className="col-span-8">
+                  <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">
+                    Item Name
+                  </label>
+                  <input 
+                    type="text" 
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder="e.g. Truffle Tagliatelle"
+                    className="w-full bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all text-sm dark:text-white"
+                  />
+                </div>
+                <div className="col-span-4">
+                  <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">
+                    Price ($)
+                  </label>
+                  <input 
+                    type="text" 
+                    value={formPrice}
+                    onChange={(e) => setFormPrice(e.target.value)}
+                    placeholder="24.00"
+                    className="w-full font-mono bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all text-sm font-semibold dark:text-white text-right"
+                  />
+                </div>
+              </div>
+
+              {/* Select Category */}
+              <section>
+                <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">
+                  Category
+                </label>
+                <select
+                  value={formCategory}
+                  onChange={(e) => setFormCategory(e.target.value)}
+                  className="w-full bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 px-4 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 dark:text-white"
+                >
+                  <option value="Starters">Starters</option>
+                  <option value="Mains">Main Courses (Mains)</option>
+                  <option value="Desserts">Desserts</option>
+                  <option value="Beverages">Beverages</option>
+                  <option value="Asian Fusion">Asian Fusion</option>
+                </select>
+              </section>
+
+              {/* Description field area */}
+              <section>
+                <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">
+                  Description
+                </label>
+                <textarea 
+                  rows={2} 
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  placeholder="Gourmet handmade pasta with white truffle infusion and parmesan shavings..."
+                  className="w-full text-xs bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all dark:text-white"
+                />
+              </section>
+
+              {/* Culinary details card */}
+              <div className="bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl p-4 space-y-4 border border-[#E5E7EB] dark:border-neutral-800">
+                <h3 className="font-sans text-sm font-bold text-neutral-800 dark:text-white">
+                  Culinary Specifics & Nutrition
+                </h3>
+
+                {/* Badges buttons choices selection */}
+                <div>
+                  <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">
+                    Menu Badges & Tags
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Popular', 'New', 'Vegan', 'Chef\'s Pick', 'Seasonal'].map((badge) => {
+                      const isActive = formBadges.includes(badge);
+                      return (
+                        <button
+                          key={badge}
+                          onClick={() => handleToggleBadge(badge)}
+                          className={`px-3 py-1.5 rounded-full font-sans text-[11px] font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-[#EEF2FF] border border-[#2a14b4] text-[#2a14b4]'
+                              : 'bg-white dark:bg-neutral-800 border border-neutral-200 text-neutral-500'
+                          }`}
+                        >
+                          {badge}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Ingredients tag list */}
+                <div>
+                  <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">
+                    Ingredients (comma separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={formIngredients}
+                    onChange={(e) => setFormIngredients(e.target.value)}
+                    placeholder="Semolina, water, truffle paste, pecorino romano"
+                    className="w-full text-xs bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 rounded-lg px-3 py-2 outline-none dark:text-white"
+                  />
+                </div>
+
+                {/* Nutritional metrics numbers */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                      Calories (kcal)
+                    </label>
+                    <input
+                      type="number"
+                      value={formCalories}
+                      onChange={(e) => setFormCalories(e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-lg text-xs outline-none dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                      Prep Time (mins)
+                    </label>
+                    <input
+                      type="number"
+                      value={formPrepTime}
+                      onChange={(e) => setFormPrepTime(e.target.value)}
+                      className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-lg text-xs outline-none dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Spiciness Level slider with interactive flame count indicators */}
+                <div>
+                  <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                    Spiciness Rating
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="5"
+                      value={formSpiciness}
+                      onChange={(e) => setFormSpiciness(parseInt(e.target.value))}
+                      className="w-full h-2 bg-neutral-205 rounded-lg appearance-none cursor-pointer accent-[#2a14b4]"
+                    />
+                    <div className="flex gap-0.5 text-[#2a14b4]">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <Flame 
+                          key={level}
+                          className={`w-4 h-4 ${
+                            level <= formSpiciness 
+                              ? 'text-red-500 fill-red-500 animate-bounce-slow' 
+                              : 'text-neutral-300 dark:text-neutral-600'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Available status checkbox toggle */}
+              <div className="flex items-center justify-between p-4 bg-white dark:bg-[#191c1d] border border-[#E5E7EB] dark:border-neutral-800 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-[#10B981]" />
+                  <div>
+                    <p className="font-semibold text-xs text-neutral-800 dark:text-white">Available on Menu</p>
+                    <p className="text-neutral-400 text-[10px]">Visible to table QR scans and takeout orders immediately.</p>
+                  </div>
+                </div>
+                
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={formAvailable}
+                    onChange={(e) => setFormAvailable(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-12 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2a14b4]" />
+                </label>
+              </div>
+
+            </div>
+
+            {/* Editor Footer CTA items */}
+            <div className="px-6 py-5 border-t border-[#E5E7EB] dark:border-neutral-850 flex items-center gap-3 bg-white dark:bg-neutral-900">
+              <button
+                onClick={() => setIsEditorOpen(false)}
+                className="flex-1 py-3 border border-[#E5E7EB] dark:border-neutral-700 text-neutral-500 dark:text-neutral-300 font-sans text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-neutral-50 transition-all cursor-pointer text-center"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveItemSubmit}
+                className="flex-1 py-3 bg-[#2a14b4] hover:opacity-90 transition-all text-white font-sans text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer text-center shadow-md shadow-[#2a14b4]/10"
+              >
+                Save Catalog Changes
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
