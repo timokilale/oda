@@ -80,10 +80,10 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
       <section className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
         <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-1 rounded-xl">
           {[
-            { key: 'All', label: `All Orders (${counts.all})` },
+            { key: 'All', label: `All (${counts.all})` },
             { key: 'Pending', label: `Pending (${counts.pending})` },
-            { key: 'Confirmed', label: `Confirmed (${counts.confirmed})` },
-            { key: 'Served', label: `Served (${counts.served})` },
+            { key: 'Confirmed', label: `Active (${counts.confirmed})` },
+            { key: 'Served', label: `Done (${counts.served})` },
           ].map((opt) => (
             <button key={opt.key} onClick={() => setFilter(opt.key)} className={`px-4 py-2 rounded-lg font-sans text-xs font-bold uppercase tracking-wider transition-all active:scale-95 ${filter === opt.key ? 'bg-[#2a14b4] text-white shadow-sm' : 'text-neutral-500 hover:bg-[#edeeef] dark:text-neutral-400 dark:hover:bg-neutral-800'}`}>{opt.label}</button>
           ))}
@@ -91,7 +91,7 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
         <div className="flex items-center gap-4 w-full lg:w-auto">
           <div className="relative flex-1 lg:w-64">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <input type="text" placeholder="Search Order ID or Table..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-xl font-sans text-sm focus:ring-2 focus:ring-[#4338ca] focus:border-transparent outline-none transition-all dark:text-white" />
+            <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-xl font-sans text-sm focus:ring-2 focus:ring-[#4338ca] focus:border-transparent outline-none transition-all dark:text-white" />
           </div>
           <button onClick={() => setSearchQuery('')} className="p-2 border border-[#E5E7EB] dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 hover:bg-[#f3f4f5] dark:hover:bg-neutral-800 transition-all text-[#5b598c] dark:text-neutral-400"><SlidersHorizontal className="w-5 h-5" /></button>
         </div>
@@ -123,7 +123,7 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
 
                 <div className="space-y-2 border-y border-[#E5E7EB] dark:border-neutral-800 py-3">
                   {isServed ? (
-                    <div className="font-sans text-xs text-neutral-500 italic">Items completed & served.</div>
+                    <div className="font-sans text-xs text-neutral-500 italic">All items served.</div>
                   ) : (
                     order.items.map((it, idx) => (
                       <div key={idx} className="flex justify-between font-sans text-xs text-neutral-700 dark:text-neutral-300">
@@ -138,19 +138,19 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
                   {isPending && (
                     <div className="grid grid-cols-2 gap-2">
                       <button onClick={() => onCancelOrder(order.id)} className="py-2 rounded-lg border border-[#E5E7EB] dark:border-neutral-700 text-neutral-500 dark:text-neutral-300 font-sans text-xs font-bold uppercase tracking-wider hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer text-center">Cancel</button>
-                      <button onClick={() => onAcceptOrder(order.id)} className="py-2 rounded-lg bg-[#2a14b4] text-white font-sans text-xs font-bold uppercase tracking-wider hover:bg-[#4338ca] transition-all cursor-pointer text-center">Accept Order</button>
+                      <button onClick={() => onAcceptOrder(order.id)} className="py-2 rounded-lg bg-[#2a14b4] text-white font-sans text-xs font-bold uppercase tracking-wider hover:bg-[#4338ca] transition-all cursor-pointer text-center">Accept</button>
                     </div>
                   )}
                   {isConfirmed && (
                     <div className="grid grid-cols-1">
                       <button onClick={() => onMarkServed(order.id)} className="py-2.5 rounded-lg bg-[#10B981] text-white font-sans text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer">
-                        <CheckCircle className="w-4 h-4" /><span>Mark as Served</span>
+                        <CheckCircle className="w-4 h-4" /><span>Served</span>
                       </button>
                     </div>
                   )}
                   {isServed && (
                     <button onClick={() => onRecallOrder ? onRecallOrder(order.id) : setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Pending', timeAgo: 'Just restarted' } : o))} className="w-full py-2 rounded-lg border border-[#E5E7EB] dark:border-neutral-700 text-neutral-500 dark:text-neutral-300 font-sans text-xs font-bold uppercase tracking-wider hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer text-center flex items-center justify-center gap-1.5">
-                      <RotateCcw className="w-3.5 h-3.5" /><span>Recall Order</span>
+                      <RotateCcw className="w-3.5 h-3.5" /><span>Recall</span>
                     </button>
                   )}
                   {isCancelled && <div className="font-sans text-xs text-[#ba1a1a] text-center font-medium italic py-1">Order was cancelled.</div>}
@@ -161,7 +161,7 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
 
           <button onClick={() => setShowManualOrderModal(true)} className="border-2 border-dashed border-[#E5E7EB] dark:border-neutral-800 rounded-xl p-6 flex flex-col items-center justify-center text-neutral-400 dark:text-neutral-600 gap-2 bg-[#f8f9fa]/50 dark:bg-neutral-950/20 hover:bg-white dark:hover:bg-neutral-900 transition-colors cursor-pointer min-h-[220px]">
             <Plus className="w-10 h-10 text-neutral-500 dark:text-neutral-400" />
-            <span className="font-sans text-xs font-bold uppercase tracking-wide">Create Manual Order</span>
+            <span className="font-sans text-xs font-bold uppercase tracking-wide">Add Order</span>
           </button>
         </div>
       </section>
@@ -170,28 +170,28 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
         <div className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-6">
             <div className="flex justify-between items-center border-b border-[#E5E7EB] dark:border-neutral-800 pb-3">
-              <h3 className="font-sans text-lg font-bold text-neutral-850 dark:text-white">Create Manual Staff Order</h3>
+              <h3 className="font-sans text-lg font-bold text-neutral-850 dark:text-white">New Order</h3>
               <button onClick={() => setShowManualOrderModal(false)} className="text-neutral-400 hover:text-neutral-600 font-sans text-lg font-bold">&times;</button>
             </div>
             <div className="space-y-4">
-              <div className="font-sans text-xs text-neutral-500">Staff can place manual order on behalf of tables or takeaways.</div>
+              <div className="font-sans text-xs text-neutral-500">Place order for a table or takeaway.</div>
               <div>
                 <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Order Type</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setOrderType('Table')} className={`py-2 rounded-lg font-sans text-xs font-bold border transition-all ${orderType === 'Table' ? 'border-[#2a14b4] bg-[#2a14b4]/10 text-[#2a14b4]' : 'border-neutral-200 text-neutral-500'}`}>Table Service</button>
+                  <button onClick={() => setOrderType('Table')} className={`py-2 rounded-lg font-sans text-xs font-bold border transition-all ${orderType === 'Table' ? 'border-[#2a14b4] bg-[#2a14b4]/10 text-[#2a14b4]' : 'border-neutral-200 text-neutral-500'}`}>Dine-in</button>
                   <button onClick={() => setOrderType('Takeaway')} className={`py-2 rounded-lg font-sans text-xs font-bold border transition-all ${orderType === 'Takeaway' ? 'border-[#2a14b4] bg-[#2a14b4]/10 text-[#2a14b4]' : 'border-neutral-200 text-neutral-500'}`}>Takeaway</button>
                 </div>
               </div>
               {orderType === 'Table' && (
                 <div>
-                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Select Table</label>
+                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Table</label>
                   <select value={selectedTable} onChange={(e) => setSelectedTable(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white">
                     {['Table 01', 'Table 02', 'Table 03', 'Table 04', 'Table 05', 'Table 12', 'Table 18'].map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
               )}
               <div>
-                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Menu Selections</label>
+                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Items</label>
                 <div className="max-h-48 overflow-y-auto space-y-1 pr-1 border border-[#E5E7EB] dark:border-neutral-800 rounded-xl p-2 bg-[#f3f4f5]/50 dark:bg-neutral-900">
                   {menuItems.filter(m => m.status === 'Available').map((item) => {
                     const count = selectedItemIds[item.id] || 0;
@@ -212,23 +212,23 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Staff Notes (optional)</label>
+                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Notes</label>
                 <input type="text" value={staffNotes} onChange={(e) => setStaffNotes(e.target.value)} placeholder="e.g. Extra napkins, no ice..." className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Tip (optional)</label>
+                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Tip</label>
                   <input type="number" min="0" step="0.01" value={tipAmount} onChange={(e) => setTipAmount(e.target.value)} placeholder="0.00" className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white font-mono text-right" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Service Charge (optional)</label>
+                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Service</label>
                   <input type="number" min="0" step="0.01" value={serviceCharge} onChange={(e) => setServiceCharge(e.target.value)} placeholder="0.00" className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white font-mono text-right" />
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-[#E5E7EB] dark:border-neutral-800">
               <button onClick={() => setShowManualOrderModal(false)} className="py-2.5 font-sans text-xs font-bold text-neutral-500 border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-all">Cancel</button>
-              <button onClick={handleCreateManualOrderSubmit} className="py-2.5 font-sans text-xs font-bold text-white bg-[#2a14b4] rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-1.5"><span>Place Order</span></button>
+              <button onClick={handleCreateManualOrderSubmit} className="py-2.5 font-sans text-xs font-bold text-white bg-[#2a14b4] rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-1.5"><span>Place</span></button>
             </div>
           </div>
         </div>

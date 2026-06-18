@@ -65,37 +65,34 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h2 className="font-sans text-xl font-bold text-neutral-800 dark:text-neutral-100">Table QR Dashboard</h2>
-          <p className="font-sans text-xs text-neutral-500">Provision dining QR labels, monitor scan metrics, and track table engagement.</p>
-        </div>
+        <div />
         <div className="flex items-center gap-2">
           <button onClick={() => setShowAddTableModal(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#2a14b4] text-[#2a14b4] font-semibold hover:bg-[#EEF2FF] transition-all active:scale-95 text-xs uppercase cursor-pointer">
-            <Plus className="w-4 h-4" /><span>Add Tables</span>
+            <Plus className="w-4 h-4" /><span>Add</span>
           </button>
           <button onClick={handlePrintAllQR} className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2a14b4] text-white font-semibold hover:opacity-90 transition-all active:scale-95 text-xs uppercase cursor-pointer shadow-md">
-            <Printer className="w-4 h-4" /><span>Print All QR Codes</span>
+            <Printer className="w-4 h-4" /><span>Print All</span>
           </button>
         </div>
       </div>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-6 rounded-2xl flex flex-col justify-between shadow-xs">
-          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Total Tables</span>
+          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Tables</span>
           <div className="flex items-baseline gap-2 mt-4">
             <span className="font-mono text-3xl font-bold text-[#2a14b4] dark:text-[#c3c0ff]">{totalTablesCount}</span>
             <span className="text-[#10B981] font-sans text-xs font-semibold flex items-center ml-1"><TrendingUp className="w-3.5 h-3.5 mr-1" />+active</span>
           </div>
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-6 rounded-2xl flex flex-col justify-between shadow-xs">
-          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Total Scans</span>
+          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Scans</span>
           <div className="flex items-baseline gap-2 mt-4">
             <span className="font-mono text-3xl font-bold text-[#5b598c] dark:text-neutral-300">{totalScansValue}</span>
             <span className="text-neutral-400 font-sans text-xs">Avg. {(totalScansValue / (totalTablesCount || 1)).toFixed(1)} per table</span>
           </div>
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-6 rounded-2xl flex flex-col justify-between shadow-xs">
-          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Active Tables</span>
+          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Active</span>
           <div className="flex items-baseline gap-2 mt-4">
             <span className="font-mono text-3xl font-bold text-[#2a14b4] dark:text-[#c3c0ff]">{activeOrdersVal}</span>
             <span className="bg-[#4338ca]/15 text-[#2a14b4] dark:text-[#c1beff] px-2.5 py-0.5 rounded-full font-sans text-[10px] font-bold uppercase tracking-wider ml-1">{Math.min(100, Math.round((activeOrdersVal / (totalTablesCount || 1)) * 100))}% Active</span>
@@ -151,7 +148,6 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
             <Plus className="w-6 h-6 text-neutral-500 group-hover:text-white transition-all" />
           </div>
           <span className="font-sans font-bold text-sm text-neutral-800 dark:text-neutral-300">Add Table</span>
-          <span className="text-neutral-400 font-sans text-xs text-center mt-2 px-4">Generate new QR codes for additional dining locations.</span>
         </button>
       </section>
 
@@ -159,20 +155,20 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
         <div className="fixed inset-0 bg-neutral-950/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl space-y-4">
             <div className="flex justify-between items-center border-b border-neutral-100 dark:border-neutral-800 pb-2.5">
-              <h3 className="font-sans text-base font-bold text-neutral-800 dark:text-white">Add Table Dining Space</h3>
+              <h3 className="font-sans text-base font-bold text-neutral-800 dark:text-white">Add Table</h3>
               <button onClick={() => setShowAddTableModal(false)} className="text-neutral-400 hover:text-neutral-600 font-sans text-lg font-bold">&times;</button>
             </div>
             <div className="space-y-3">
               <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Table Number / Label</label>
+                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Number / Label</label>
                 <input type="text" placeholder="e.g. 05 or 19" maxLength={5} value={newTableNum} onChange={(e) => setNewTableNum(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3.5 py-2.5 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white text-center font-mono font-bold text-base" />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Initial Status</label>
+                <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Status</label>
                 <div className="relative">
                   <select value={newTableStatus} onChange={(e) => setNewTableStatus(e.target.value)} className="w-full bg-white dark:bg-neutral-850 border border-neutral-200 dark:border-neutral-700 px-3 py-2 rounded-xl text-xs outline-none dark:text-white appearance-none">
-                    <option value="ACTIVE">ACTIVE (Immediate use)</option>
-                    <option value="PENDING">PENDING (Hold QR codes)</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="PENDING">Pending</option>
                   </select>
                   <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400" />
                 </div>
@@ -180,7 +176,7 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
             </div>
             <div className="grid grid-cols-2 gap-2 pt-2">
               <button onClick={() => setShowAddTableModal(false)} className="py-2 rounded-xl border border-neutral-200 text-neutral-500 font-sans text-xs font-bold hover:bg-neutral-50">Cancel</button>
-              <button onClick={handleAddNewTableSubmit} className="py-2 rounded-xl bg-[#2a14b4] text-white font-sans text-xs font-bold hover:opacity-90 transition-all text-center">Create table</button>
+              <button onClick={handleAddNewTableSubmit} className="py-2 rounded-xl bg-[#2a14b4] text-white font-sans text-xs font-bold hover:opacity-90 transition-all text-center">Create</button>
             </div>
           </div>
         </div>

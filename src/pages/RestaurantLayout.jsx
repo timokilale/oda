@@ -56,7 +56,6 @@ export default function RestaurantLayout() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [flash, setFlash] = useState(null);
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const currentSection = useMemo(
     () => resolveCurrentSection(location.pathname),
@@ -177,10 +176,6 @@ export default function RestaurantLayout() {
     currentSection,
     onSectionChange: handleSectionChange,
     restaurant,
-    soundEnabled,
-    onToggleSound: () => setSoundEnabled((v) => !v),
-    notificationsCount: 0,
-    onNotificationsClick: () => {},
     onLogout: handleLogout,
   };
 

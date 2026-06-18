@@ -42,15 +42,12 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="font-sans text-xl font-bold text-neutral-800 dark:text-neutral-100">Reports & Insights</h2>
-          <p className="font-sans text-xs text-neutral-500">Monitor operational performance across multiple dimensions.</p>
-        </div>
+        <div />
         <div className="flex items-center gap-3">
           <div className="bg-[#edeeef] dark:bg-neutral-800 rounded-xl p-1 flex h-10 border border-[#E5E7EB] dark:border-neutral-700">
             {['Today', 'Week', 'Month', 'AllTime'].map((period) => (
               <button key={period} onClick={() => onTimeframeChange(period)} className={`px-3 py-1 text-xs font-bold font-sans rounded-lg transition-all ${timeframe === period ? 'bg-white dark:bg-neutral-700 text-[#2a14b4] dark:text-white shadow-xs' : 'text-neutral-500 hover:text-[#2a14b4]'}`}>
-                {period === 'AllTime' ? 'All Time' : period === 'Week' ? 'This Week' : period === 'Month' ? 'This Month' : 'Today'}
+                {period === 'AllTime' ? 'All' : period === 'Week' ? 'Week' : period === 'Month' ? 'Month' : 'Today'}
               </button>
             ))}
           </div>
@@ -65,17 +62,17 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
           <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Total Revenue</span>
+            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Revenue</span>
             <span className="text-[#10B981]"><TrendingUp className="w-4 h-4" /></span>
           </div>
           <div>
             <span className="font-mono text-base xl:text-lg font-bold text-neutral-850 dark:text-white block mt-2">{formatCurrency(reports.revenue || 0)}</span>
-            <span className="font-sans text-[11px] text-[#10B981] flex items-center gap-1 mt-1 font-semibold">↑ vs last period</span>
+            <span className="font-sans text-[11px] text-[#10B981] flex items-center gap-1 mt-1 font-semibold">↑ vs last</span>
           </div>
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
           <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Total Orders</span>
+            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Orders</span>
             <ShoppingBag className="w-4 h-4 text-[#2a14b4]" />
           </div>
           <div>
@@ -85,22 +82,20 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
           <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg. Ticket</span>
+            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg Ticket</span>
             <CreditCard className="w-4 h-4 text-[#5b598c]" />
           </div>
           <div>
             <span className="font-mono text-lg font-bold text-neutral-850 dark:text-white block mt-2">{formatCurrency(reports.avgTicket || 0)}</span>
-            <span className="font-sans text-[11px] text-neutral-500 flex items-center gap-1 mt-1 font-semibold">per order</span>
           </div>
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
           <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Completion Rate</span>
+            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Completion</span>
             <Percent className="w-4 h-4 text-amber-500" />
           </div>
           <div>
             <span className="font-mono text-lg font-bold text-neutral-850 dark:text-white block mt-2">{reports.completion || 0}%</span>
-            <span className="font-sans text-[11px] text-[#10B981] flex items-center gap-1 mt-1 font-semibold">↑ successful</span>
           </div>
         </div>
       </section>
@@ -108,16 +103,16 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl shadow-xs">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white">Revenue Summary</h3>
-            <span className="text-xs text-neutral-400 font-sans uppercase font-bold tracking-wider">{timeframe === 'Today' ? 'Today' : timeframe === 'AllTime' ? 'All Time' : `This ${timeframe.toLowerCase()}`}</span>
+            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white">Revenue</h3>
+            <span className="text-xs text-neutral-400 font-sans uppercase font-bold tracking-wider">{timeframe === 'Today' ? 'Today' : timeframe === 'AllTime' ? 'All' : timeframe}</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
-              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Total Revenue</span>
+              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Revenue</span>
               <p className="font-mono text-2xl font-bold text-[#2a14b4] dark:text-[#c3c0ff] mt-1">{formatCurrency(reports.revenue || 0)}</p>
             </div>
             <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
-              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Total Orders</span>
+              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Orders</span>
               <p className="font-mono text-2xl font-bold text-neutral-850 dark:text-white mt-1">{reports.orders || 0}</p>
             </div>
             <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
@@ -129,14 +124,13 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
               <p className="font-mono text-2xl font-bold text-[#10B981] mt-1">{reports.completion || 0}%</p>
             </div>
           </div>
-          <p className="font-sans text-[11px] text-neutral-400 mt-4 text-center border-t border-[#E5E7EB] dark:border-neutral-800 pt-3">Daily revenue chart available in a future update</p>
+          <p className="font-sans text-[11px] text-neutral-400 mt-4 text-center border-t border-[#E5E7EB] dark:border-neutral-800 pt-3">Daily chart coming soon</p>
         </div>
 
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col h-96 shadow-xs">
-          <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white mb-4">Category Breakdown</h3>
+          <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white mb-4">Categories</h3>
           <div className="flex-1 relative flex items-center justify-center">
             <div className="absolute flex flex-col items-center">
-              <span className="font-sans font-bold text-xs uppercase text-neutral-500 tracking-wider">Volume</span>
               <span className="font-sans font-bold text-neutral-850 dark:text-white text-base">By Category</span>
             </div>
             <ResponsiveContainer width="100%" height="100%">
@@ -165,7 +159,7 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl shadow-xs">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white">Popular Items</h3>
+            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white">Popular</h3>
           </div>
           <div className="space-y-4">
             {popularProducts.length > 0 ? popularProducts.map((p, idx) => (
@@ -188,7 +182,7 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
 
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl shadow-xs flex flex-col justify-between">
           <div>
-            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white mb-6">Order Status Summary</h3>
+            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white mb-6">Status</h3>
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: 'Pending', count: reports.pendingCount || 0, icon: AlertCircle, color: 'amber', bg: 'amber-100/80' },
@@ -213,7 +207,7 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
             <div className="mt-6 pt-4 border-t border-neutral-100 dark:border-neutral-800">
               <h4 className="font-sans text-[10px] font-bold tracking-wider text-neutral-400 uppercase mb-3 flex items-center gap-1.5 leading-none">
                 <Activity className="w-3.5 h-3.5 animate-pulse text-[#2a14b4]" />
-                <span>Activity Log</span>
+                <span>Activity</span>
               </h4>
               <div className="space-y-3">
                 {logs.slice(0, 3).map((log) => (

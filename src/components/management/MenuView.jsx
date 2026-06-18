@@ -123,10 +123,7 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="font-sans text-xl font-bold text-neutral-800 dark:text-neutral-100">Menu Catalog</h2>
-          <p className="font-sans text-xs text-neutral-500">Control items, pricing, tags, and availability.</p>
-        </div>
+        <div />
         <div className="flex items-center gap-2">
           <div className="bg-[#edeeef] dark:bg-neutral-800 rounded-lg p-1 flex gap-1">
             <button onClick={() => setViewStyle('list')} className={`px-3 py-1.5 rounded-md font-sans text-xs font-bold transition-all ${viewStyle === 'list' ? 'bg-white shadow-xs text-neutral-800' : 'text-neutral-500'}`}>List</button>
@@ -141,12 +138,12 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
       <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-[#E5E7EB] dark:border-neutral-800 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex gap-1 bg-[#f3f4f5] dark:bg-neutral-850 p-1 rounded-xl w-full md:w-auto">
           {['All', 'Available', 'Archived'].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 md:flex-none px-6 py-2 rounded-lg transition-all font-sans text-xs font-bold uppercase tracking-wider ${activeTab === tab ? 'bg-white dark:bg-neutral-800 text-[#2a14b4] dark:text-white shadow-xs' : 'text-neutral-500 hover:bg-white/50'}`}>{tab === 'All' ? 'All Items' : tab}</button>
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 md:flex-none px-6 py-2 rounded-lg transition-all font-sans text-xs font-bold uppercase tracking-wider ${activeTab === tab ? 'bg-white dark:bg-neutral-800 text-[#2a14b4] dark:text-white shadow-xs' : 'text-neutral-500 hover:bg-white/50'}`}>{tab}</button>
           ))}
         </div>
         <div className="relative w-full md:w-80">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-          <input type="text" placeholder="Search menu items..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-[#f3f4f5] dark:bg-neutral-850 border-transparent rounded-lg focus:ring-2 focus:ring-[#4338ca] outline-none text-xs dark:text-white" />
+          <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-[#f3f4f5] dark:bg-neutral-850 border-transparent rounded-lg focus:ring-2 focus:ring-[#4338ca] outline-none text-xs dark:text-white" />
         </div>
       </div>
 
@@ -184,11 +181,11 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#f3f4f5]/65 dark:bg-neutral-950/20 border-b border-[#E5E7EB] dark:border-neutral-850">
-                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Item Details</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Item</th>
                   <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Price</th>
-                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Prep Time</th>
-                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Metrics</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Prep</th>
+                  <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Perf</th>
                   <th className="px-6 py-4 font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4"></th>
                 </tr>
@@ -275,11 +272,11 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#2a14b4]"><Utensils className="w-5 h-5 text-[#2a14b4]" /></div>
-          <div><span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Active Items</span><p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{activeCount}</p></div>
+          <div><span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Active</span><p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{activeCount}</p></div>
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-[#f3f4f5] flex items-center justify-center text-[#5b598c]"><Clock className="w-5 h-5 text-[#5b598c]" /></div>
-          <div><span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg Prep Time</span><p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{avgPrepTime} min</p></div>
+          <div><span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg Prep</span><p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{avgPrepTime} min</p></div>
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-[#dec0ff]/20 flex items-center justify-center text-[#4338ca]"><Sparkles className="w-5 h-5 text-[#4338ca]" /></div>
@@ -293,17 +290,16 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
           <div className="relative w-full max-w-xl bg-white dark:bg-neutral-900 h-full shadow-2xl flex flex-col justify-between z-10">
             <div className="px-6 py-5 border-b border-[#E5E7EB] dark:border-neutral-850 flex items-center justify-between">
               <div>
-                <h2 className="font-sans text-lg font-bold text-neutral-800 dark:text-white">{editingItemId ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
-                <p className="font-sans text-xs text-neutral-400">Update your restaurant digital menu specs.</p>
+                <h2 className="font-sans text-lg font-bold text-neutral-800 dark:text-white">{editingItemId ? 'Edit' : 'New Item'}</h2>
               </div>
               <button onClick={() => setIsEditorOpen(false)} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors cursor-pointer"><X className="w-5 h-5 text-neutral-400" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
               <section className="space-y-2">
-                <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest">Item Photography</label>
+                <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest">Photo</label>
                 <div className="relative h-48 w-full bg-neutral-100 dark:bg-neutral-800 rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 flex flex-col items-center justify-center overflow-hidden transition-all bg-cover bg-center" style={{ backgroundImage: `url('${formImage || IMAGE_PRESETS[0].url}')` }}>
-                  <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2 text-center text-white text-[10px] font-sans">Photography Preset Loaded</div>
+                  <div className="absolute inset-x-0 bottom-0 bg-black/50 p-2 text-center text-white text-[10px] font-sans">Preset Loaded</div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 pt-1 font-sans text-xs">
                   <span className="text-neutral-400 text-[10px] font-bold uppercase tracking-wider">Select Preset:</span>
@@ -315,7 +311,7 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
 
               <div className="grid grid-cols-12 gap-4">
                 <div className="col-span-8">
-                  <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Item Name</label>
+                    <label className="block font-sans text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Name</label>
                   <input type="text" value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="e.g. Truffle Tagliatelle" className="w-full bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all text-sm dark:text-white" />
                 </div>
                 <div className="col-span-4">
@@ -337,9 +333,9 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
               </section>
 
               <div className="bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl p-4 space-y-4 border border-[#E5E7EB] dark:border-neutral-800">
-                <h3 className="font-sans text-sm font-bold text-neutral-800 dark:text-white">Culinary Specifics & Nutrition</h3>
+                <h3 className="font-sans text-sm font-bold text-neutral-800 dark:text-white">Details</h3>
                 <div>
-                  <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Menu Badges & Tags</label>
+                  <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Badges</label>
                   <div className="flex flex-wrap gap-2">
                     {BADGE_OPTIONS.map((badge) => (
                       <button key={badge} onClick={() => handleToggleBadge(badge)} className={`px-3 py-1.5 rounded-full font-sans text-[11px] font-bold transition-all cursor-pointer ${formBadges.includes(badge) ? 'bg-[#EEF2FF] border border-[#2a14b4] text-[#2a14b4]' : 'bg-white dark:bg-neutral-800 border border-neutral-200 text-neutral-500'}`}>{badge}</button>
@@ -347,16 +343,16 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
                   </div>
                 </div>
                 <div>
-                  <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Ingredients (comma separated)</label>
+                  <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5">Ingredients</label>
                   <input type="text" value={formIngredients} onChange={(e) => setFormIngredients(e.target.value)} placeholder="Semolina, water, truffle paste, pecorino romano" className="w-full text-xs bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 rounded-lg px-3 py-2 outline-none dark:text-white" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Calories (kcal)</label>
+                    <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Calories</label>
                     <input type="number" value={formCalories} onChange={(e) => setFormCalories(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-lg text-xs outline-none dark:text-white" />
                   </div>
                   <div>
-                    <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Prep Time (mins)</label>
+                    <label className="block font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">Prep (min)</label>
                     <input type="number" value={formPrepTime} onChange={(e) => setFormPrepTime(e.target.value)} className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-lg text-xs outline-none dark:text-white" />
                   </div>
                 </div>
@@ -378,7 +374,7 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
                   <CheckCircle className="w-5 h-5 text-[#10B981]" />
                   <div>
                     <p className="font-semibold text-xs text-neutral-800 dark:text-white">Available on Menu</p>
-                    <p className="text-neutral-400 text-[10px]">Visible to table QR scans and takeout orders.</p>
+                    <p className="text-neutral-400 text-[10px]">Visible on menus.</p>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -390,7 +386,7 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
 
             <div className="px-6 py-5 border-t border-[#E5E7EB] dark:border-neutral-850 flex items-center gap-3 bg-white dark:bg-neutral-900">
               <button onClick={() => setIsEditorOpen(false)} className="flex-1 py-3 border border-[#E5E7EB] dark:border-neutral-700 text-neutral-500 dark:text-neutral-300 font-sans text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-neutral-50 transition-all cursor-pointer text-center">Cancel</button>
-              <button onClick={handleSaveItemSubmit} className="flex-1 py-3 bg-[#2a14b4] hover:opacity-90 transition-all text-white font-sans text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer text-center shadow-md">Save Changes</button>
+              <button onClick={handleSaveItemSubmit} className="flex-1 py-3 bg-[#2a14b4] hover:opacity-90 transition-all text-white font-sans text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer text-center shadow-md">Save</button>
             </div>
           </div>
         </div>
