@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { IMAGE_PRESETS, BADGE_OPTIONS } from '../../types/managementTypes.js';
 
-export default function MenuView({ menuItems, setMenuItems, onAddItem, restaurantId }) {
+export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteItem, restaurantId }) {
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewStyle, setViewStyle] = useState('list');
@@ -65,7 +65,11 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, restauran
 
   const handleDeleteItem = (itemId) => {
     if (confirm('Delete this menu item permanently?')) {
-      setMenuItems((prev) => prev.filter((m) => m.id !== itemId));
+      if (onDeleteItem) {
+        onDeleteItem(itemId);
+      } else {
+        setMenuItems((prev) => prev.filter((m) => m.id !== itemId));
+      }
       setOpenDropdownId(null);
     }
   };

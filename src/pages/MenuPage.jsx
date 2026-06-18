@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
@@ -24,6 +23,17 @@ export default function MenuPage() {
   useEffect(() => {
     loadMenu();
   }, [loadMenu]);
+
+  async function handleDeleteItem(itemId) {
+    clearFlash();
+    try {
+      await apiRequest(`/restaurants/${restaurant.id}/menu-items/${itemId}`, { method: "DELETE" });
+      setFlash({ type: "success", message: "Item deleted." });
+      await Promise.all([loadMenu(), refreshWorkspace()]);
+    } catch (error) {
+      setFlash({ type: "error", message: error.message });
+    }
+  }
 
   async function handleAddItem(itemData) {
     clearFlash();
@@ -63,22 +73,11 @@ export default function MenuPage() {
 
   return (
     <>
-      <section className="flex items-start justify-between gap-4 py-6">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">Menu</h1>
-        </div>
-        <Link
-          to={`/restaurants/${restaurant.id}/menu/new`}
-          className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors no-underline shrink-0 mt-6"
-        >
-          Add items (bulk)
-        </Link>
-      </section>
-
       <MenuView
         menuItems={items}
         setMenuItems={setMenuItems}
         onAddItem={handleAddItem}
+        onDeleteItem={handleDeleteItem}
         restaurantId={restaurant.id}
       />
     </>

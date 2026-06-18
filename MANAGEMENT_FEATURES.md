@@ -191,6 +191,8 @@ pending ──► confirmed ──► completed
 - Group by table toggle
 - Undo accept: toast with 4s timeout
 - Optimistic UI with rollback on error
+- **Manual order creation** with: Table/Takeaway type, item qty picker, staff notes, optional tip, optional service charge, auto-calculated total
+- **Recall order**: re-open a completed order back to pending status
 
 ### 5.2 Order Management Gaps
 
@@ -203,6 +205,17 @@ pending ──► confirmed ──► completed
 | 5 | **No rejection reason** | When cancelling, no field to explain why (customer sees "Cancelled" only) |
 | 6 | **No order history search** | No way to search/filter past orders by item, table, or date range |
 | 7 | **No split/combine orders** | Can't split a large order across tables or combine small ones |
+
+### 5.3 Recent Improvements (June 2026)
+
+| # | Fix | Details |
+|---|---|---|
+| 1 | **Manual order NaN fix** | Takeaway orders no longer send `NaN` as `tableNumber` — sends `null` instead |
+| 2 | **Item IDs in manual orders** | Each order item now includes `menuItemId` alongside `menuItemName` for reliable backend matching |
+| 3 | **Auto-calculated total** | Total is computed from item prices × quantity, plus optional tip and service charge |
+| 4 | **Tip / Service charge** | Staff can add optional tip and service charge when creating a manual order |
+| 5 | **Order recall** | Completed ("Served") orders can be recalled back to `pending` status via the API |
+| 6 | **Delete wired** | Menu items and tables are now deleted via `DELETE` API call (not just local state) |
 
 ---
 
@@ -221,14 +234,13 @@ pending ──► confirmed ──► completed
 
 | # | Gap | Notes |
 |---|---|---|
-| 1 | **No charts or graphs** | All numeric, no visualizations |
-| 2 | **No time-series trends** | Can't see daily/weekly/monthly patterns |
-| 3 | **No category breakdown** | Can't see which categories drive revenue |
-| 4 | **No profit/cost analysis** | No cost data input, no margin calculation |
-| 5 | **No export** | Can't export to CSV, PDF, or Excel |
-| 6 | **No peak hours analysis** | No insight into busiest times |
-| 7 | **No item-level trends** | Can't see if an item is gaining or losing popularity |
-| 8 | **No table utilization** | Can't see which tables generate the most orders |
+| 1 | **Charts/graphs** | Pie chart now derived from real `topItems` category data; bar chart replaced with Revenue Summary panel (time-series chart needs backend data) |
+| 2 | **No time-series trends** | Can't see daily/weekly/monthly patterns — requires backend time-series data |
+| 3 | **No profit/cost analysis** | No cost data input, no margin calculation |
+| 4 | **No export** | Can't export to CSV, PDF, or Excel |
+| 5 | **No peak hours analysis** | No insight into busiest times |
+| 6 | **No item-level trends** | Can't see if an item is gaining or losing popularity |
+| 7 | **No table utilization** | Can't see which tables generate the most orders |
 
 ---
 
@@ -326,7 +338,10 @@ Every customer-facing element mapped to its management data source and whether t
 | GET/POST/DELETE | `/restaurants/:id/tables` | CRUD tables |
 | GET | `/restaurants/:id/tables/:id` | Get single table |
 | GET | `/restaurants/:id/orders` | List orders |
+| POST | `/restaurants/:id/orders` | Create manual order (with items, tip, service charge) |
 | PATCH | `/restaurants/:id/orders/:id/status` | Change order status |
+| DELETE | `/restaurants/:id/menu-items/:id` | Delete menu item |
+| DELETE | `/restaurants/:id/tables/:tableNumber` | Delete table |
 | SSE | `/api/restaurants/:id/orders/sse` | Real-time order updates |
 | GET | `/restaurants/:id/reports` | Get reports (`?period=`) |
 | POST | `/auth/me` | Session check |

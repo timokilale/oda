@@ -102,27 +102,27 @@ export default function RegisterPage() {
 
   return (
     <AuthShell flash={flash} onClearFlash={() => setFlash(null)}>
-      <section className="w-full max-w-[520px] mx-auto px-4 py-12">
-        <div className="rounded-xl border border-border bg-card p-6 grid gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
+      <section className="w-full max-w-[480px] mx-auto px-4 py-16">
+        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-2xl p-6 shadow-xs space-y-5">
+          <div className="text-center">
+            <h1 className="font-sans text-2xl font-bold text-neutral-800 dark:text-white">
               {otpRequested ? "Check your phone" : "Create your account"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="font-sans text-xs text-neutral-500 mt-2">
               {otpRequested
                 ? `Enter the code sent to ${fullNumber}`
                 : "Phone number and name — that's all you need to start."}
             </p>
           </div>
 
-          <form className="grid gap-3" onSubmit={otpRequested ? handleVerifyOtp : handleRequestOtp}>
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium text-foreground" htmlFor="phone_number">
+          <form className="space-y-4" onSubmit={otpRequested ? handleVerifyOtp : handleRequestOtp}>
+            <div>
+              <label className="block font-sans text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5" htmlFor="phone_number">
                 Phone number
               </label>
               <div className="flex gap-2">
                 <select
-                  className="h-10 rounded-lg border border-input bg-background px-2 text-sm text-foreground transition-colors w-28 shrink-0"
+                  className="bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-2 py-2.5 text-sm focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all dark:text-white w-28 shrink-0"
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
                   disabled={otpRequested || submitting}
@@ -134,7 +134,7 @@ export default function RegisterPage() {
                   ))}
                 </select>
                 <input
-                  className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-base text-foreground transition-colors disabled:opacity-50"
+                  className="flex-1 bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all dark:text-white disabled:opacity-50"
                   id="phone_number"
                   type="tel"
                   inputMode="numeric"
@@ -147,12 +147,12 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium text-foreground" htmlFor="restaurant_name">
+            <div>
+              <label className="block font-sans text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5" htmlFor="restaurant_name">
                 Restaurant name
               </label>
               <input
-                className="h-10 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground transition-colors disabled:opacity-50"
+                className="w-full bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all dark:text-white disabled:opacity-50"
                 id="restaurant_name"
                 type="text"
                 placeholder="e.g. Mama's Kitchen"
@@ -165,12 +165,12 @@ export default function RegisterPage() {
 
             {otpRequested ? (
               <>
-                <div className="grid gap-1.5">
-                  <label className="text-sm font-medium text-foreground" htmlFor="otp_code">
+                <div>
+                  <label className="block font-sans text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5" htmlFor="otp_code">
                     Confirmation code
                   </label>
                   <input
-                    className="h-10 w-full rounded-lg border border-input bg-background px-3 text-base text-foreground transition-colors"
+                    className="w-full bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all dark:text-white"
                     id="otp_code"
                     type="text"
                     inputMode="numeric"
@@ -182,21 +182,19 @@ export default function RegisterPage() {
                     autoFocus
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center h-9 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
-                    onClick={resetOtpFlow}
-                    disabled={submitting}
-                  >
-                    Edit details
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center border border-[#E5E7EB] dark:border-neutral-800 text-neutral-500 font-sans text-[11px] font-bold uppercase tracking-wider rounded-xl px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all disabled:opacity-50"
+                  onClick={resetOtpFlow}
+                  disabled={submitting}
+                >
+                  Edit details
+                </button>
               </>
             ) : null}
 
             {import.meta.env.DEV && otpRequested && devOtpCode ? (
-              <div className="rounded-lg border border-warning/30 bg-warning/15 px-3 py-2 text-sm text-warning-foreground dark:text-warning">
+              <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/10 px-4 py-2.5 font-sans text-xs text-amber-800 dark:text-amber-300">
                 Development OTP: <strong>{devOtpCode}</strong>
               </div>
             ) : null}
@@ -204,13 +202,13 @@ export default function RegisterPage() {
             <div className="flex items-center gap-2 pt-2">
               <button
                 type="submit"
-                className="inline-flex items-center justify-center h-10 px-4 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                className="inline-flex items-center justify-center bg-[#2a14b4] text-white font-sans text-xs font-bold uppercase tracking-wider rounded-xl px-6 py-2.5 hover:opacity-90 transition-all disabled:opacity-50 shadow-md"
                 disabled={submitting || localNumber.length < 6}
               >
                 {submitting
                   ? otpRequested
-                    ? "Verifying"
-                    : "Sending"
+                    ? "Verifying..."
+                    : "Sending..."
                   : otpRequested
                     ? "Verify & create account"
                     : "Send OTP"}
@@ -218,7 +216,7 @@ export default function RegisterPage() {
               {otpRequested ? (
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center h-10 px-3 rounded-lg text-sm font-medium border border-border bg-background text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center border border-[#E5E7EB] dark:border-neutral-800 text-neutral-500 font-sans text-xs font-bold uppercase tracking-wider rounded-xl px-4 py-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all disabled:opacity-50"
                   onClick={handleRequestOtp}
                   disabled={submitting || resendCooldown > 0}
                 >
@@ -228,9 +226,9 @@ export default function RegisterPage() {
             </div>
           </form>
 
-          <p className="text-xs text-muted-foreground">
+          <p className="font-sans text-[11px] text-neutral-500 text-center">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary underline underline-offset-2 hover:no-underline">
+            <Link to="/login" className="text-[#2a14b4] dark:text-[#c3c0ff] font-bold underline underline-offset-2 hover:no-underline">
               Log in
             </Link>
           </p>

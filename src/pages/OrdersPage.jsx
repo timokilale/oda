@@ -134,12 +134,32 @@ export default function OrdersPage() {
     clearFlash();
     try {
       const payload = {
-        tableNumber: parseInt(newOrder.table.replace('Table ', '')),
-        items: newOrder.items.map((it) => ({ menuItemName: it.name, quantity: it.quantity, notes: it.customization })),
+        tableNumber: newOrder.orderType === 'Takeaway' ? null : parseInt(newOrder.table.replace('Table ', '')),
+        orderType: newOrder.orderType,
+        items: newOrder.items.map((it) => ({
+          menuItemName: it.name,
+          menuItemId: it.id,
+          quantity: it.quantity,
+          notes: it.customization,
+        })),
         totalAmount: newOrder.price,
+        tip: newOrder.tip || 0,
+        serviceCharge: newOrder.serviceCharge || 0,
       };
       await apiRequest(`/restaurants/${restaurant.id}/orders`, { method: "POST", body: payload });
       setFlash({ type: "success", message: "Manual order placed." });
+      await Promise.all([loadOrders(), refreshWorkspace()]);
+    } catch (error) {
+      setFlash({ type: "error", message: error.message });
+    }
+  }
+
+  async function handleRecallOrder(orderId) {
+    const rawId = orderId.replace('#', '');
+    clearFlash();
+    try {
+      await apiRequest(`/restaurants/${restaurant.id}/orders/${rawId}/status`, { method: "PATCH", body: { status: "pending" } });
+      setFlash({ type: "success", message: "Order recalled." });
       await Promise.all([loadOrders(), refreshWorkspace()]);
     } catch (error) {
       setFlash({ type: "error", message: error.message });
@@ -161,22 +181,6 @@ export default function OrdersPage() {
 
   return (
     <>
-      <section className="flex items-start justify-between gap-4 py-6">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">Orders</h1>
-        </div>
-        <div className="flex items-center gap-2 mt-6">
-          <button
-            type="button"
-            onClick={toggleAcceptingOrders}
-            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border transition-colors ${acceptingOrders ? "border-success/40 bg-success text-white" : "border-border bg-muted"}`}
-            role="switch" aria-checked={acceptingOrders} aria-label="Accepting orders"
-          >
-            <span className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${acceptingOrders ? "translate-x-6" : "translate-x-0.5"}`} />
-          </button>
-        </div>
-      </section>
-
       <OrdersView
         orders={orders}
         setOrders={setOrders}
@@ -185,6 +189,7 @@ export default function OrdersPage() {
         onAcceptOrder={handleAcceptOrder}
         onCancelOrder={handleCancelOrder}
         onMarkServed={handleMarkServed}
+        onRecallOrder={handleRecallOrder}
       />
     </>
   );

@@ -331,3 +331,87 @@
     @apply border-border outline-ring/50;
   }
 }
+
+/* Restomanage editorial theme — scoped to management shell */
+.restomanage-theme {
+  --font-serif: "Playfair Display", "Cormorant Garamond", "Lora", Georgia, serif;
+  --color-indigo-brand: #8C2D19;
+  --color-indigo-container: #1C1917;
+  --color-on-indigo-container: #FCFAF7;
+  --color-accent-secondary: #6B5E59;
+  --color-success-brand: #415E4A;
+  --color-pending-brand: #BF7E22;
+  --color-destructive-brand: #A33526;
+  background-color: #FCFAF7;
+  color: #1A1513;
+  -webkit-font-smoothing: antialiased;
+}
+
+.restomanage-theme h1,
+.restomanage-theme h2,
+.restomanage-theme h3,
+.restomanage-theme h4,
+.restomanage-theme .font-bold,
+.restomanage-theme [id*="header-page-title"],
+.restomanage-theme .font-sans.text-xl,
+.restomanage-theme .font-sans.text-lg {
+  font-family: var(--font-serif) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  color: #1A1513 !important;
+}
+
+.restomanage-theme thead,
+.restomanage-theme th {
+  font-family: var(--font-serif) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  background-color: #FAF6F0 !important;
+  border-bottom: 2px solid #E3DCD1 !important;
+}
+
+.restomanage-theme .bg-white {
+  background-color: #FFFFFF !important;
+}
+
+.restomanage-theme .bg-\[\#f8f9fa\] {
+  background-color: #FCFAF7 !important;
+}
+
+.restomanage-theme .border,
+.restomanage-theme .border-b,
+.restomanage-theme .border-t,
+.restomanage-theme .border-l,
+.restomanage-theme .border-r,
+.restomanage-theme .border-\[\#E5E7EB\],
+.restomanage-theme .border-neutral-200 {
+  border-color: #E6DFD4 !important;
+}
+
+.restomanage-theme .shadow-xs,
+.restomanage-theme .shadow-sm,
+.restomanage-theme .shadow-md,
+.restomanage-theme .shadow-lg,
+.restomanage-theme .shadow-xl,
+.restomanage-theme .shadow-2xl {
+  box-shadow: none !important;
+  border: 1px solid #E6DFD4 !important;
+}
+
+.restomanage-theme .frosted-header {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(252, 250, 247, 0.85) !important;
+}
+
+.restomanage-theme .qr-pattern {
+  background-color: #FFFFFF;
+  background-image: radial-gradient(#8C2D19 0.5px, transparent 0.5px);
+  background-size: 8px 8px;
+}
+
+.restomanage-theme ::-webkit-scrollbar { width: 5px; height: 5px; }
+.restomanage-theme ::-webkit-scrollbar-track { background: #FCFAF7; }
+.restomanage-theme ::-webkit-scrollbar-thumb { background: #E3DCD1; border-radius: 4px; }
+.restomanage-theme ::-webkit-scrollbar-thumb:hover { background: #CFC5B6; }

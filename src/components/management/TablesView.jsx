@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Plus, Printer, TrendingUp, CheckCircle, QrCode, Download, Share2, Trash2, ChevronDown } from 'lucide-react';
 
-export default function TablesView({ tables, setTables, onAddTable, restaurantName, qrBaseUrl }) {
+export default function TablesView({ tables, setTables, onAddTable, onDeleteTable, restaurantName, qrBaseUrl }) {
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNum, setNewTableNum] = useState('');
   const [newTableStatus, setNewTableStatus] = useState('ACTIVE');
@@ -19,9 +19,13 @@ export default function TablesView({ tables, setTables, onAddTable, restaurantNa
     setShowAddTableModal(false);
   };
 
-  const handleDeleteTable = (id) => {
-    if (confirm(`Delete Table ${id} permanently? This will invalidate its active QR code.`)) {
-      setTables((prev) => prev.filter((t) => t.id !== id));
+  const handleDeleteTable = (tableNumber) => {
+    if (confirm(`Delete Table ${tableNumber} permanently? This will invalidate its active QR code.`)) {
+      if (onDeleteTable) {
+        onDeleteTable(tableNumber);
+      } else {
+        setTables((prev) => prev.filter((t) => t.id !== String(tableNumber).padStart(2, '0')));
+      }
     }
   };
 
@@ -133,7 +137,7 @@ export default function TablesView({ tables, setTables, onAddTable, restaurantNa
                   <button onClick={() => handleShareQR(table.tableNumber)} className="flex-1 flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-400 hover:text-neutral-700 transition-all cursor-pointer" title="Share QR Link">
                     <Share2 className="w-4 h-4" /><span className="font-sans text-[9px] font-bold uppercase tracking-wider">Share</span>
                   </button>
-                  <button onClick={() => handleDeleteTable(table.id)} className="flex-1 flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-all cursor-pointer" title="Delete">
+                  <button onClick={() => handleDeleteTable(table.tableNumber)} className="flex-1 flex flex-col items-center gap-0.5 p-1 rounded-lg hover:bg-red-50 text-neutral-400 hover:text-red-600 transition-all cursor-pointer" title="Delete">
                     <Trash2 className="w-4 h-4" /><span className="font-sans text-[9px] font-bold uppercase tracking-wider">Delete</span>
                   </button>
                 </div>

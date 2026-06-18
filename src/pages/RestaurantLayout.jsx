@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import WorkspaceShell from "../components/WorkspaceShell.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import RestomanageShell from "../components/management/RestomanageShell.jsx";
 import { RestaurantWorkspaceContext } from "../context/RestaurantWorkspaceContext.jsx";
+import FlashStack from "../components/FlashStack.jsx";
 import { apiRequest } from "../lib/api.js";
 
 function resolvePanelSection(section) {
@@ -48,11 +50,13 @@ export default function RestaurantLayout() {
   const { restaurantId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { owner, logout } = useAuth();
   const [restaurant, setRestaurant] = useState(null);
   const [workspaceSummary, setWorkspaceSummary] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [flash, setFlash] = useState(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const currentSection = useMemo(
     () => resolveCurrentSection(location.pathname),
@@ -146,6 +150,15 @@ export default function RestaurantLayout() {
     );
   }, [location.pathname, location.search, location.state, navigate]);
 
+  const handleSectionChange = useCallback((section) => {
+    navigate(`/restaurants/${restaurantId}/${section}`);
+  }, [navigate, restaurantId]);
+
+  const handleLogout = useCallback(async () => {
+    await logout();
+    navigate("/login");
+  }, [logout, navigate]);
+
   const workspaceContext = useMemo(
     () => ({
       restaurant,
@@ -160,9 +173,20 @@ export default function RestaurantLayout() {
     [flash, loadWorkspace, restaurant, scrollActiveViewToTop, workspaceSummary],
   );
 
+  const shellProps = {
+    currentSection,
+    onSectionChange: handleSectionChange,
+    restaurant,
+    soundEnabled,
+    onToggleSound: () => setSoundEnabled((v) => !v),
+    notificationsCount: 0,
+    onNotificationsClick: () => {},
+    onLogout: handleLogout,
+  };
+
   if (loading) {
     return (
-      <WorkspaceShell currentSection={currentSection} restaurant={restaurant}>
+      <RestomanageShell {...shellProps}>
         <section className="py-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
@@ -171,13 +195,13 @@ export default function RestaurantLayout() {
             <p className="text-sm text-muted-foreground mt-2">Preparing your workspace...</p>
           </div>
         </section>
-      </WorkspaceShell>
+      </RestomanageShell>
     );
   }
 
   if (error) {
     return (
-      <WorkspaceShell currentSection={currentSection} restaurant={restaurant}>
+      <RestomanageShell {...shellProps}>
         <section className="py-6">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">
@@ -186,17 +210,13 @@ export default function RestaurantLayout() {
             <p className="text-sm text-muted-foreground mt-2">{error}</p>
           </div>
         </section>
-      </WorkspaceShell>
+      </RestomanageShell>
     );
   }
 
   return (
-    <WorkspaceShell
-      currentSection={currentSection}
-      restaurant={restaurant}
-      flash={flash}
-      onClearFlash={() => setFlash(null)}
-    >
+    <RestomanageShell {...shellProps}>
+      <FlashStack flash={flash} onDismiss={() => setFlash(null)} bottom />
       <RestaurantWorkspaceContext.Provider value={workspaceContext}>
         <section
           id={buildRestaurantPanelId(panelSection)}
@@ -206,6 +226,6 @@ export default function RestaurantLayout() {
           <Outlet />
         </section>
       </RestaurantWorkspaceContext.Provider>
-    </WorkspaceShell>
+    </RestomanageShell>
   );
 }

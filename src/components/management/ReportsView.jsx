@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, ShoppingBag, CreditCard, Percent, Download, CheckCircle, AlertCircle, XCircle, ThumbsUp, Activity } from 'lucide-react';
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, ShoppingBag, CreditCard, Percent, Download, CheckCircle, AlertCircle, XCircle, ThumbsUp, Activity } from 'lucide-react';
 import { formatCurrency } from '../../lib/format.js';
 
 export default function ReportsView({ reports, logs, onExportCsv, timeframe, onTimeframeChange }) {
@@ -12,21 +12,24 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
     );
   }
 
-  const barData = useMemo(() => {
-    const scale = timeframe === 'Week' ? 6 : timeframe === 'Month' ? 25 : timeframe === 'AllTime' ? 85 : 1;
-    return [
-      { name: 'MON', value: 1.2 * scale }, { name: 'TUE', value: 2.1 * scale },
-      { name: 'WED', value: 1.8 * scale }, { name: 'THU', value: 3.2 * scale },
-      { name: 'FRI', value: 1.5 * scale }, { name: 'SAT', value: 2.8 * scale },
-      { name: 'SUN', value: 4.2 * scale },
-    ];
-  }, [timeframe]);
+  const CHART_COLORS = ['#2a14b4', '#5b598c', '#c4c1fb', '#10B981', '#F59E0B', '#ba1a1a'];
 
-  const pieData = [
-    { name: 'Beverages', value: 45, color: '#2a14b4' },
-    { name: 'Mains', value: 30, color: '#5b598c' },
-    { name: 'Starters', value: 25, color: '#c4c1fb' },
-  ];
+  const pieData = useMemo(() => {
+    const items = reports.topItems || [];
+    const catTotals = {};
+    items.forEach((item) => {
+      const cat = item.category || 'Other';
+      catTotals[cat] = (catTotals[cat] || 0) + (item.revenue || 0);
+    });
+    const entries = Object.entries(catTotals);
+    if (entries.length === 0) return [];
+    const total = entries.reduce((s, [, v]) => s + v, 0);
+    return entries.map(([name, value], idx) => ({
+      name,
+      value: Math.round((value / total) * 100),
+      color: CHART_COLORS[idx % CHART_COLORS.length],
+    }));
+  }, [reports.topItems]);
 
   const popularProducts = (reports.topItems || []).map((item, idx) => ({
     name: item.name,
@@ -103,27 +106,30 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col h-96 shadow-xs">
+        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl shadow-xs">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white">Revenue Over Time</h3>
-            <span className="text-xs text-neutral-400 font-sans uppercase font-bold tracking-wider">{timeframe === 'Today' ? 'Hourly' : 'Daily'}</span>
+            <h3 className="font-sans font-bold text-sm text-neutral-850 dark:text-white">Revenue Summary</h3>
+            <span className="text-xs text-neutral-400 font-sans uppercase font-bold tracking-wider">{timeframe === 'Today' ? 'Today' : timeframe === 'AllTime' ? 'All Time' : `This ${timeframe.toLowerCase()}`}</span>
           </div>
-          <div className="flex-1 w-full text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="primaryGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2a14b4" stopOpacity={0.85}/>
-                    <stop offset="95%" stopColor="#4338ca" stopOpacity={0.4}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="name" stroke="#777586" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis stroke="#777586" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}M`} />
-                <Tooltip cursor={{ fill: '#edeeef', opacity: 0.2 }} contentStyle={{ backgroundColor: '#191c1d', borderRadius: '8px', color: '#ffffff', border: 'none', fontSize: '11px' }} formatter={(value) => [`${value}M TZS`, 'Revenue']} />
-                <Bar dataKey="value" fill="url(#primaryGrad)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
+              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Total Revenue</span>
+              <p className="font-mono text-2xl font-bold text-[#2a14b4] dark:text-[#c3c0ff] mt-1">{formatCurrency(reports.revenue || 0)}</p>
+            </div>
+            <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
+              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Total Orders</span>
+              <p className="font-mono text-2xl font-bold text-neutral-850 dark:text-white mt-1">{reports.orders || 0}</p>
+            </div>
+            <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
+              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Avg. Ticket</span>
+              <p className="font-mono text-2xl font-bold text-[#5b598c] dark:text-neutral-300 mt-1">{formatCurrency(reports.avgTicket || 0)}</p>
+            </div>
+            <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
+              <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Completion Rate</span>
+              <p className="font-mono text-2xl font-bold text-[#10B981] mt-1">{reports.completion || 0}%</p>
+            </div>
           </div>
+          <p className="font-sans text-[11px] text-neutral-400 mt-4 text-center border-t border-[#E5E7EB] dark:border-neutral-800 pt-3">Daily revenue chart available in a future update</p>
         </div>
 
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col h-96 shadow-xs">
@@ -212,7 +218,7 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
               <div className="space-y-3">
                 {logs.slice(0, 3).map((log) => (
                   <div key={log.id} className="flex items-center gap-3">
-                    <span className={`w-2 h-2 rounded-full ${log.type === 'success' ? 'bg-[#10B981] animate-pulse' : log.type === 'pending' ? 'bg-[#F59E0B] animate-pulse' : 'bg-[#2a14b4] animate-pulse'}`} />
+                    <span className={`w-2 h-2 rounded-full ${log.type === 'success' ? 'bg-[#10B981] animate-pulse' : log.type === 'pending' ? 'bg-[#F59E0B] animate-pulse' : log.type === 'error' ? 'bg-[#ba1a1a] animate-pulse' : 'bg-[#2a14b4] animate-pulse'}`} />
                     <span className="text-xs text-neutral-600 dark:text-neutral-300 font-sans font-medium">{log.text}</span>
                     <span className="text-[10px] text-neutral-400 ml-auto font-sans">{log.time}</span>
                   </div>

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
@@ -37,26 +36,24 @@ export default function TablesPage() {
     }
   }
 
+  async function handleDeleteTable(tableNumber) {
+    clearFlash();
+    try {
+      await apiRequest(`/restaurants/${restaurant.id}/tables/${tableNumber}`, { method: "DELETE" });
+      setFlash({ type: "success", message: `Table ${tableNumber} deleted.` });
+      await Promise.all([loadTables(), refreshWorkspace()]);
+    } catch (error) {
+      setFlash({ type: "error", message: error.message });
+    }
+  }
+
   return (
     <>
-      <section className="flex items-start justify-between gap-4 py-6">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight text-foreground mt-1">QR Codes</h1>
-        </div>
-        <div className="flex items-center gap-2 shrink-0 mt-6">
-          <Link
-            to={`/restaurants/${restaurant.id}/tables/new`}
-            className="inline-flex items-center justify-center h-8 px-3 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors no-underline"
-          >
-            Add tables (bulk)
-          </Link>
-        </div>
-      </section>
-
       <TablesView
         tables={tables}
         setTables={setTables}
         onAddTable={handleAddTable}
+        onDeleteTable={handleDeleteTable}
         restaurantName={restaurant.ref || restaurant.name}
         qrBaseUrl={window.location.origin}
       />

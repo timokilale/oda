@@ -1,13 +1,16 @@
 import { useState, useMemo } from 'react';
 import { Clock, Search, SlidersHorizontal, Plus, CheckCircle, RotateCcw } from 'lucide-react';
 
-export default function OrdersView({ orders, setOrders, menuItems, onAddManualOrder, onAcceptOrder, onCancelOrder, onMarkServed }) {
+export default function OrdersView({ orders, setOrders, menuItems, onAddManualOrder, onAcceptOrder, onCancelOrder, onMarkServed, onRecallOrder }) {
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showManualOrderModal, setShowManualOrderModal] = useState(false);
   const [selectedTable, setSelectedTable] = useState('Table 01');
   const [selectedItemIds, setSelectedItemIds] = useState({});
   const [orderType, setOrderType] = useState('Table');
+  const [staffNotes, setStaffNotes] = useState('');
+  const [tipAmount, setTipAmount] = useState(0);
+  const [serviceCharge, setServiceCharge] = useState(0);
 
   const counts = useMemo(() => ({
     all: orders.length,
@@ -34,27 +37,41 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
       .filter(entry => entry.qty > 0)
       .map(entry => {
         const item = menuItems.find((m) => m.id === entry.id);
-        return { name: item ? item.name : 'Custom Dish', quantity: entry.qty, customization: 'Staff input' };
+        return {
+          id: item ? item.id : null,
+          name: item ? item.name : 'Custom Dish',
+          quantity: entry.qty,
+          customization: staffNotes || 'Staff input',
+        };
       });
 
     if (selectedItemsList.length === 0) { alert('Please select at least one menu item.'); return; }
 
-    const price = selectedItemsList.reduce((acc, currentItem) => {
-      const match = menuItems.find((m) => m.name === currentItem.name);
+    const itemsTotal = selectedItemsList.reduce((acc, currentItem) => {
+      const match = menuItems.find((m) => m.id === currentItem.id);
       return acc + (match ? match.price : 15) * currentItem.quantity;
     }, 0);
 
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const tip = parseFloat(tipAmount) || 0;
+    const sc = parseFloat(serviceCharge) || 0;
+    const total = itemsTotal + tip + sc;
+
     onAddManualOrder({
-      id: `#RM-${randomNum}`,
-      table: orderType === 'Takeaway' ? 'Takeaway (Staff)' : selectedTable,
-      status: 'Pending',
+      table: orderType === 'Takeaway' ? 'Takeaway' : selectedTable,
+      orderType: orderType,
       items: selectedItemsList,
-      price: parseFloat(price.toFixed(2)),
+      price: parseFloat(total.toFixed(2)),
+      itemsTotal: parseFloat(itemsTotal.toFixed(2)),
+      tip: tip,
+      serviceCharge: sc,
+      staffNotes: staffNotes,
       timeAgo: 'Just now',
       timestamp: Date.now(),
     });
     setSelectedItemIds({});
+    setStaffNotes('');
+    setTipAmount(0);
+    setServiceCharge(0);
     setShowManualOrderModal(false);
   };
 
@@ -132,7 +149,7 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
                     </div>
                   )}
                   {isServed && (
-                    <button onClick={() => setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Pending', timeAgo: 'Just restarted' } : o))} className="w-full py-2 rounded-lg border border-[#E5E7EB] dark:border-neutral-700 text-neutral-500 dark:text-neutral-300 font-sans text-xs font-bold uppercase tracking-wider hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer text-center flex items-center justify-center gap-1.5">
+                    <button onClick={() => onRecallOrder ? onRecallOrder(order.id) : setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'Pending', timeAgo: 'Just restarted' } : o))} className="w-full py-2 rounded-lg border border-[#E5E7EB] dark:border-neutral-700 text-neutral-500 dark:text-neutral-300 font-sans text-xs font-bold uppercase tracking-wider hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer text-center flex items-center justify-center gap-1.5">
                       <RotateCcw className="w-3.5 h-3.5" /><span>Recall Order</span>
                     </button>
                   )}
@@ -192,6 +209,20 @@ export default function OrdersView({ orders, setOrders, menuItems, onAddManualOr
                       </div>
                     );
                   })}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Staff Notes (optional)</label>
+                <input type="text" value={staffNotes} onChange={(e) => setStaffNotes(e.target.value)} placeholder="e.g. Extra napkins, no ice..." className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Tip (optional)</label>
+                  <input type="number" min="0" step="0.01" value={tipAmount} onChange={(e) => setTipAmount(e.target.value)} placeholder="0.00" className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white font-mono text-right" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Service Charge (optional)</label>
+                  <input type="number" min="0" step="0.01" value={serviceCharge} onChange={(e) => setServiceCharge(e.target.value)} placeholder="0.00" className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 px-3 py-2 rounded-xl text-sm focus:ring-1 focus:ring-[#4338ca] outline-none dark:text-white font-mono text-right" />
                 </div>
               </div>
             </div>

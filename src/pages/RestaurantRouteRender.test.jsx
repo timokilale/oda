@@ -138,12 +138,10 @@ describe("restaurant route rendering", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Orders" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Live Orders" })).toBeInTheDocument();
+      expect(screen.getByText("Test Kitchen")).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("tablist", { name: "Test Kitchen sections" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Orders" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tabpanel")).toHaveAttribute("aria-labelledby", "restaurant-tab-orders");
-    expect(screen.getByRole("tablist", { name: "Test Kitchen sections" })).toBeInTheDocument();
   });
 });
