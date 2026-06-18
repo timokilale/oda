@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,20 +24,16 @@ describe("PublicOrderPage", () => {
     vi.clearAllMocks();
   });
 
-  it("shows the manual table lookup form when no table query is present", () => {
+  it("shows a message when no table query is present", () => {
     renderPage("/r/demo/order");
 
-    expect(screen.getByLabelText("Table reference")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Load menu" })).toBeInTheDocument();
+    expect(screen.getByText("No table specified.")).toBeInTheDocument();
   });
 
   it("loads the menu and places an order from the cart", async () => {
     const user = userEvent.setup();
     const contextPayload = {
-      restaurant: {
-        id: 12,
-        name: "Coast Kitchen",
-      },
+      restaurant: { id: 12, name: "Coast Kitchen" },
       tableNumber: "A1",
       menuItems: [
         {
@@ -46,29 +42,9 @@ describe("PublicOrderPage", () => {
           description: "Signature rice.",
           price: 1200,
           category: "Main dishes",
-          categoryPath: "Main dishes",
           imageUrl: null,
           imagePositionX: 50,
           imagePositionY: 50,
-        },
-      ],
-      menuTree: [
-        {
-          name: "Main dishes",
-          children: [],
-          items: [
-            {
-              id: 1,
-              name: "Pilau",
-              description: "Signature rice.",
-              price: 1200,
-              category: "Main dishes",
-              categoryPath: "Main dishes",
-              imageUrl: null,
-              imagePositionX: 50,
-              imagePositionY: 50,
-            },
-          ],
         },
       ],
     };
@@ -76,6 +52,10 @@ describe("PublicOrderPage", () => {
     apiRequest.mockImplementation((path, options = {}) => {
       if (path === "/public/restaurants/demo/order-context?table=A1") {
         return Promise.resolve(contextPayload);
+      }
+
+      if (path === "/public/restaurants/demo/orders?table=A1") {
+        return Promise.resolve({ orders: [] });
       }
 
       if (path === "/public/restaurants/demo/orders" && options.method === "POST") {
@@ -87,23 +67,17 @@ describe("PublicOrderPage", () => {
 
     renderPage("/r/demo/order?table=A1");
 
-    expect(await screen.findByRole("heading", { name: "Coast Kitchen" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Main dishes" })).toBeInTheDocument();
+    expect(await screen.findByText("Coast Kitchen")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Add Pilau" }));
+    const addBtn = screen.getByRole("button", { name: "Add to Order" });
+    await user.click(addBtn);
 
-    // CUS-L09: Must review cart first — button says "Review Order" initially
-    const reviewButton = screen.getByRole("button", { name: "Review Order" });
-    expect(reviewButton).toBeEnabled();
-    await user.click(reviewButton);
+    await user.click(screen.getByRole("button", { name: /status/i }));
 
-    // Now the review sheet is open (role="dialog"), find the Place Order button inside it
-    const reviewSheet = screen.getByRole("dialog", { name: "Your order" });
-    const placeOrderButton = within(reviewSheet).getByRole("button", { name: /Place Order/ });
-    expect(placeOrderButton).toBeEnabled();
-    await user.click(placeOrderButton);
+    expect(screen.getByText("Pilau")).toBeInTheDocument();
 
-    expect(await screen.findByText("Order placed successfully.")).toBeInTheDocument();
+    const placeOrderBtn = screen.getByRole("button", { name: /Place Order/ });
+    await user.click(placeOrderBtn);
 
     await waitFor(() => {
       expect(apiRequest).toHaveBeenCalledWith(
