@@ -48,5 +48,5 @@ export default function useTables() {
     [restaurant.id, loadTables, refreshWorkspace, setFlash, clearFlash]
   );
 
-  return { tables, setTables, addTable, deleteTable };
+  return { tables, setTables, addTable, deleteTable, restaurantRef: restaurant.ref || restaurant.id, restaurantName: restaurant.name };
 }

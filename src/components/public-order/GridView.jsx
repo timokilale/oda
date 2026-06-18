@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { Search, Plus, Leaf, Info, X } from 'lucide-react';
+import { Search, Plus, Info, X } from 'lucide-react';
 import { formatCurrency } from '../../lib/format';
-
-const CATEGORIES = ['All', 'Starters', 'Mains', 'Desserts', 'Beverages'];
 
 export default function GridView({
   items,
@@ -13,6 +11,11 @@ export default function GridView({
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const categories = useMemo(() => {
+    const cats = [...new Set((items || []).map((i) => i.category).filter(Boolean))];
+    return ['All', ...cats.sort()];
+  }, [items]);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -51,7 +54,7 @@ export default function GridView({
 
         <div className="flex items-center gap-2 overflow-hidden shrink-0">
           <div className="flex gap-1.5 overflow-x-auto hide-scrollbar py-0.5 w-full">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}

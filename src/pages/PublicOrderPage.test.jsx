@@ -2,11 +2,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { apiRequest } from "../lib/api.js";
+import * as publicOrderService from "../services/publicOrderService";
 import PublicOrderPage from "./PublicOrderPage.jsx";
 
-vi.mock("../lib/api.js", () => ({
-  apiRequest: vi.fn(),
+vi.mock("../services/publicOrderService", () => ({
+  getOrderContext: vi.fn(),
+  getOrders: vi.fn(),
+  createOrder: vi.fn(),
 }));
 
 function renderPage(initialEntry) {
@@ -49,21 +51,9 @@ describe("PublicOrderPage", () => {
       ],
     };
 
-    apiRequest.mockImplementation((path, options = {}) => {
-      if (path === "/public/restaurants/demo/order-context?table=A1") {
-        return Promise.resolve(contextPayload);
-      }
-
-      if (path === "/public/restaurants/demo/orders?table=A1") {
-        return Promise.resolve({ orders: [] });
-      }
-
-      if (path === "/public/restaurants/demo/orders" && options.method === "POST") {
-        return Promise.resolve({ successMessage: "Order placed successfully." });
-      }
-
-      return Promise.reject(new Error(`Unexpected request: ${path}`));
-    });
+    publicOrderService.getOrderContext.mockResolvedValue(contextPayload);
+    publicOrderService.getOrders.mockResolvedValue({ orders: [] });
+    publicOrderService.createOrder.mockResolvedValue({ successMessage: "Order placed successfully." });
 
     renderPage("/r/demo/order?table=A1");
 
@@ -80,15 +70,10 @@ describe("PublicOrderPage", () => {
     await user.click(placeOrderBtn);
 
     await waitFor(() => {
-      expect(apiRequest).toHaveBeenCalledWith(
-        "/public/restaurants/demo/orders",
-        {
-          method: "POST",
-          body: {
-            tableNumber: "A1",
-            items: [{ id: 1, quantity: 1 }],
-          },
-        },
+      expect(publicOrderService.createOrder).toHaveBeenCalledWith(
+        "demo",
+        "A1",
+        [{ id: 1, quantity: 1 }],
       );
     });
   });

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Plus, Printer, TrendingUp, CheckCircle, QrCode, Download, Share2, Trash2, ChevronDown } from 'lucide-react';
 
-export default function TablesView({ tables, setTables, onAddTable, onDeleteTable, restaurantName, qrBaseUrl }) {
+export default function TablesView({ tables, setTables, onAddTable, onDeleteTable, restaurantName, restaurantRef, qrBaseUrl }) {
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNum, setNewTableNum] = useState('');
   const [newTableStatus, setNewTableStatus] = useState('ACTIVE');
@@ -31,7 +31,8 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
 
   const handleDownloadQR = (id, tableNumber) => {
     const element = document.createElement("a");
-    const file = new Blob([`ODA QR Code for Table ${tableNumber}\nScan Link: ${qrBaseUrl || window.location.origin}/order/${restaurantName}?table=${tableNumber}`], { type: 'text/plain' });
+    const linkUrl = `${qrBaseUrl || window.location.origin}/order/${restaurantRef}?table=${tableNumber}`;
+    const file = new Blob([`ODA QR Code for Table ${tableNumber}\nScan Link: ${linkUrl}`], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = `table-${id}-qr.txt`;
     document.body.appendChild(element);
@@ -40,8 +41,12 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
   };
 
   const handleShareQR = (tableNumber) => {
-    const linkUrl = `${qrBaseUrl || window.location.origin}/order/${restaurantName}?table=${tableNumber}`;
-    navigator.clipboard.writeText(linkUrl);
+    const linkUrl = `${qrBaseUrl || window.location.origin}/order/${restaurantRef}?table=${tableNumber}`;
+    try {
+      navigator.clipboard.writeText(linkUrl);
+    } catch {
+      // clipboard unavailable (insecure context)
+    }
     alert(`Link copied to clipboard!\n${linkUrl}`);
   };
 

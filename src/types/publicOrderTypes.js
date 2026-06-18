@@ -24,9 +24,17 @@ const COLOR_LEAKS = [
   'rgba(244, 143, 177, 0.3)',
   'rgba(255, 183, 77, 0.3)',
 ];
-let colorIndex = 0;
 
-export function transformMenuItem(backendItem, idx) {
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+export function transformMenuItem(backendItem) {
   const cat = (backendItem.category || '').toLowerCase();
   let category = 'Mains';
   if (cat.includes('starter') || cat.includes('appetizer')) category = 'Starters';
@@ -44,7 +52,7 @@ export function transformMenuItem(backendItem, idx) {
     ingredients: [],
     calories: 0,
     prepTime: 0,
-    colorLeak: COLOR_LEAKS[(idx + colorIndex++) % COLOR_LEAKS.length],
+    colorLeak: COLOR_LEAKS[hashCode(String(backendItem.id || backendItem.name)) % COLOR_LEAKS.length],
     spiciness: 0,
   };
 }
