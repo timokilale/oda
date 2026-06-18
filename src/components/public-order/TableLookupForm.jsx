@@ -19,7 +19,7 @@ export default function TableLookupForm({ tableInput, onTableInputChange, onSubm
       </div>
       <Button
         type="submit"
-        className="h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold"
+        className="h-12 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold active:scale-[0.98]"
       >
         View menu
       </Button>

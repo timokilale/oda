@@ -14,10 +14,10 @@ import { formatCurrency } from "../lib/format.js";
 import { filterMenuNodes } from "../lib/public-order/filterMenuNodes.js";
 
 const ORDER_LABELS = {
-  pending: { label: "Waiting", icon: "🕐", color: "text-amber-600 bg-amber-50 border-amber-200" },
-  confirmed: { label: "Cooking", icon: "👨‍🍳", color: "text-orange-600 bg-orange-50 border-orange-200" },
-  completed: { label: "Served", icon: "✅", color: "text-green-600 bg-green-50 border-green-200" },
-  cancelled: { label: "Cancelled", icon: "—", color: "text-gray-500 bg-gray-50 border-gray-200" },
+  pending: { label: "Pending", color: "bg-warning/15 text-warning" },
+  confirmed: { label: "Cooking", color: "bg-warning/15 text-warning" },
+  completed: { label: "Served", color: "bg-success/15 text-success" },
+  cancelled: { label: "Cancelled", color: "bg-destructive/15 text-destructive" },
 };
 
 function orderStatusMeta(status) {
@@ -26,11 +26,11 @@ function orderStatusMeta(status) {
 
 function TabBar({ activeTab, onTabChange, searchTerm, onSearchChange, searchInputRef }) {
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-border bg-muted p-1">
+    <div className="flex items-center gap-1 rounded-xl border border-border bg-muted p-1">
       <button
         type="button"
         onClick={() => onTabChange("menu")}
-        className={`inline-flex items-center justify-center h-8 px-4 rounded text-sm font-medium transition-colors shrink-0 ${
+        className={`inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-medium transition-colors shrink-0 ${
           activeTab === "menu"
             ? "bg-card text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
@@ -61,7 +61,7 @@ function TabBar({ activeTab, onTabChange, searchTerm, onSearchChange, searchInpu
       <button
         type="button"
         onClick={() => onTabChange("status")}
-        className={`inline-flex items-center justify-center h-8 px-4 rounded text-sm font-medium transition-colors shrink-0 ${
+        className={`inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-medium transition-colors shrink-0 ${
           activeTab === "status"
             ? "bg-card text-foreground shadow-sm"
             : "text-muted-foreground hover:text-foreground"
@@ -76,7 +76,7 @@ function TabBar({ activeTab, onTabChange, searchTerm, onSearchChange, searchInpu
 
 function LiveDot() {
   return (
-    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+    <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
   );
 }
 
@@ -133,7 +133,7 @@ function OrderStatusView({ restaurantRef, tableQuery, onNewOrder }) {
         <button
           type="button"
           onClick={onNewOrder}
-          className="mt-4 inline-flex items-center justify-center h-10 px-5 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="mt-4 inline-flex items-center justify-center h-10 px-5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors active:scale-[0.98]"
         >
           Browse menu
         </button>
@@ -157,17 +157,16 @@ function OrderCard({ order }) {
     : "";
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_3px_0_rgba(30,27,75,0.04)]">
       <div className="flex items-center justify-between mb-3">
         <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Order #{order.id}
           <span className="ml-2 font-mono font-normal normal-case">{created}</span>
         </div>
         <span
-          className={`inline-flex items-center gap-1 h-6 px-2.5 rounded-full text-xs font-medium border ${orderMeta.color}`}
+          className={`inline-flex items-center h-6 px-2.5 rounded-full text-xs font-semibold ${orderMeta.color}`}
         >
-          <span>{orderMeta.icon}</span>
-          <span>{orderMeta.label}</span>
+          {orderMeta.label}
         </span>
       </div>
       <ul className="flex flex-col gap-2">
@@ -301,7 +300,7 @@ function PublicOrderPageInner() {
 
   function InfoCard({ eyebrow, title, children, tone = "default" }) {
     return (
-      <section className="mx-auto w-[calc(100%-24px)] max-w-md mt-8 p-6 rounded-2xl border border-border bg-card shadow-sm">
+      <section className="mx-auto w-[calc(100%-24px)] max-w-md mt-8 p-6 rounded-xl border border-border bg-card shadow-[0_1px_3px_0_rgba(30,27,75,0.04)]">
         <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${tone === "error" ? "text-destructive" : "text-primary"}`}>
           {eyebrow}
         </p>
@@ -326,64 +325,83 @@ function PublicOrderPageInner() {
 
     return (
       <div
-        className="rounded-xl border border-border bg-card shadow-sm overflow-hidden opacity-0 translate-y-1 animate-[cardIn_300ms_ease-out_both]"
+        className="rounded-xl border border-border bg-card overflow-hidden opacity-0 translate-y-1 animate-[cardIn_300ms_ease-out_both] shadow-[0_1px_3px_0_rgba(30,27,75,0.04)]"
         style={{ animationDelay: `${Math.min(index * 40, 320)}ms` }}
       >
-        <div className="flex items-start gap-3 px-4 py-3.5">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-foreground text-[15px] leading-tight">{item.name}</h3>
-              {isSelected ? <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold font-mono leading-none animate-[badgePop_200ms_ease-out_both]">{qty}</span> : null}
-            </div>
-            <p className="mt-1 font-mono text-sm font-medium text-primary">{formatCurrency(item.price)}</p>
-            {item.description ? (
-              <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>
+        <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+          {item.imageUrl ? (
+            <img
+              src={item.imageUrl || "/placeholder.svg"}
+              alt={item.name}
+              crossOrigin="anonymous"
+              loading="lazy"
+              className="w-full h-full object-cover"
+              style={{ objectPosition: `${item.imagePositionX ?? 50}% ${item.imagePositionY ?? 50}%` }}
+            />
+          ) : (
+            <span className="flex items-center justify-center w-full h-full text-muted-foreground" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" className="w-10 h-10">
+                <path d="M4 7h16v12H4z" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="9" cy="11" r="1.6" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M5 18l5-4 3 2 3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+              </svg>
+            </span>
+          )}
+          {qty === 0 ? (
+            <button
+              type="button"
+              onClick={() => changeQuantity(1)}
+              aria-label={`Add ${item.name}`}
+              className="absolute bottom-2 right-2 grid place-items-center w-9 h-9 rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-card transition-transform duration-150 active:scale-90 cursor-pointer"
+            >
+              <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4">
+                <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
+            </button>
+          ) : null}
+        </div>
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-xl font-semibold text-foreground leading-tight">{item.name}</h3>
+            {isSelected ? (
+              <span className="inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold font-mono leading-none animate-[badgePop_200ms_ease-out_both] shrink-0">
+                {qty}
+              </span>
             ) : null}
           </div>
-          <div className="relative flex-shrink-0">
-            <div className="block w-[88px] h-[88px] rounded-xl overflow-hidden bg-muted">
-              {item.imageUrl ? (
-                <img
-                  src={item.imageUrl || "/placeholder.svg"}
-                  alt={item.name}
-                  crossOrigin="anonymous"
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: `${item.imagePositionX ?? 50}% ${item.imagePositionY ?? 50}%` }}
-                />
-              ) : (
-                <span className="flex items-center justify-center w-full h-full text-muted-foreground" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7">
-                    <path d="M4 7h16v12H4z" stroke="currentColor" strokeWidth="1.4" />
-                    <circle cx="9" cy="11" r="1.6" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M5 18l5-4 3 2 3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-                  </svg>
-                </span>
-              )}
-            </div>
-            {qty === 0 ? (
-              <button type="button" onClick={() => changeQuantity(1)} aria-label={`Add ${item.name}`} className="absolute -bottom-2 -right-2 grid place-items-center w-9 h-9 rounded-full bg-primary text-primary-foreground shadow-md ring-2 ring-card transition-transform duration-150 active:scale-90 cursor-pointer">
-                <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4">
-                  <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                  <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
-              </button>
-            ) : (
-              <div className="absolute -bottom-2 -right-2 flex items-center gap-0.5 h-9 px-1 rounded-full bg-card shadow-md ring-1 ring-border animate-[badgePop_180ms_ease-out_both]">
-                <button type="button" onClick={() => changeQuantity(-1)} aria-label={`Remove one ${item.name}`} className="grid place-items-center w-7 h-7 rounded-full text-foreground hover:bg-muted transition-colors active:scale-90 cursor-pointer">
+          {item.description ? (
+            <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed line-clamp-2">{item.description}</p>
+          ) : null}
+          <div className="mt-2 flex items-center justify-between">
+            <span className="font-mono text-lg font-bold text-primary">{formatCurrency(item.price)}</span>
+            {isSelected ? (
+              <div className="flex items-center gap-0.5 h-9 px-1 rounded-full bg-muted animate-[badgePop_180ms_ease-out_both]">
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(-1)}
+                  aria-label={`Remove one ${item.name}`}
+                  className="grid place-items-center w-7 h-7 rounded-full text-foreground hover:bg-accent transition-colors active:scale-90 cursor-pointer"
+                >
                   <svg viewBox="0 0 14 14" fill="none" className="w-3.5 h-3.5">
                     <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
                   </svg>
                 </button>
                 <output className="min-w-5 text-center text-sm font-semibold text-foreground font-mono" aria-live="polite">{qty}</output>
-                <button type="button" onClick={() => changeQuantity(1)} disabled={qty >= 20} aria-label={`Add one ${item.name}`} className="grid place-items-center w-7 h-7 rounded-full text-primary hover:bg-accent transition-colors active:scale-90 disabled:opacity-30 cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(1)}
+                  disabled={qty >= 20}
+                  aria-label={`Add one ${item.name}`}
+                  className="grid place-items-center w-7 h-7 rounded-full text-primary hover:bg-accent transition-colors active:scale-90 disabled:opacity-30 cursor-pointer"
+                >
                   <svg viewBox="0 0 14 14" fill="none" className="w-3.5 h-3.5">
                     <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
                     <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
                   </svg>
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -431,7 +449,7 @@ function PublicOrderPageInner() {
         return <DetailedView items={allItems} />;
       }
       return (
-        <div className="grid gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {allItems.map((item, index) => (
             <MenuItemCard key={item.id} item={item} index={index} />
           ))}
@@ -584,7 +602,7 @@ function PublicOrderPageInner() {
               <button
                 type="button"
                 onClick={() => changeQuantity(1)}
-                className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2 h-11 px-6 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all active:scale-[0.98] cursor-pointer"
               >
                 <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4">
                   <line x1="7" y1="3" x2="7" y2="11" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -620,7 +638,7 @@ function PublicOrderPageInner() {
               {context?.restaurant?.name || restaurantRef || "ODA"}
             </h1>
             {tableQuery ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <span className="shrink-0 text-xs font-semibold font-mono tracking-wide text-primary bg-accent rounded-full px-3 py-1">
                   Table {context?.tableNumber || tableQuery || "--"}
                 </span>
@@ -628,7 +646,7 @@ function PublicOrderPageInner() {
                   <button
                     type="button"
                     onClick={() => { setDetailedView((v) => !v); setDetailIndex(0); }}
-                    className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-full transition-colors cursor-pointer bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    className="shrink-0 text-xs font-semibold px-3 py-1 rounded-lg transition-colors cursor-pointer bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground active:scale-[0.97]"
                   >
                     {detailedView ? "Grid" : "Browse"}
                   </button>
@@ -664,7 +682,7 @@ function PublicOrderPageInner() {
       </header>
 
       <div style={{ paddingTop: headerHeight }}>
-        <main className="px-3 py-4 max-w-4xl mx-auto pb-28">
+        <main className="px-4 py-4 max-w-4xl mx-auto pb-28">
           {tableQuery && activeTab === "status" ? (
             <OrderStatusView
               restaurantRef={restaurantRef}
@@ -742,7 +760,7 @@ function OrderResultDialog({ orderResult, onDismiss }) {
           </svg>
         </div>
         <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-1">Order placed</p>
-        <h2 className="text-2xl font-semibold leading-tight text-foreground">Order #{orderResult.orderId}</h2>
+        <h2 className="text-xl font-semibold leading-tight text-foreground">Order #{orderResult.orderId}</h2>
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
           Table {orderResult.tableNumber} — your order is pending.
         </p>
@@ -769,7 +787,7 @@ function OrderResultDialog({ orderResult, onDismiss }) {
         <Button
           type="button"
           onClick={onDismiss}
-          className="w-full h-12 mt-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
+          className="w-full h-12 mt-4 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
         >
           Back to menu
         </Button>

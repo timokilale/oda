@@ -12,7 +12,7 @@ function CartSheet({ cartItems, submitting, onPlaceOrder, onAdjustItemQuantity }
               <h3 className="font-medium text-foreground truncate text-[15px]">{item.name}</h3>
               <p className="text-sm text-muted-foreground font-mono">{formatCurrency(item.subtotal)}</p>
             </div>
-            <div className="flex items-center gap-1 h-10 px-1 rounded-full bg-muted" role="group" aria-label={`Quantity for ${item.name}`}>
+            <div className="flex items-center gap-1 h-9 px-1 rounded-full bg-muted" role="group" aria-label={`Quantity for ${item.name}`}>
               <button
                 type="button"
                 onClick={() => onAdjustItemQuantity(item.id, -1)}
@@ -47,7 +47,7 @@ function CartSheet({ cartItems, submitting, onPlaceOrder, onAdjustItemQuantity }
         <Button
           type="submit"
           disabled={cartItems.count === 0 || submitting}
-          className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold"
+          className="w-full h-12 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold"
         >
           {submitting ? "Placing order..." : `Place order  •  ${formatCurrency(cartItems.total)}`}
         </Button>
@@ -71,7 +71,7 @@ export default function CartStrip({
   return (
     <>
       <Sheet open={cartOpen} onOpenChange={onToggleOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl border-border bg-card max-h-[80dvh] overflow-y-auto">
+        <SheetContent side="bottom" className="rounded-t-xl border-border bg-card max-h-[80dvh] overflow-y-auto">
           <SheetHeader className="px-5 pt-5 pb-0">
             <SheetTitle className="text-lg font-semibold text-foreground">
               Your order · {cartItems.count} item{cartItems.count !== 1 ? "s" : ""}
@@ -91,7 +91,7 @@ export default function CartStrip({
       <div className="fixed bottom-0 left-0 right-0 z-50 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
         <aside
           ref={containerRef}
-          className="pointer-events-auto max-w-md mx-auto flex items-center gap-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 px-4 py-2.5"
+          className="pointer-events-auto max-w-md mx-auto flex items-center gap-3 rounded-xl bg-primary text-primary-foreground px-4 py-3"
           aria-label="Your order"
           aria-live="polite"
         >

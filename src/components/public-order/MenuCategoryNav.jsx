@@ -15,11 +15,11 @@ export default function MenuCategoryNav({ roots, selectedIndex, onSelectCategory
     <nav
       ref={containerRef}
       style={{ top: topOffset }}
-      className="sticky z-40 bg-background/85 backdrop-blur-md"
+      className="sticky z-40 bg-background/85 backdrop-blur-md border-b border-border"
       aria-label="Menu sections"
     >
       <div
-        className="flex gap-2 overflow-x-auto scrollbar-none px-4 py-2.5 max-w-4xl mx-auto"
+        className="flex gap-2 overflow-x-auto scrollbar-none px-4 py-3 max-w-4xl mx-auto"
         role="tablist"
         aria-label="Menu categories"
       >
@@ -29,10 +29,10 @@ export default function MenuCategoryNav({ roots, selectedIndex, onSelectCategory
           aria-selected={selectedIndex == null}
           onClick={() => selectedIndex != null && onSelectCategory(selectedIndex)}
           className={cn(
-            "flex-shrink-0 px-3.5 py-2 min-h-9 rounded-full text-[13px] font-medium whitespace-nowrap",
-            "transition-colors duration-150 active:scale-[0.97] cursor-pointer",
+            "flex-shrink-0 px-3.5 py-1.5 min-h-8 rounded-full text-xs font-semibold whitespace-nowrap tracking-wide",
+            "transition-all duration-150 active:scale-[0.97] cursor-pointer",
             selectedIndex == null
-              ? "bg-primary text-primary-foreground"
+              ? "bg-primary text-primary-foreground shadow-sm"
               : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground",
           )}
         >
@@ -51,10 +51,10 @@ export default function MenuCategoryNav({ roots, selectedIndex, onSelectCategory
               onClick={() => onSelectCategory(index)}
               onKeyDown={(e) => handleKeyDown(e, position)}
               className={cn(
-                "flex-shrink-0 px-3.5 py-2 min-h-9 rounded-full text-[13px] font-medium whitespace-nowrap",
-                "transition-colors duration-150 active:scale-[0.97] cursor-pointer",
+                "flex-shrink-0 px-3.5 py-1.5 min-h-8 rounded-full text-xs font-semibold whitespace-nowrap tracking-wide",
+                "transition-all duration-150 active:scale-[0.97] cursor-pointer",
                 isActive
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground",
               )}
             >
