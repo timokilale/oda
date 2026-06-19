@@ -1,7 +1,7 @@
 const listeners = new Map();
-let lastEventId = 0;
 let pollingId = null;
 let sseConnection = null;
+let currentUrl = null;
 
 function notify(type, payload) {
   const cbs = listeners.get(type);
@@ -11,55 +11,36 @@ function notify(type, payload) {
   });
 }
 
-function startPolling() {
-  if (pollingId) return;
-  pollingId = setInterval(async () => {
-    try {
-      const res = await fetch(`/api/events?since=${lastEventId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) return;
-      const batch = await res.json();
-      (batch.events || []).forEach((ev) => {
-        if (ev.id > lastEventId) lastEventId = ev.id;
-        notify(ev.type, ev.data);
-      });
-    } catch {}
-  }, 5000);
-}
-
-function startSSE() {
+function startSSE(url) {
   try {
-    const es = new EventSource("/api/events", { withCredentials: true });
+    const es = new EventSource(url, { withCredentials: true });
 
-    es.addEventListener("message", (event) => {
+    es.addEventListener("orders", (event) => {
       try {
-        const { type, data, id } = JSON.parse(event.data);
-        if (id && id > lastEventId) lastEventId = id;
-        notify(type, data);
+        const data = JSON.parse(event.data);
+        notify("orders", data);
       } catch {}
     });
 
     es.addEventListener("error", () => {
       es.close();
       sseConnection = null;
-      startPolling();
+      if (currentUrl) startSSE(currentUrl);
     });
 
     sseConnection = es;
-  } catch {
-    startPolling();
-  }
+  } catch {}
 }
 
-export function subscribe(eventType, callback) {
+export function subscribe(eventType, callback, url) {
   if (!listeners.has(eventType)) {
     listeners.set(eventType, new Set());
   }
   listeners.get(eventType).add(callback);
 
-  if (!sseConnection && !pollingId) {
-    startSSE();
+  if (!sseConnection && !pollingId && url) {
+    currentUrl = url;
+    startSSE(url);
   }
 
   return () => {
@@ -69,7 +50,7 @@ export function subscribe(eventType, callback) {
     if (cbs.size === 0) listeners.delete(eventType);
     if (listeners.size === 0) {
       if (pollingId) { clearInterval(pollingId); pollingId = null; }
-      if (sseConnection) { sseConnection.close(); sseConnection = null; }
+      if (sseConnection) { sseConnection.close(); sseConnection = null; currentUrl = null; }
     }
   };
 }

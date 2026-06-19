@@ -111,6 +111,7 @@ export function transformApiReportsToView(apiReports) {
   return {
     revenue: apiReports.revenueTotal || 0,
     orders: apiReports.ordersToday || 0,
+    totalOrders: apiReports.totalOrders || 0,
     avgTicket: apiReports.averageTicket || 0,
     completion: apiReports.completionRate ? Math.round(apiReports.completionRate) : 0,
     pendingCount: apiReports.pendingOrders || 0,

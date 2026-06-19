@@ -81,10 +81,7 @@ export default function useReports() {
     loadData();
   }, [loadData]);
 
-  const totalOrders =
-    (reports?.pendingCount || 0) +
-    (reports?.confirmedCount || 0) +
-    (reports?.completedCount || 0);
+  const totalOrders = reports?.totalOrders ?? 0;
 
   return { reports, logs, loading, period, setPeriod, totalOrders, refresh: loadData };
 }

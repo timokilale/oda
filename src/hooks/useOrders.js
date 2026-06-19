@@ -53,25 +53,23 @@ export default function useOrders() {
   }, [restaurant.id]);
 
   useEffect(() => {
-    const initialLoad = { current: true };
+    let initialSse = true;
     loadOrders();
     loadMenuItems();
 
-    const onCreated = (raw) => {
-      const order = transformApiOrderToView(raw);
-      if (initialLoad.current) return;
-      playNotificationSound();
-      setOrders((prev) => [order, ...prev]);
-    };
-
-    const onUpdated = (raw) => {
-      const updated = transformApiOrderToView(raw);
-      setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
-    };
-
-    const unsubscribe = subscribeToOrders(restaurant.id, onCreated, onUpdated);
-
-    initialLoad.current = false;
+    const unsubscribe = subscribeToOrders(restaurant.id, (rawOrders) => {
+      const mapped = rawOrders.map(transformApiOrderToView);
+      if (initialSse) {
+        initialSse = false;
+        return;
+      }
+      setOrders((prev) => {
+        if (mapped.length > prev.length) {
+          playNotificationSound();
+        }
+        return mapped;
+      });
+    });
 
     return () => {
       unsubscribe();

@@ -76,8 +76,8 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
             <ShoppingBag className="w-4 h-4 text-[#2a14b4]" />
           </div>
           <div>
-            <span className="font-mono text-lg font-bold text-neutral-850 dark:text-white block mt-2">{reports.orders || 0}</span>
-            <span className="font-sans text-[11px] text-[#10B981] flex items-center gap-1 mt-1 font-semibold">↑ vs last period</span>
+            <span className="font-mono text-lg font-bold text-neutral-850 dark:text-white block mt-2">{reports.totalOrders || 0}</span>
+            <span className="font-sans text-[11px] text-neutral-400 flex items-center gap-1 mt-1 font-semibold">{reports.orders || 0} today</span>
           </div>
         </div>
         <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
@@ -113,7 +113,8 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
             </div>
             <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
               <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Orders</span>
-              <p className="font-mono text-2xl font-bold text-neutral-850 dark:text-white mt-1">{reports.orders || 0}</p>
+              <p className="font-mono text-2xl font-bold text-neutral-850 dark:text-white mt-1">{reports.totalOrders || 0}</p>
+              <span className="font-sans text-[9px] text-neutral-400">{reports.orders || 0} today</span>
             </div>
             <div className="p-4 bg-[#f3f4f5]/65 dark:bg-neutral-850/50 rounded-xl">
               <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Avg. Ticket</span>

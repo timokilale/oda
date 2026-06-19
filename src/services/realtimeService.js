@@ -1,20 +1,11 @@
 import { subscribe } from "./eventBus.js";
 
-export function subscribeToOrders(restaurantId, onOrderCreated, onOrderUpdated) {
-  const unsub1 = subscribe("order.created", (data) => {
-    if (String(data.restaurantId) === String(restaurantId)) {
-      onOrderCreated(data.order);
-    }
-  });
+export function subscribeToOrders(restaurantId, onOrdersUpdate) {
+  const sseUrl = `/api/restaurants/${restaurantId}/orders/sse`;
 
-  const unsub2 = subscribe("order.updated", (data) => {
-    if (String(data.restaurantId) === String(restaurantId)) {
-      onOrderUpdated(data.order);
-    }
-  });
+  const unsub = subscribe("orders", (data) => {
+    onOrdersUpdate(data.orders || [], data.orderSummary || {});
+  }, sseUrl);
 
-  return () => {
-    unsub1();
-    unsub2();
-  };
+  return unsub;
 }
