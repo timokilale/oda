@@ -3,22 +3,28 @@ import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.js
 import { transformApiMenuItemToView, transformViewItemToApiPayload } from "../types/managementTypes.js";
 import * as menuService from "../services/menuService.js";
 
+const cache = new Map();
+
 export default function useMenu() {
   const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => cache.get(restaurant.id) || []);
 
   const loadMenu = useCallback(async () => {
     try {
       const data = await menuService.getMenuItems(restaurant.id);
-      setItems((data.items || []).map(transformApiMenuItemToView));
+      const mapped = (data.items || []).map(transformApiMenuItemToView);
+      cache.set(restaurant.id, mapped);
+      setItems(mapped);
     } catch (error) {
       setFlash({ type: "error", message: error.message });
     }
   }, [restaurant.id, setFlash]);
 
   useEffect(() => {
-    loadMenu();
-  }, [loadMenu]);
+    if (!cache.has(restaurant.id)) {
+      loadMenu();
+    }
+  }, [loadMenu, restaurant.id]);
 
   const handleDeleteItem = useCallback(
     async (itemId) => {

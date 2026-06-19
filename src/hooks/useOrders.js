@@ -20,15 +20,18 @@ function playNotificationSound() {
   } catch {}
 }
 
+const cache = new Map();
+
 export default function useOrders() {
   const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState(() => cache.get(restaurant.id) || []);
 
   const loadOrders = useCallback(async () => {
     try {
       const data = await orderService.getOrders(restaurant.id);
       const raw = data.orders || [];
       const mapped = raw.map(transformApiOrderToView);
+      cache.set(restaurant.id, mapped);
       setOrders(mapped);
     } catch (error) {
       if (!error.message.includes("timed out")) {
@@ -38,15 +41,18 @@ export default function useOrders() {
   }, [restaurant.id, setFlash]);
 
   useEffect(() => {
-    let initialSse = true;
-    loadOrders();
+    const wasCached = cache.has(restaurant.id);
+
+    if (!wasCached) {
+      loadOrders();
+    }
 
     const unsubscribe = subscribeToOrders(restaurant.id, (rawOrders) => {
       const mapped = rawOrders.map(transformApiOrderToView);
-      if (initialSse) {
-        initialSse = false;
+      if (!wasCached) {
         return;
       }
+      cache.set(restaurant.id, mapped);
       setOrders((prev) => {
         if (mapped.length > prev.length) {
           playNotificationSound();

@@ -15,8 +15,11 @@ const cache = new Map();
 export default function useReports() {
   const { restaurant, setFlash } = useRestaurantWorkspace();
   const [period, setPeriod] = useState("Today");
-  const [reports, setReports] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [reports, setReports] = useState(() => {
+    const k = `${restaurant.id}:Today`;
+    return cache.get(k) || null;
+  });
+  const [loading, setLoading] = useState(!cache.has(`${restaurant.id}:Today`));
 
   const loadData = useCallback(async (p) => {
     const k = `${restaurant.id}:${p}`;
