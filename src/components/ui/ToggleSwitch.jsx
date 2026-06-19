@@ -32,7 +32,7 @@ export default function ToggleSwitch({
       <div className={cn('flex items-center justify-between', className)}>
         <div className="min-w-0">
           {label && (
-            <span className="block text-sm font-semibold text-neutral-800 dark:text-white">
+            <span className="block text-sm text-neutral-800 dark:text-neutral-100">
               {label}
             </span>
           )}
@@ -73,11 +73,11 @@ export default function ToggleSwitch({
       />
       <div
         className={`${s} rounded-full transition-colors peer-focus:outline-none ${
-          checked ? 'bg-[#10B981]' : 'bg-neutral-300 dark:bg-neutral-600'
+          checked ? 'bg-neutral-700 dark:bg-neutral-300' : 'bg-neutral-300 dark:bg-neutral-600'
         }`}
       >
         <span
-          className={`${t} ${checked ? tr : 'translate-x-0.5'} inline-block rounded-full bg-white shadow-sm transform transition-transform`}
+          className={`${t} ${checked ? tr : 'translate-x-0.5'} inline-block rounded-full bg-white transform transition-transform`}
         />
       </div>
     </label>

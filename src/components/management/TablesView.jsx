@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useToast } from '../../context/ToastContext.jsx';
 
-export default function TablesView({ tables, setTables, onAddTable, onDeleteTable, restaurantRef }) {
+export default function TablesView({ tables, setTables, onAddTable, onDeleteTable, restaurantRef, settingsIncomplete }) {
   const { toast } = useToast();
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNum, setNewTableNum] = useState('');
@@ -36,7 +36,7 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <button onClick={() => setShowAddTableModal(true)} className="bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-800 px-4 py-2 rounded-lg font-sans text-xs font-medium hover:opacity-80 transition-all cursor-pointer">
+        <button onClick={() => setShowAddTableModal(true)} disabled={settingsIncomplete} className="bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-800 px-4 py-2 rounded-lg font-sans text-xs font-medium hover:opacity-80 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed" title={settingsIncomplete ? 'Fill in restaurant settings first' : ''}>
           Add Table
         </button>
       </div>
