@@ -26,6 +26,11 @@ class OrderService
                 ->map(fn($item) => $item->quantity . 'x ' . $item->menuItem->name)
                 ->implode(', ');
 
+            $items = $order->items->map(fn($item) => [
+                'name' => $item->menuItem->name,
+                'quantity' => $item->quantity,
+            ])->values()->toArray();
+
             return [
                 'id' => $order->id,
                 'tableNumber' => $order->table_number,
@@ -33,6 +38,7 @@ class OrderService
                 'createdAt' => $order->created_at,
                 'totalAmount' => (float) $totalAmount,
                 'itemsSummary' => $itemsSummary,
+                'items' => $items,
             ];
         })->toArray();
     }

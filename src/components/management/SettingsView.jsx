@@ -1,4 +1,5 @@
 import { Save, Bell, ToggleLeft } from 'lucide-react';
+import ToggleSwitch from '../ui/ToggleSwitch.jsx';
 
 export default function SettingsView({ restaurantName, onRestaurantNameChange, branchName, onBranchNameChange, soundEnabled, onSoundEnabledChange, autoAccept, onAutoAcceptChange, onSave, saving }) {
   return (
@@ -32,36 +33,19 @@ export default function SettingsView({ restaurantName, onRestaurantNameChange, b
           />
         </div>
 
-        <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="block font-semibold text-neutral-800 dark:text-white text-sm">Sound</span>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={soundEnabled}
-                onChange={(e) => onSoundEnabledChange(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2a14b4]" />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between pt-1">
-            <div>
-              <span className="block font-semibold text-neutral-800 dark:text-white text-sm">Auto-Accept</span>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoAccept}
-                onChange={(e) => onAutoAcceptChange(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2a14b4]" />
-            </label>
-          </div>
+        <div className="border-t border-neutral-100 dark:border-neutral-800 pt-4 space-y-4">
+          <ToggleSwitch
+            checked={soundEnabled}
+            onChange={onSoundEnabledChange}
+            label="Sound"
+            description="Play notification sound on new orders"
+          />
+          <ToggleSwitch
+            checked={autoAccept}
+            onChange={onAutoAcceptChange}
+            label="Auto-Accept"
+            description="Automatically accept incoming orders"
+          />
         </div>
       </div>
 

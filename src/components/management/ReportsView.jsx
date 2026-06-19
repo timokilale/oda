@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, ShoppingBag, CreditCard, Percent, Download, CheckCircle, AlertCircle, XCircle, ThumbsUp, Activity } from 'lucide-react';
 import { formatCurrency } from '../../lib/format.js';
+import StatCard from '../ui/StatCard.jsx';
 
 export default function ReportsView({ reports, logs, onExportCsv, timeframe, onTimeframeChange }) {
   if (!reports) {
@@ -60,44 +61,10 @@ export default function ReportsView({ reports, logs, onExportCsv, timeframe, onT
       </div>
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
-          <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Revenue</span>
-            <span className="text-[#10B981]"><TrendingUp className="w-4 h-4" /></span>
-          </div>
-          <div>
-            <span className="font-mono text-base xl:text-lg font-bold text-neutral-850 dark:text-white block mt-2">{formatCurrency(reports.revenue || 0)}</span>
-            <span className="font-sans text-[11px] text-[#10B981] flex items-center gap-1 mt-1 font-semibold">↑ vs last</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
-          <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Orders</span>
-            <ShoppingBag className="w-4 h-4 text-[#2a14b4]" />
-          </div>
-          <div>
-            <span className="font-mono text-lg font-bold text-neutral-850 dark:text-white block mt-2">{reports.totalOrders || 0}</span>
-            <span className="font-sans text-[11px] text-neutral-400 flex items-center gap-1 mt-1 font-semibold">{reports.orders || 0} today</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
-          <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg Ticket</span>
-            <CreditCard className="w-4 h-4 text-[#5b598c]" />
-          </div>
-          <div>
-            <span className="font-mono text-lg font-bold text-neutral-850 dark:text-white block mt-2">{formatCurrency(reports.avgTicket || 0)}</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex flex-col justify-between shadow-xs">
-          <div className="flex justify-between items-start mb-2">
-            <span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Completion</span>
-            <Percent className="w-4 h-4 text-amber-500" />
-          </div>
-          <div>
-            <span className="font-mono text-lg font-bold text-neutral-850 dark:text-white block mt-2">{reports.completion || 0}%</span>
-          </div>
-        </div>
+        <StatCard icon={TrendingUp} label="Revenue" value={formatCurrency(reports.revenue || 0)} sublabel="↑ vs last" accent="success" />
+        <StatCard icon={ShoppingBag} label="Orders" value={reports.totalOrders || 0} sublabel={`${reports.orders || 0} today`} accent="primary" />
+        <StatCard icon={CreditCard} label="Avg Ticket" value={formatCurrency(reports.avgTicket || 0)} accent="secondary" />
+        <StatCard icon={Percent} label="Completion" value={`${reports.completion || 0}%`} accent="warning" />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">

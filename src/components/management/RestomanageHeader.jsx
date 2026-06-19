@@ -13,8 +13,6 @@ export default function RestomanageHeader({
   onTabChange,
   restaurantName = 'Restaurant',
   branchName = '',
-  ordersActive,
-  onToggleOrders,
   onLogout,
 }) {
   return (
@@ -53,19 +51,6 @@ export default function RestomanageHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          onClick={onToggleOrders}
-          className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
-            ordersActive ? 'bg-[#10B981]' : 'bg-neutral-400'
-          }`}
-        >
-          <span
-            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-              ordersActive ? 'translate-x-[18px]' : 'translate-x-1'
-            }`}
-          />
-        </button>
-
         <button
           onClick={onLogout}
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#edeeef] dark:hover:bg-neutral-800 transition-colors text-neutral-400"

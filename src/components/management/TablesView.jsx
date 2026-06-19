@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Plus, Printer, TrendingUp, CheckCircle, QrCode, Download, Share2, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, Printer, TrendingUp, CheckCircle, QrCode, Download, Share2, Trash2, ChevronDown, Table as TableIcon, ScanLine } from 'lucide-react';
+import { useToast } from '../../context/ToastContext.jsx';
+import StatCard from '../ui/StatCard.jsx';
 
 export default function TablesView({ tables, setTables, onAddTable, onDeleteTable, restaurantName, restaurantRef, qrBaseUrl }) {
+  const { toast } = useToast();
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableNum, setNewTableNum] = useState('');
   const [newTableStatus, setNewTableStatus] = useState('ACTIVE');
@@ -11,22 +14,21 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
   const activeOrdersVal = useMemo(() => tables.filter(t => t.status === 'ACTIVE').length, [tables]);
 
   const handleAddNewTableSubmit = () => {
-    if (!newTableNum.trim()) { alert('Please enter a valid table number/label.'); return; }
+    if (!newTableNum.trim()) { toast({ type: 'warning', title: 'Validation', message: 'Please enter a valid table number/label.' }); return; }
     const formattedId = newTableNum.trim().padStart(2, '0');
-    if (tables.some(t => t.id === formattedId)) { alert(`Table ${formattedId} already exists.`); return; }
+    if (tables.some(t => t.id === formattedId)) { toast({ type: 'warning', title: 'Duplicate', message: `Table ${formattedId} already exists.` }); return; }
     onAddTable({ id: formattedId, status: newTableStatus, tableNumber: newTableNum.trim() });
     setNewTableNum('');
     setShowAddTableModal(false);
   };
 
   const handleDeleteTable = (tableNumber) => {
-    if (confirm(`Delete Table ${tableNumber} permanently? This will invalidate its active QR code.`)) {
-      if (onDeleteTable) {
-        onDeleteTable(tableNumber);
-      } else {
-        setTables((prev) => prev.filter((t) => t.id !== String(tableNumber).padStart(2, '0')));
-      }
+    if (onDeleteTable) {
+      onDeleteTable(tableNumber);
+    } else {
+      setTables((prev) => prev.filter((t) => t.id !== String(tableNumber).padStart(2, '0')));
     }
+    toast({ type: 'success', title: 'Deleted', message: `Table ${tableNumber} has been removed.` });
   };
 
   const handleDownloadQR = (id, tableNumber) => {
@@ -47,12 +49,12 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
     } catch {
       // clipboard unavailable (insecure context)
     }
-    alert(`Link copied to clipboard!\n${linkUrl}`);
+    toast({ type: 'success', title: 'Link copied', message: `Table ${tableNumber} QR link copied to clipboard.` });
   };
 
   const handlePrintAllQR = () => {
     const printWindow = window.open('', '_blank');
-    if (!printWindow) { alert('Pop-up blocked. Please allow popups to print QR sheets.'); return; }
+    if (!printWindow) { toast({ type: 'error', title: 'Pop-up blocked', message: 'Please allow popups to print QR sheets.' }); return; }
     printWindow.document.write(`
       <html><head><title>Tables QR Codes | ODA</title>
         <style>body{font-family:sans-serif;padding:40px;color:#191c1d;text-align:center}
@@ -82,27 +84,9 @@ export default function TablesView({ tables, setTables, onAddTable, onDeleteTabl
       </div>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-6 rounded-2xl flex flex-col justify-between shadow-xs">
-          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Tables</span>
-          <div className="flex items-baseline gap-2 mt-4">
-            <span className="font-mono text-3xl font-bold text-[#2a14b4] dark:text-[#c3c0ff]">{totalTablesCount}</span>
-            <span className="text-[#10B981] font-sans text-xs font-semibold flex items-center ml-1"><TrendingUp className="w-3.5 h-3.5 mr-1" />+active</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-6 rounded-2xl flex flex-col justify-between shadow-xs">
-          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Scans</span>
-          <div className="flex items-baseline gap-2 mt-4">
-            <span className="font-mono text-3xl font-bold text-[#5b598c] dark:text-neutral-300">{totalScansValue}</span>
-            <span className="text-neutral-400 font-sans text-xs">Avg. {(totalScansValue / (totalTablesCount || 1)).toFixed(1)} per table</span>
-          </div>
-        </div>
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-6 rounded-2xl flex flex-col justify-between shadow-xs">
-          <span className="text-neutral-400 font-sans text-[10px] font-bold uppercase tracking-wider">Active</span>
-          <div className="flex items-baseline gap-2 mt-4">
-            <span className="font-mono text-3xl font-bold text-[#2a14b4] dark:text-[#c3c0ff]">{activeOrdersVal}</span>
-            <span className="bg-[#4338ca]/15 text-[#2a14b4] dark:text-[#c1beff] px-2.5 py-0.5 rounded-full font-sans text-[10px] font-bold uppercase tracking-wider ml-1">{Math.min(100, Math.round((activeOrdersVal / (totalTablesCount || 1)) * 100))}% Active</span>
-          </div>
-        </div>
+        <StatCard icon={TableIcon} label="Tables" value={totalTablesCount} sublabel="Total tables" accent="primary" />
+        <StatCard icon={ScanLine} label="Scans" value={totalScansValue} sublabel={`Avg. ${(totalScansValue / (totalTablesCount || 1)).toFixed(1)} per table`} accent="secondary" />
+        <StatCard icon={TrendingUp} label="Active" value={activeOrdersVal} sublabel={`${Math.min(100, Math.round((activeOrdersVal / (totalTablesCount || 1)) * 100))}% of tables`} accent="success" />
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-8">

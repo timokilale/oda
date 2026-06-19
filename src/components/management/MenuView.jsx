@@ -1,11 +1,15 @@
 import { useState, useMemo } from 'react';
 import {
-  Plus, Search, MoreVertical, Eye, Trash2, Flame, Clock, Sparkles,
+  Plus, Search, MoreVertical, Trash2, Flame, Clock, Sparkles,
   Leaf, CheckCircle, X, FileEdit, FolderMinus, Utensils,
 } from 'lucide-react';
 import { IMAGE_PRESETS, BADGE_OPTIONS } from '../../types/managementTypes.js';
+import { useToast } from '../../context/ToastContext.jsx';
+import StatCard from '../ui/StatCard.jsx';
+import { formatCurrency } from '../../lib/format.js';
 
 export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteItem }) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewStyle, setViewStyle] = useState('list');
@@ -64,14 +68,13 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
   };
 
   const handleDeleteItem = (itemId) => {
-    if (confirm('Delete this menu item permanently?')) {
-      if (onDeleteItem) {
-        onDeleteItem(itemId);
-      } else {
-        setMenuItems((prev) => prev.filter((m) => m.id !== itemId));
-      }
-      setOpenDropdownId(null);
+    if (onDeleteItem) {
+      onDeleteItem(itemId);
+    } else {
+      setMenuItems((prev) => prev.filter((m) => m.id !== itemId));
     }
+    setOpenDropdownId(null);
+    toast({ type: 'success', title: 'Deleted', message: 'Menu item has been removed.' });
   };
 
   const handleToggleBadge = (badge) => {
@@ -79,9 +82,9 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
   };
 
   const handleSaveItemSubmit = async () => {
-    if (!formName.trim()) { alert('Item name cannot be empty.'); return; }
+    if (!formName.trim()) { toast({ type: 'warning', title: 'Validation', message: 'Item name cannot be empty.' }); return; }
     const priceNum = parseFloat(formPrice);
-    if (isNaN(priceNum) || priceNum <= 0) { alert('Please enter a valid price.'); return; }
+    if (isNaN(priceNum) || priceNum <= 0) { toast({ type: 'warning', title: 'Validation', message: 'Please enter a valid price.' }); return; }
 
     const itemData = {
       id: editingItemId || ('menu-' + Math.floor(Math.random() * 10000)),
@@ -158,7 +161,7 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-sans font-bold text-base text-neutral-850 dark:text-white group-hover:text-[#2a14b4]">{item.name}</h3>
-                    <span className="font-mono text-base font-bold text-[#2a14b4] dark:text-[#c1beff]">${item.price.toFixed(2)}</span>
+                    <span className="font-mono text-base font-bold text-[#2a14b4] dark:text-[#c1beff]">{formatCurrency(item.price)}</span>
                   </div>
                   <p className="font-sans text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2 mb-4">{item.description}</p>
                 </div>
@@ -221,7 +224,7 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
                       </div>
                     </td>
                     <td className="px-6 py-4 font-sans text-xs font-semibold text-neutral-500 uppercase tracking-wide">{item.category}</td>
-                    <td className="px-6 py-4 font-mono text-sm font-bold text-[#2a14b4] dark:text-[#c3c0ff]">${item.price.toFixed(2)}</td>
+                    <td className="px-6 py-4 font-mono text-sm font-bold text-[#2a14b4] dark:text-[#c3c0ff]">{formatCurrency(item.price)}</td>
                     <td className="px-6 py-4 font-sans text-xs text-neutral-500 dark:text-neutral-400">{item.prepTime} min</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1 w-24">
@@ -270,18 +273,9 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
       )}
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#2a14b4]"><Utensils className="w-5 h-5 text-[#2a14b4]" /></div>
-          <div><span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Active</span><p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{activeCount}</p></div>
-        </div>
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#f3f4f5] flex items-center justify-center text-[#5b598c]"><Clock className="w-5 h-5 text-[#5b598c]" /></div>
-          <div><span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Avg Prep</span><p className="font-sans text-2xl font-bold text-neutral-850 dark:text-white">{avgPrepTime} min</p></div>
-        </div>
-        <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 p-5 rounded-2xl flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-[#dec0ff]/20 flex items-center justify-center text-[#4338ca]"><Sparkles className="w-5 h-5 text-[#4338ca]" /></div>
-          <div><span className="font-sans text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Top Category</span><p className="font-sans text-lg font-bold text-[#2a14b4] dark:text-[#c3c0ff] mt-0.5">{topCategory}</p></div>
-        </div>
+        <StatCard icon={Utensils} label="Active Items" value={activeCount} accent="primary" />
+        <StatCard icon={Clock} label="Avg Prep Time" value={`${avgPrepTime} min`} accent="secondary" />
+        <StatCard icon={Sparkles} label="Top Category" value={topCategory} accent="primary" />
       </section>
 
       {isEditorOpen && (

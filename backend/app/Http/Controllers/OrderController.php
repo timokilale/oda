@@ -34,6 +34,7 @@ class OrderController extends Controller
         Gate::forUser($owner)->authorize('view', $restaurant);
 
         $response = response()->stream(function () use ($restaurantId) {
+            session_write_close();
             set_time_limit(0);
 
             if (ini_get('zlib.output_compression')) {
