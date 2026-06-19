@@ -1,24 +1,30 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 import { transformApiTableToView } from "../types/managementTypes.js";
 import * as tableService from "../services/tableService.js";
 
+const cache = new Map();
+
 export default function useTables() {
   const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
-  const [tables, setTables] = useState([]);
+  const [tables, setTables] = useState(() => cache.get(restaurant.id) || []);
 
   const loadTables = useCallback(async () => {
     try {
       const data = await tableService.getTables(restaurant.id);
-      setTables((data.tables || []).map(transformApiTableToView));
+      const mapped = (data.tables || []).map(transformApiTableToView);
+      cache.set(restaurant.id, mapped);
+      setTables(mapped);
     } catch (error) {
       setFlash({ type: "error", message: error.message });
     }
   }, [restaurant.id, setFlash]);
 
   useEffect(() => {
-    loadTables();
-  }, [loadTables]);
+    if (!cache.has(restaurant.id)) {
+      loadTables();
+    }
+  }, [loadTables, restaurant.id]);
 
   const addTable = useCallback(
     async ({ id, tableNumber }) => {
@@ -48,5 +54,5 @@ export default function useTables() {
     [restaurant.id, loadTables, refreshWorkspace, setFlash, clearFlash]
   );
 
-  return { tables, setTables, addTable, deleteTable, restaurantRef: restaurant.ref || restaurant.id, restaurantName: restaurant.name };
+  return { tables, setTables, addTable, deleteTable, restaurantRef: restaurant.ref || restaurant.id };
 }

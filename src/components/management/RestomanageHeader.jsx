@@ -1,11 +1,9 @@
-import { Receipt, UtensilsCrossed, Table as TableIcon, BarChart3, Settings, LogOut, Store } from 'lucide-react';
-
 const NAV_ITEMS = [
-  { id: 'orders', label: 'Orders', icon: Receipt },
-  { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
-  { id: 'tables', label: 'Tables', icon: TableIcon },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'orders', label: 'Orders' },
+  { id: 'menu', label: 'Menu' },
+  { id: 'tables', label: 'Tables' },
+  { id: 'reports', label: 'Reports' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 export default function RestomanageHeader({
@@ -16,34 +14,32 @@ export default function RestomanageHeader({
   onLogout,
 }) {
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 py-3 w-full bg-white/80 dark:bg-[#191c1d]/80 frosted-header border-b border-[#E5E7EB] dark:border-neutral-800">
+    <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 py-3 w-full bg-white/80 dark:bg-[#191c1d]/80 border-b border-[#E5E7EB] dark:border-neutral-800">
       <div className="flex items-center gap-1 md:gap-2">
         <div className="hidden md:flex items-center gap-2 mr-3 pr-3 border-r border-[#E5E7EB] dark:border-neutral-800">
-          <div className="w-8 h-8 rounded-lg bg-[#4338ca] flex items-center justify-center text-white">
-            <Store className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-lg bg-neutral-800 dark:bg-white flex items-center justify-center text-white dark:text-neutral-800 font-sans text-xs font-bold">
+            O
           </div>
           <div className="hidden lg:block">
-            <span className="font-sans text-sm font-bold text-[#2a14b4] dark:text-[#c3c0ff] leading-tight block">{restaurantName}</span>
-            <span className="font-sans text-[10px] text-[#5b598c] dark:text-neutral-400 leading-tight block">{branchName}</span>
+            <span className="font-sans text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-tight block">{restaurantName}</span>
+            <span className="font-sans text-[10px] text-neutral-400 leading-tight block">{branchName}</span>
           </div>
         </div>
 
         <nav className="flex items-center gap-0.5">
           {NAV_ITEMS.map((item) => {
-            const IconComponent = item.icon;
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-sans text-xs font-bold transition-all active:scale-95 ${
+                className={`px-3 py-2 rounded-lg font-sans text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-[#4338ca] text-white shadow-sm'
-                    : 'text-[#5b598c] hover:bg-[#e7e8e9] dark:text-neutral-300 dark:hover:bg-neutral-800'
+                    ? 'bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-800'
+                    : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100'
                 }`}
               >
-                <IconComponent className="w-4 h-4" />
-                <span className="hidden sm:inline">{item.label}</span>
+                {item.label}
               </button>
             );
           })}
@@ -53,10 +49,9 @@ export default function RestomanageHeader({
       <div className="flex items-center gap-3">
         <button
           onClick={onLogout}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#edeeef] dark:hover:bg-neutral-800 transition-colors text-neutral-400"
-          title="Logout"
+          className="px-3 py-2 text-xs font-sans font-medium text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
         >
-          <LogOut className="w-4 h-4" />
+          Log out
         </button>
       </div>
     </header>

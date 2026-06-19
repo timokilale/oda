@@ -1,22 +1,3 @@
-const IMAGE_PRESETS = [
-  { label: 'Burger', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCiu__j1Ve9suXJmSB64pBXfJWPggANsiYebEW-80OCmSiyGQo1k2b8yDYVZc8TUjzWPPesuDQ2rhMZbkhQXouZDSoPGqC9Qh5wpsZ40TVc-AxyyyTuly7cjZIXQaMczbUvw58J8gR97bczYH3RuN1RLk7K4XdC1xPXrW7yL6SaXBner1Zpe0KfGtl8nJAZesF0JT6maAISzBPrbTES0nrdM3qEyKS275AZckiTri-VmKBfHaXuLBoK0gVNrC0seAlJVwTB9HYGcqI' },
-  { label: 'Truffle Pasta', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBMOBS-P8b6kn5ZTPEEDXaiEKl1oAvAzPuVu4k7GK7QqRkx3jeFW5-gPS-2K0DGMMk6fJbQU6iFMZvUfyC6JcgIzhvMp4KUnAFerUb9muaqxFy5kzwzwfzpmXoOUNjfIlnrlBtfJuTDwWZSasHIH5HXdSthiiRaknLy65v8wOTby79dL4xD3--e2YM5ffubxMws58ZXegNfUV9vPZk7HmjUzv0jpwc0Z2jjyLLNGNS9tUNtXIf-mDi6fozpHlVT1bCqjRc1FsGP56w' },
-  { label: 'Salad', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDYEW7lpuX8ovh0QAifeOxbir1opRfUtKEPYZKkTeJj3-DEdjtw19c5-5tUziFajUg_7Ngw0kAWkvSQgoAlCeQ6IYuucaL8lZFN9qclXkQ1NVbuNDngLLeuOpwEa07Yuay_mg5mNOC6uZk-B6vthUmD6sOREDaSA-xRkqh8tcP5PsOsZzgoQOnAAUk2LOkR7h-slXgkHoduzj6bt3x5zL2kjfolo9e5-XHt0p01f-3ajYnm2busuMMr5LUz5Rws3YCDWvg7BZgp3_E' },
-  { label: 'Hibiscus Drink', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAX_fN4zaz9c89WnUWZI7U-eDVOJxLAm9Ep-MrLC338ykUAgvMarNPMtwUVHN2bay3iG5JDTct7gvqP25OksmZvh7GgTRQgFzFM1WpD9vWnFUy6OdSrGW2Ee9uAkza2uRXdfDMdAcaqxMaDjMyubBPYk8Z6X17MWzHG7uvCUmx7X9qwn5ByKVQ3M48CPCzzufe_5J5XKB3XlVWCPR3VLuhnOI3rysCKvMDKM1pQERp1iJyqi3_eSZAkwq9Mcuf43jZGrAi3A3aV1j8' },
-  { label: 'Classic Pizza', url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA4kwJhJ0mlCvLP4ktsdmr4PevsDj9DZCix8kSLtQ97wCdjdAV46LmCmavo85dMavZ0zEMGx5BPVSAwpYlDxIG0s8ntS59zay_u-xSwMJLlozjHx5PK1olRHKV0CFxQHGIzLTt0L51AAWZ72JuOEcKiOZNx6OtigtYFig7OUSnCCeLOtW5kLJfajNkWtlQSQJ549jzCWBLwGhGF5NI3hg26y3YJUc6ZoEPOzR0ugB2OqNfBe9rSkcnYBkVVD-rLVtmzc3Ky4ojuGXM' },
-];
-
-export { IMAGE_PRESETS };
-
-const BADGE_OPTIONS = ['Popular', 'New', 'Vegan', 'Chef\'s Pick', 'Seasonal'];
-
-const METRICS_POOL = [
-  { label: 'High Margin', value: 85, color: 'success' },
-  { label: 'Avg Demand', value: 50, color: 'pending' },
-  { label: 'High Velocity', value: 75, color: 'success' },
-  { label: 'Low Stock', value: 15, color: 'outline' },
-];
-
 export function parseDate(value) {
   if (!value) return NaN;
   const s = String(value);
@@ -72,14 +53,8 @@ export function transformApiMenuItemToView(apiItem) {
     price: apiItem.price,
     category: apiItem.category || 'Mains',
     description: apiItem.description || '',
-    image: apiItem.imageUrl || IMAGE_PRESETS[0].url,
-    badges: apiItem.badges || [],
-    spiciness: apiItem.spiciness ?? 0,
-    ingredients: apiItem.ingredients || '',
-    calories: apiItem.calories ?? 400,
-    prepTime: apiItem.prepTime ?? 15,
+    image: apiItem.imageUrl || '',
     status: apiItem.active !== false ? 'Available' : 'Archived',
-    metrics: METRICS_POOL[Math.floor(Math.random() * METRICS_POOL.length)],
   };
 }
 
@@ -96,13 +71,9 @@ export function transformViewItemToApiPayload(item) {
 
 export function transformApiTableToView(apiTable) {
   return {
-    id: String(apiTable.tableNumber).padStart(2, '0'),
-    status: apiTable.active !== false ? 'ACTIVE' : 'PENDING',
-    scansCount: apiTable.scansCount ?? 0,
-    activeOrdersCount: apiTable.activeOrdersCount ?? 0,
-    qrVerified: Boolean(apiTable.qrCodeUrl),
-    qrCodeUrl: apiTable.qrCodeUrl || null,
+    id: apiTable.id,
     tableNumber: apiTable.tableNumber,
+    qrCodeUrl: apiTable.qrCodeUrl || null,
   };
 }
 
@@ -120,11 +91,8 @@ export function transformApiReportsToView(apiReports) {
     cancelledCount: apiReports.cancelledOrders || 0,
     topItems: (apiReports.topItems || []).map((item) => ({
       name: item.name,
-      category: item.category || '',
       sold: item.quantitySold || 0,
       revenue: item.revenue || 0,
     })),
   };
 }
-
-export { BADGE_OPTIONS, METRICS_POOL };

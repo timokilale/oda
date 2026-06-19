@@ -1,11 +1,9 @@
-import { Receipt, UtensilsCrossed, Table as TableIcon, BarChart3, Settings } from 'lucide-react';
-
 const NAV_ITEMS = [
-  { id: 'orders', label: 'Orders', icon: Receipt },
-  { id: 'menu', label: 'Menu', icon: UtensilsCrossed },
-  { id: 'tables', label: 'Tables', icon: TableIcon },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'orders', label: 'Orders' },
+  { id: 'menu', label: 'Menu' },
+  { id: 'tables', label: 'Tables' },
+  { id: 'reports', label: 'Reports' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 export default function RestomanageSidebar({
@@ -15,20 +13,16 @@ export default function RestomanageSidebar({
   return (
     <footer className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 border-t border-[#E5E7EB] flex items-center justify-around py-2.5 px-4">
       {NAV_ITEMS.map((item) => {
-        const IconComponent = item.icon;
         const isActive = activeTab === item.id;
         return (
           <button
             key={item.id}
             onClick={() => onTabChange(item.id)}
-            className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${
-              isActive ? 'text-[#2a14b4] dark:text-[#c3c0ff]' : 'text-neutral-500'
+            className={`text-[10px] font-sans font-medium transition-all ${
+              isActive ? 'text-neutral-900 dark:text-neutral-100' : 'text-neutral-400 dark:text-neutral-500'
             }`}
           >
-            <IconComponent className="w-5 h-5" />
-            <span className="text-[10px] font-sans font-bold tracking-tight uppercase">
-              {item.label}
-            </span>
+            {item.label}
           </button>
         );
       })}

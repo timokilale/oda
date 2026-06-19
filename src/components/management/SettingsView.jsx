@@ -1,35 +1,28 @@
-import { Save, Bell, ToggleLeft } from 'lucide-react';
 import ToggleSwitch from '../ui/ToggleSwitch.jsx';
 
 export default function SettingsView({ restaurantName, onRestaurantNameChange, branchName, onBranchNameChange, soundEnabled, onSoundEnabledChange, autoAccept, onAutoAcceptChange, onSave, saving }) {
   return (
-    <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-2xl p-6 shadow-xs max-w-2xl space-y-6">
-      <div>
-        <h3 className="font-sans text-lg font-bold text-neutral-800 dark:text-white">Settings</h3>
-      </div>
+    <div className="bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-xl p-6 max-w-2xl space-y-6">
+      <h3 className="font-sans text-base font-semibold text-neutral-800 dark:text-neutral-100">Settings</h3>
 
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">
-            Name
-          </label>
+          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Name</label>
           <input
             type="text"
             value={restaurantName}
             onChange={(e) => onRestaurantNameChange(e.target.value)}
-            className="w-full bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all text-sm dark:text-white font-medium"
+            className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 rounded-lg px-3 py-2 focus:ring-1 focus:ring-neutral-400 outline-none transition-all text-sm dark:text-neutral-100"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1.5">
-            Branch
-          </label>
+          <label className="block text-[10px] font-medium text-neutral-400 mb-1">Branch</label>
           <input
             type="text"
             value={branchName}
             onChange={(e) => onBranchNameChange(e.target.value)}
-            className="w-full bg-white dark:bg-neutral-850 border border-[#E5E7EB] dark:border-neutral-700 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-[#4338ca]/20 outline-none transition-all text-sm dark:text-white font-medium"
+            className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 rounded-lg px-3 py-2 focus:ring-1 focus:ring-neutral-400 outline-none transition-all text-sm dark:text-neutral-100"
           />
         </div>
 
@@ -53,10 +46,9 @@ export default function SettingsView({ restaurantName, onRestaurantNameChange, b
         <button
           onClick={onSave}
           disabled={saving}
-          className="px-6 py-2.5 bg-[#2a14b4] hover:opacity-90 transition-all text-white font-sans text-xs font-bold uppercase tracking-wider rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+          className="px-4 py-2 bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-800 font-sans text-xs font-medium rounded-lg hover:opacity-80 transition-all cursor-pointer disabled:opacity-50"
         >
-          <Save className="w-4 h-4" />
-          <span>{saving ? 'Saving...' : 'Save'}</span>
+          {saving ? 'Saving...' : 'Save'}
         </button>
       </div>
     </div>

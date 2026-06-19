@@ -23,7 +23,6 @@ function playNotificationSound() {
 export default function useOrders() {
   const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
   const [orders, setOrders] = useState([]);
-  const [menuItems, setMenuItems] = useState([]);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -38,24 +37,9 @@ export default function useOrders() {
     }
   }, [restaurant.id, setFlash]);
 
-  const loadMenuItems = useCallback(async () => {
-    try {
-      const data = await orderService.getMenuItems(restaurant.id);
-      setMenuItems(
-        (data.items || []).map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          status: item.active !== false ? "Available" : "Archived",
-        }))
-      );
-    } catch {}
-  }, [restaurant.id]);
-
   useEffect(() => {
     let initialSse = true;
     loadOrders();
-    loadMenuItems();
 
     const unsubscribe = subscribeToOrders(restaurant.id, (rawOrders) => {
       const mapped = rawOrders.map(transformApiOrderToView);
@@ -74,7 +58,7 @@ export default function useOrders() {
     return () => {
       unsubscribe();
     };
-  }, [restaurant.id, loadOrders, loadMenuItems]);
+  }, [restaurant.id, loadOrders]);
 
   const acceptOrder = useCallback(
     async (orderId) => {
@@ -92,7 +76,6 @@ export default function useOrders() {
 
   const cancelOrder = useCallback(
     async (orderId) => {
-      if (!confirm(`Cancel order ${orderId}?`)) return;
       const rawId = String(orderId).replace("#", "");
       clearFlash();
       try {
@@ -119,59 +102,10 @@ export default function useOrders() {
     [restaurant.id, loadOrders, refreshWorkspace, setFlash, clearFlash]
   );
 
-  const recallOrder = useCallback(
-    async (orderId) => {
-      const rawId = String(orderId).replace("#", "");
-      clearFlash();
-      try {
-        await orderService.updateOrderStatus(restaurant.id, rawId, "pending");
-        setFlash({ type: "success", message: "Order recalled." });
-        await Promise.all([loadOrders(), refreshWorkspace()]);
-      } catch (error) {
-        setFlash({ type: "error", message: error.message });
-      }
-    },
-    [restaurant.id, loadOrders, refreshWorkspace, setFlash, clearFlash]
-  );
-
-  const addManualOrder = useCallback(
-    async (newOrder) => {
-      clearFlash();
-      try {
-        const payload = {
-          tableNumber:
-            newOrder.orderType === "Takeaway"
-              ? null
-              : parseInt(newOrder.table.replace("Table ", "")),
-          orderType: newOrder.orderType,
-          items: newOrder.items.map((it) => ({
-            menuItemName: it.name,
-            menuItemId: it.id,
-            quantity: it.quantity,
-            notes: it.customization,
-          })),
-          totalAmount: newOrder.price,
-          tip: newOrder.tip || 0,
-          serviceCharge: newOrder.serviceCharge || 0,
-        };
-        await orderService.createOrder(restaurant.id, payload);
-        setFlash({ type: "success", message: "Order placed." });
-        await Promise.all([loadOrders(), refreshWorkspace()]);
-      } catch (error) {
-        setFlash({ type: "error", message: error.message });
-      }
-    },
-    [restaurant.id, loadOrders, refreshWorkspace, setFlash, clearFlash]
-  );
-
   return {
     orders,
-    setOrders,
-    menuItems,
     acceptOrder,
     cancelOrder,
     markServed,
-    recallOrder,
-    addManualOrder,
   };
 }

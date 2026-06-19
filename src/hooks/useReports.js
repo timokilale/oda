@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
-import { transformApiReportsToView, timeAgoLabel } from "../types/managementTypes.js";
+import { transformApiReportsToView } from "../types/managementTypes.js";
 import * as reportService from "../services/reportService.js";
 
 const PERIOD_REVERSE = {
@@ -10,78 +10,45 @@ const PERIOD_REVERSE = {
   AllTime: "all",
 };
 
+const cache = new Map();
+
 export default function useReports() {
   const { restaurant, setFlash } = useRestaurantWorkspace();
-  const [reports, setReports] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("Today");
+  const [reports, setReports] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (p) => {
+    const k = `${restaurant.id}:${p}`;
+    if (cache.has(k)) {
+      setReports(cache.get(k));
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const apiPeriod = PERIOD_REVERSE[period];
+      const apiPeriod = PERIOD_REVERSE[p];
       const params = apiPeriod !== "all" ? `?period=${apiPeriod}` : "";
-      const [reportsRes, ordersRes] = await Promise.all([
-        reportService.getReports(restaurant.id, params),
-        reportService.getOrders(restaurant.id),
-      ]);
-
-      setReports(transformApiReportsToView(reportsRes.reports));
-
-      const rawOrders = (ordersRes.orders || []).slice(0, 10);
-      const activityLog = rawOrders
-        .flatMap((o) => {
-          const table = `Table ${o.tableNumber}`;
-          const id = `#${o.id}`;
-          const entries = [];
-          entries.push({
-            id: `${o.id}-placed`,
-            text: `${id} — ${table} placed order`,
-            type: "pending",
-            time: timeAgoLabel(o.createdAt),
-          });
-          if (o.status === "confirmed" || o.status === "completed") {
-            entries.push({
-              id: `${o.id}-confirmed`,
-              text: `${id} — ${table} confirmed`,
-              type: "success",
-              time: timeAgoLabel(o.updatedAt || o.createdAt),
-            });
-          }
-          if (o.status === "completed") {
-            entries.push({
-              id: `${o.id}-served`,
-              text: `${id} — ${table} served`,
-              type: "success",
-              time: timeAgoLabel(o.updatedAt || o.createdAt),
-            });
-          }
-          if (o.status === "cancelled") {
-            entries.push({
-              id: `${o.id}-cancelled`,
-              text: `${id} — ${table} cancelled`,
-              type: "error",
-              time: timeAgoLabel(o.updatedAt || o.createdAt),
-            });
-          }
-          return entries;
-        })
-        .sort((a, b) => a.time.localeCompare(b.time))
-        .slice(-10);
-      setLogs(activityLog);
+      const res = await reportService.getReports(restaurant.id, params);
+      const mapped = transformApiReportsToView(res.reports);
+      cache.set(k, mapped);
+      setReports(mapped);
     } catch (error) {
       setFlash({ type: "error", message: error.message });
     } finally {
       setLoading(false);
     }
-  }, [period, restaurant.id, setFlash]);
+  }, [restaurant.id, setFlash]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData(period);
+  }, [period, loadData]);
 
-  const totalOrders = reports?.totalOrders ?? 0;
+  const handleSetPeriod = useCallback((p) => {
+    if (p !== period) {
+      setPeriod(p);
+    }
+  }, [period]);
 
-  return { reports, logs, loading, period, setPeriod, totalOrders, refresh: loadData };
+  return { reports, loading, period, setPeriod: handleSetPeriod, refresh: () => { cache.clear(); loadData(period); } };
 }
