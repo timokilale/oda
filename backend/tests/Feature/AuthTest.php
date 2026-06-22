@@ -6,11 +6,34 @@ use App\Models\Owner;
 use App\Models\OwnerAuthOtp;
 use App\Models\OwnerAuthToken;
 use App\Models\PendingOwnerRegistration;
-use App\Models\Restaurant;
+use Firebase\JWT\JWT;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
+    private function issueJwt(int $ownerId, string $jti = null): string
+    {
+        $jti ??= 'test-jti-' . $ownerId . '-' . uniqid();
+        return JWT::encode([
+            'sub' => $ownerId,
+            'phone' => '+1234567890',
+            'admin' => false,
+            'multi' => false,
+            'jti' => $jti,
+            'iat' => now()->timestamp,
+            'exp' => now()->addDays(30)->timestamp,
+        ], config('jwt.secret'), config('jwt.algo'));
+    }
+
+    private function storeToken(int $ownerId, string $jti): OwnerAuthToken
+    {
+        return OwnerAuthToken::create([
+            'owner_id' => $ownerId,
+            'token_hash' => $jti,
+            'expires_at' => now()->addDays(30),
+        ]);
+    }
+
     public function test_health_endpoint(): void
     {
         $response = $this->getJson('/api/health');
@@ -174,15 +197,11 @@ class AuthTest extends TestCase
     public function test_me_endpoint(): void
     {
         $owner = Owner::create(['phone_number' => '+1234567890', 'phone_verified_at' => now()]);
-        $token = hash('sha256', 'test-raw-token');
+        $jti = 'test-me-jti';
+        $jwt = $this->issueJwt($owner->id, $jti);
+        $this->storeToken($owner->id, $jti);
 
-        OwnerAuthToken::create([
-            'owner_id' => $owner->id,
-            'token_hash' => $token,
-            'expires_at' => now()->addDays(30),
-        ]);
-
-        $response = $this->withHeaders(['Authorization' => 'Bearer test-raw-token'])
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $jwt])
             ->getJson('/api/auth/me');
 
         $response->assertOk();
@@ -198,21 +217,17 @@ class AuthTest extends TestCase
     public function test_logout(): void
     {
         $owner = Owner::create(['phone_number' => '+1234567890', 'phone_verified_at' => now()]);
-        $token = hash('sha256', 'test-raw-token');
+        $jti = 'test-logout-jti';
+        $jwt = $this->issueJwt($owner->id, $jti);
+        $this->storeToken($owner->id, $jti);
 
-        OwnerAuthToken::create([
-            'owner_id' => $owner->id,
-            'token_hash' => $token,
-            'expires_at' => now()->addDays(30),
-        ]);
-
-        $response = $this->withHeaders(['Authorization' => 'Bearer test-raw-token'])
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $jwt])
             ->postJson('/api/auth/logout');
 
         $response->assertStatus(204);
 
         $this->assertDatabaseHas('owner_auth_tokens', [
-            'token_hash' => $token,
+            'token_hash' => $jti,
             'revoked_at' => now(),
         ]);
     }

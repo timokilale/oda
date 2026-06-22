@@ -1,3 +1,18 @@
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
+function decodeJwtPayload(token) {
+  try {
+    const payload = token.split(".")[1];
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
 import { createContext, useCallback, useContext, useState } from "react";
 import { apiRequest } from "../lib/api.js";
 
@@ -10,8 +25,22 @@ export function AuthProvider({ children }) {
   const refreshSession = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiRequest("/auth/me");
-      setOwner(data.owner);
+      const token = getCookie("oda_owner_token");
+      if (!token) {
+        setOwner(null);
+        return;
+      }
+      const payload = decodeJwtPayload(token);
+      if (!payload || payload.exp < Math.floor(Date.now() / 1000)) {
+        setOwner(null);
+        return;
+      }
+      setOwner({
+        id: payload.sub,
+        phoneNumber: payload.phone,
+        isAdmin: payload.admin,
+        canManageMultipleRestaurants: payload.multi,
+      });
     } catch {
       setOwner(null);
     } finally {

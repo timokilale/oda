@@ -4,10 +4,11 @@ namespace App\Auth;
 
 use App\Models\Owner;
 use App\Models\OwnerAuthToken;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Auth\GuardHelpers;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
-use Illuminate\Http\Request;
 
 class OwnerGuard implements Guard
 {
@@ -25,32 +26,31 @@ class OwnerGuard implements Guard
         }
 
         $request = app('request');
-        $rawToken = $request->cookie('oda_owner_token');
-        if (!$rawToken && $request->bearerToken()) {
-            $rawToken = $request->bearerToken();
+        $jwt = $request->cookie('oda_owner_token');
+        if (!$jwt && $request->bearerToken()) {
+            $jwt = $request->bearerToken();
         }
-        if (!$rawToken) {
+        if (!$jwt) {
             return null;
         }
 
-        $tokenHash = hash('sha256', $rawToken);
+        try {
+            $decoded = JWT::decode($jwt, new Key(config('jwt.secret'), config('jwt.algo')));
+        } catch (\Exception $e) {
+            return null;
+        }
 
-        $token = OwnerAuthToken::where('token_hash', $tokenHash)
+        $token = OwnerAuthToken::where('token_hash', $decoded->jti)
             ->whereNull('revoked_at')
-            ->where('expires_at', '>', now())
             ->first();
 
         if (!$token) {
             return null;
         }
 
-        $owner = Owner::find($token->owner_id);
+        $owner = Owner::find($decoded->sub);
         if (!$owner) {
             return null;
-        }
-
-        if ($token->last_used_at === null || $token->last_used_at->diffInHours(now()) > 1) {
-            $token->update(['last_used_at' => now()]);
         }
 
         $this->resolvedOwner = $owner;

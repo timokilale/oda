@@ -1,0 +1,10 @@
+{
+    admin off
+    auto_https off
+}
+
+http://localhost:8000 {
+    root * public/
+    try_files {path} /index.php
+    php /index.php 200
+}

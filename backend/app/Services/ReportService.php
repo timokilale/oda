@@ -18,8 +18,15 @@ class ReportService
             default => null,
         };
 
+        $orderTotalsSub = DB::table('order_items as oi')
+            ->select('oi.order_id', DB::raw('SUM(oi.quantity * mi.price) AS total_amount'))
+            ->join('menu_items as mi', 'mi.id', '=', 'oi.menu_item_id')
+            ->join('orders as o2', 'o2.id', '=', 'oi.order_id')
+            ->where('o2.restaurant_id', $restaurantId)
+            ->groupBy('oi.order_id');
+
         $totalsQuery = DB::table('orders as o')
-            ->leftJoin(DB::raw('(SELECT oi.order_id, SUM(oi.quantity * mi.price) AS total_amount FROM order_items oi JOIN menu_items mi ON mi.id = oi.menu_item_id GROUP BY oi.order_id) as order_totals'), 'order_totals.order_id', '=', 'o.id')
+            ->leftJoinSub($orderTotalsSub, 'order_totals', 'order_totals.order_id', '=', 'o.id')
             ->where('o.restaurant_id', $restaurantId);
 
         if ($dateFilter) {

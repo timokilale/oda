@@ -8,6 +8,7 @@ use App\Models\Owner;
 use App\Models\OwnerAuthToken;
 use App\Models\Restaurant;
 use App\Models\RestaurantTable;
+use Firebase\JWT\JWT;
 use Tests\TestCase;
 
 class OrderTest extends TestCase
@@ -34,13 +35,24 @@ class OrderTest extends TestCase
 
     private function authCookie(): array
     {
-        $rawToken = 'test-raw-token-' . uniqid();
+        $jti = 'test-jti-' . uniqid();
+        $jwt = JWT::encode([
+            'sub' => $this->owner->id,
+            'phone' => $this->owner->phone_number,
+            'admin' => false,
+            'multi' => false,
+            'jti' => $jti,
+            'iat' => now()->timestamp,
+            'exp' => now()->addDays(30)->timestamp,
+        ], config('jwt.secret'), config('jwt.algo'));
+
         OwnerAuthToken::create([
             'owner_id' => $this->owner->id,
-            'token_hash' => hash('sha256', $rawToken),
+            'token_hash' => $jti,
             'expires_at' => now()->addDays(30),
         ]);
-        return ['Authorization' => 'Bearer ' . $rawToken];
+
+        return ['Authorization' => 'Bearer ' . $jwt];
     }
 
     public function test_list_orders_empty(): void

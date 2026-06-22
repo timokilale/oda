@@ -6,6 +6,7 @@ use App\Models\MenuItem;
 use App\Models\Owner;
 use App\Models\OwnerAuthToken;
 use App\Models\Restaurant;
+use Firebase\JWT\JWT;
 use Tests\TestCase;
 
 class AdminTest extends TestCase
@@ -24,13 +25,24 @@ class AdminTest extends TestCase
 
     private function adminCookie(): array
     {
-        $rawToken = 'admin-raw-token-' . uniqid();
+        $jti = 'test-jti-' . uniqid();
+        $jwt = JWT::encode([
+            'sub' => $this->admin->id,
+            'phone' => $this->admin->phone_number,
+            'admin' => true,
+            'multi' => false,
+            'jti' => $jti,
+            'iat' => now()->timestamp,
+            'exp' => now()->addDays(30)->timestamp,
+        ], config('jwt.secret'), config('jwt.algo'));
+
         OwnerAuthToken::create([
             'owner_id' => $this->admin->id,
-            'token_hash' => hash('sha256', $rawToken),
+            'token_hash' => $jti,
             'expires_at' => now()->addDays(30),
         ]);
-        return ['Authorization' => 'Bearer ' . $rawToken];
+
+        return ['Authorization' => 'Bearer ' . $jwt];
     }
 
     public function test_admin_list_restaurants(): void
@@ -93,14 +105,24 @@ class AdminTest extends TestCase
     public function test_admin_requires_admin_role(): void
     {
         $regular = Owner::create(['phone_number' => '+regular123', 'phone_verified_at' => now(), 'is_admin' => false]);
-        $rawToken = 'regular-token';
+        $jti = 'test-jti-regular';
+        $jwt = JWT::encode([
+            'sub' => $regular->id,
+            'phone' => $regular->phone_number,
+            'admin' => false,
+            'multi' => false,
+            'jti' => $jti,
+            'iat' => now()->timestamp,
+            'exp' => now()->addDays(30)->timestamp,
+        ], config('jwt.secret'), config('jwt.algo'));
+
         OwnerAuthToken::create([
             'owner_id' => $regular->id,
-            'token_hash' => hash('sha256', $rawToken),
+            'token_hash' => $jti,
             'expires_at' => now()->addDays(30),
         ]);
 
-        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $rawToken])
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $jwt])
             ->getJson('/api/admin/restaurants');
 
         $response->assertStatus(403);

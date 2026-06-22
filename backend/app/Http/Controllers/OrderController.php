@@ -44,12 +44,9 @@ class OrderController extends Controller
             $lastDigest = null;
             $lastHeartbeat = time();
             $first = true;
+            $startTime = time();
 
             while (true) {
-                if (connection_aborted()) {
-                    break;
-                }
-
                 $digest = $this->orderService->getOrdersDigest($restaurantId);
                 $digestHash = md5(json_encode($digest));
 
@@ -62,21 +59,22 @@ class OrderController extends Controller
 
                     $lastDigest = $digestHash;
                     $first = false;
-
-                    if (ob_get_level() > 0) {
-                        ob_flush();
-                    }
-                    flush();
                 }
 
                 $now = time();
                 if ($now - $lastHeartbeat >= 15) {
                     echo ": heartbeat\n\n";
-                    if (ob_get_level() > 0) {
-                        ob_flush();
-                    }
-                    flush();
                     $lastHeartbeat = $now;
+                }
+
+                echo ": ping\n\n";
+                if (ob_get_level() > 0) {
+                    ob_flush();
+                }
+                flush();
+
+                if (connection_aborted()) {
+                    break;
                 }
 
                 sleep(2);

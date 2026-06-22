@@ -73,7 +73,7 @@ export async function apiRequest(path, options = {}) {
   const start = performance.now();
   const ts = new Date().toISOString();
 
-  const logData = { id, method, path, ts, status: "pending" };
+  const logData = { id, method, path, ts, status: "pending", requestBody: body || formData || undefined };
 
   console.groupCollapsed(`%c[API ${id}] %c${method} %c/api${path}`, logStyles.req, logStyles.req, logStyles.dim);
   console.log("Started at:", ts);
@@ -117,6 +117,7 @@ export async function apiRequest(path, options = {}) {
       logData.status = response.ok ? "success" : "error";
       logData.elapsed = elapsed;
       logData.statusCode = response.status;
+      logData.responseData = payload;
 
       if (!response.ok) {
         const message =

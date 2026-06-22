@@ -21,9 +21,9 @@
   },
   "scripts": {
     "dev": "vite --host",
-    "dev:all": "php -d variables_order=GPCS backend/artisan serve & vite --host",
+    "dev:all": "cd backend && frankenphp run --config Caddyfile & cd .. && vite --host",
     "build": "vite build",
-    "serve": "php -d variables_order=GPCS backend/artisan serve",
+    "serve": "cd backend && frankenphp run --config Caddyfile",
     "test": "vitest run",
     "preview": "vite preview --host"
   },

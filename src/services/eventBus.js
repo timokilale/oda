@@ -50,7 +50,7 @@ export function subscribe(eventType, callback, url) {
     if (cbs.size === 0) listeners.delete(eventType);
     if (listeners.size === 0) {
       if (pollingId) { clearInterval(pollingId); pollingId = null; }
-      if (sseConnection) { sseConnection.close(); sseConnection = null; currentUrl = null; }
+      if (sseConnection) { currentUrl = null; sseConnection.close(); sseConnection = null; }
     }
   };
 }

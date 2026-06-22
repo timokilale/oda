@@ -7,6 +7,8 @@ use App\Models\OwnerAuthOtp;
 use App\Models\OwnerAuthToken;
 use App\Models\PendingOwnerRegistration;
 use App\Models\Restaurant;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -46,16 +48,6 @@ class AuthService
             $code .= random_int(0, 9);
         }
         return $code;
-    }
-
-    private function hashAuthToken(string $token): string
-    {
-        return hash('sha256', $token);
-    }
-
-    private function generateAuthToken(): string
-    {
-        return Str::random(64);
     }
 
     public function buildUniqueSlug(string $name): string
@@ -312,10 +304,14 @@ class AuthService
     {
         if (!$cookieValue) return;
 
-        $tokenHash = $this->hashAuthToken($cookieValue);
-        OwnerAuthToken::where('token_hash', $tokenHash)
-            ->whereNull('revoked_at')
-            ->update(['revoked_at' => now()]);
+        try {
+            $decoded = JWT::decode($cookieValue, new Key(config('jwt.secret'), config('jwt.algo')));
+            OwnerAuthToken::where('token_hash', $decoded->jti)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now()]);
+        } catch (\Exception $e) {
+            // Invalid token, nothing to revoke
+        }
     }
 
     private function consumeOtp(string $phoneNumber, string $purpose, string $otpCode): void
@@ -352,18 +348,31 @@ class AuthService
 
     private function issueToken(int $ownerId, ?string $userAgent): array
     {
-        $rawToken = $this->generateAuthToken();
-        $expiresAt = now()->addDays(30);
+        $owner = Owner::findOrFail($ownerId);
+        $jti = (string) Str::uuid();
+        $expiresAt = now()->addMinutes(config('jwt.ttl', 43200));
+
+        $payload = [
+            'sub' => $ownerId,
+            'phone' => $owner->phone_number,
+            'admin' => $owner->is_admin,
+            'multi' => $owner->can_manage_multiple_restaurants,
+            'jti' => $jti,
+            'iat' => now()->timestamp,
+            'exp' => $expiresAt->timestamp,
+        ];
+
+        $jwt = JWT::encode($payload, config('jwt.secret'), config('jwt.algo'));
 
         OwnerAuthToken::create([
             'owner_id' => $ownerId,
-            'token_hash' => $this->hashAuthToken($rawToken),
+            'token_hash' => $jti,
             'user_agent' => $userAgent ? substr($userAgent, 0, 255) : null,
             'expires_at' => $expiresAt,
         ]);
 
         return [
-            'raw' => $rawToken,
+            'raw' => $jwt,
             'expires_at' => $expiresAt,
         ];
     }
@@ -373,7 +382,7 @@ class AuthService
         $response->withCookie(cookie()->make(
             'oda_owner_token', $rawToken,
             $expiresAt->getTimestamp() - time(),
-            '/', null, config('app.env') === 'production', true, false, 'lax'
+            '/', null, config('app.env') === 'production', false, false, 'lax'
         ));
     }
 
