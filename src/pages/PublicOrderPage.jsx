@@ -102,8 +102,19 @@ export default function PublicOrderPage() {
     <>
       <DesktopNotice />
       <div className="fixed inset-0 bg-background text-on-surface antialiased flex flex-col sm:hidden [&_*]:!border-transparent">
+        {/* Ambient glow — Android dialer-style color radiance */}
+        <div
+          key={filteredMenuItems[swiperIndex]?.id || 'none'}
+          className="absolute inset-0 pointer-events-none z-0 transition-colors duration-700"
+          style={{
+            background: filteredMenuItems[swiperIndex]?.colorLeak
+              ? `radial-gradient(ellipse at 50% 30%, ${filteredMenuItems[swiperIndex].colorLeak}cc 0%, ${filteredMenuItems[swiperIndex].colorLeak}44 50%, transparent 75%)`
+              : 'none',
+          }}
+        />
+
         {/* Header */}
-        <header className="relative z-40 bg-surface flex justify-between items-end px-5 pt-4 pb-3 h-18 shrink-0 select-none">
+        <header className="relative z-40 bg-surface/90 backdrop-blur-xl flex justify-between items-end px-5 pt-4 pb-3 h-18 shrink-0 select-none">
           <div className="flex items-center pb-0.5">
             {activeTab === 'status' ? (
               <button

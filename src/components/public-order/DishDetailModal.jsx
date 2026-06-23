@@ -43,8 +43,12 @@ export default function DishDetailModal({
             className="relative w-full sm:max-w-xl bg-surface sm:rounded-2xl shadow-xl border border-border overflow-hidden rounded-t-2xl z-10 max-h-[92dvh] sm:max-h-[85vh] flex flex-col"
           >
             <div
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 opacity-20 blur-[80px] pointer-events-none rounded-full"
-              style={{ backgroundColor: item.colorLeak }}
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background: item?.colorLeak
+                  ? `radial-gradient(ellipse at 50% 20%, ${item.colorLeak}cc 0%, ${item.colorLeak}33 60%, transparent 80%)`
+                  : 'none',
+              }}
             />
 
             <div className="relative h-48 sm:h-56 bg-surface-container-low flex items-center justify-center overflow-hidden">

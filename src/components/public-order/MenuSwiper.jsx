@@ -61,18 +61,6 @@ export default function MenuSwiper({
 
   return (
     <div className="flex-1 w-full h-full relative flex flex-col justify-between overflow-hidden">
-      <AnimatePresence mode="popLayout">
-        <motion.div
-          key={`leak-${activeItem.id}`}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.35, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.8 }}
-          className="absolute top-10 left-1/2 -translate-x-1/2 w-80 h-80 opacity-35 blur-[80px] rounded-full z-[0] pointer-events-none"
-          style={{ backgroundColor: activeItem.colorLeak }}
-        />
-      </AnimatePresence>
-
       <div
         className="flex-1 flex items-center justify-center px-6 relative z-10 select-none"
         onMouseDown={(e) => { mouseDownX.current = e.clientX; }}
