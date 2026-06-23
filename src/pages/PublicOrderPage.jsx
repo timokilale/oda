@@ -7,6 +7,25 @@ import GridView from '../components/public-order/GridView';
 import DishDetailModal from '../components/public-order/DishDetailModal';
 import OrderStatusPanel from '../components/public-order/OrderStatusPanel';
 
+function DesktopNotice() {
+  return (
+    <div className="min-h-dvh bg-background hidden sm:flex items-center justify-center p-6">
+      <div className="text-center max-w-xs">
+        <div className="w-16 h-16 mx-auto mb-5 rounded-full bg-primary/10 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-primary">
+            <rect x="5" y="2" width="14" height="20" rx="3" stroke="currentColor" strokeWidth="1.5" />
+            <circle cx="12" cy="18" r="1" fill="currentColor" />
+          </svg>
+        </div>
+        <h2 className="font-headline-sm text-headline-sm text-on-surface mb-2">Open on your phone</h2>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Scan the QR code at your table with your phone camera to browse the menu and order.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PublicOrderPage() {
   const { restaurantRef } = useParams();
   const [searchParams] = useSearchParams();
@@ -67,10 +86,11 @@ export default function PublicOrderPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-background text-on-surface antialiased flex justify-center">
-      <div className="w-full max-w-sm sm:max-w-md h-[100dvh] sm:h-[880px] bg-background flex flex-col justify-between relative sm:rounded-2xl sm:shadow-2xl overflow-hidden border border-border/10">
+    <>
+      <DesktopNotice />
+      <div className="fixed inset-0 bg-background text-on-surface antialiased flex flex-col sm:hidden [&_*]:!border-transparent">
         {/* Header */}
-        <header className="relative z-40 bg-surface border-b border-border flex justify-between items-end px-5 pt-4 pb-3 h-18 shrink-0 select-none">
+        <header className="relative z-40 bg-surface flex justify-between items-end px-5 pt-4 pb-3 h-18 shrink-0 select-none">
           <div className="flex items-center pb-0.5">
             {activeTab === 'status' || menuSubView === 'grid' ? (
               <button
@@ -81,7 +101,7 @@ export default function PublicOrderPage() {
                     setMenuSubView('swiper');
                   }
                 }}
-                className="p-1.5 -ml-2 rounded-full text-on-surface hover:bg-surface-container transition-all active:scale-90 border border-transparent hover:border-border"
+                className="p-1.5 -ml-2 rounded-full text-on-surface hover:bg-surface-container transition-all active:scale-90"
                 aria-label="Back"
               >
                 <ArrowLeft className="w-5 h-5" />
@@ -106,10 +126,10 @@ export default function PublicOrderPage() {
             {activeTab === 'menu' ? (
               <button
                 onClick={() => setMenuSubView((prev) => (prev === 'swiper' ? 'grid' : 'swiper'))}
-                className={`p-2 -mr-1.5 rounded-full transition-all active:scale-90 border overflow-hidden flex items-center justify-center ${
+                className={`p-2 -mr-1.5 rounded-full transition-all active:scale-90 overflow-hidden flex items-center justify-center ${
                   menuSubView === 'grid'
-                    ? 'bg-primary text-on-primary border-primary'
-                    : 'text-on-surface hover:bg-surface-container border-border/60 bg-surface-container-low'
+                    ? 'bg-primary text-on-primary'
+                    : 'text-on-surface hover:bg-surface-container bg-surface-container-low'
                 }`}
                 title={menuSubView === 'grid' ? 'Swiper view' : 'Grid view'}
               >
@@ -171,7 +191,7 @@ export default function PublicOrderPage() {
               initial={{ y: 20, opacity: 0, scale: 0.9 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: -20, opacity: 0 }}
-              className="absolute bottom-18 left-4 right-4 z-50 bg-[#1e1b4b] text-neutral-100 p-3.5 rounded-xl border border-white/10 shadow-lg flex items-center gap-2.5"
+              className="absolute bottom-18 left-4 right-4 z-50 bg-[#1e1b4b] text-neutral-100 p-3.5 rounded-xl shadow-lg flex items-center gap-2.5"
             >
               <div className="bg-primary-container p-1 rounded-full text-on-primary-container">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -192,7 +212,7 @@ export default function PublicOrderPage() {
         />
 
         {/* Bottom Navigation */}
-        <nav className="bg-surface/95 backdrop-blur-md border-t border-border flex justify-around items-center h-16 shrink-0 relative z-30 select-none">
+        <nav className="bg-surface/95 backdrop-blur-md flex justify-around items-center h-16 shrink-0 relative z-30 select-none">
           <button
             onClick={() => setActiveTab('menu')}
             className={`flex flex-col items-center justify-center w-full h-full relative cursor-pointer outline-none transition-colors ${
@@ -215,12 +235,12 @@ export default function PublicOrderPage() {
             <div className="relative">
               <ReceiptText className={`w-5 h-5 mb-1 ${activeTab === 'status' ? 'fill-primary/20' : ''}`} />
               {cartPlatesTotalCount > 0 && activeOrders.length === 0 && (
-                <span className="absolute -top-1 -right-2 bg-primary text-on-primary font-mono text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center border border-surface animate-bounce shadow">
+                <span className="absolute -top-1 -right-2 bg-primary text-on-primary font-mono text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center animate-bounce shadow">
                   {cartPlatesTotalCount}
                 </span>
               )}
               {activeOrders.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-pending w-2.5 h-2.5 rounded-full border border-surface animate-ping" />
+                <span className="absolute -top-0.5 -right-0.5 bg-pending w-2.5 h-2.5 rounded-full animate-ping" />
               )}
             </div>
             <span className="font-sans font-bold text-[10px] uppercase tracking-wider">Status</span>
@@ -230,6 +250,6 @@ export default function PublicOrderPage() {
           </button>
         </nav>
       </div>
-    </div>
+    </>
   );
 }
