@@ -15,7 +15,10 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:8000",
       "/uploads": "http://localhost:8000",
-      "/storage": "http://localhost:8000",
+      "/storage": {
+        target: "http://localhost:8000",
+        rewrite: (path) => path.replace(/^\/storage/, "/assets"),
+      },
     },
   },
   build: {

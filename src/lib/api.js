@@ -65,7 +65,7 @@ export async function apiRequest(path, options = {}) {
   const { method = "GET", body, formData, signal: externalSignal, timeout = 30000 } = options;
 
   const key = inflightKey(method, path, body);
-  if (method === "GET" && !externalSignal && inflightCache.has(key)) {
+  if (method === "GET" && inflightCache.has(key)) {
     return inflightCache.get(key);
   }
 

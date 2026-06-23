@@ -116,12 +116,14 @@ export default function RestaurantLayout() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let ignore = false;
 
-    loadWorkspace({ signal: controller.signal });
+    loadWorkspace().then((data) => {
+      if (ignore || !data) return;
+    });
 
     return () => {
-      controller.abort();
+      ignore = true;
     };
   }, [loadWorkspace]);
 

@@ -1,27 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import usePageTitle from "../hooks/usePageTitle.js";
 import { apiRequest } from "../lib/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import ToggleSwitch from "../components/ui/ToggleSwitch.jsx";
 
-function buildInitialForm(restaurant) {
+function storageKey(restaurantId, field) {
+  return `oda_settings_${restaurantId}_${field}`;
+}
+
+function readStored(restaurantId, field, fallback) {
+  try {
+    const v = localStorage.getItem(storageKey(restaurantId, field));
+    return v !== null ? JSON.parse(v) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function buildInitialForm(restaurant, ownerPhone) {
   return {
     restaurantName: restaurant.name || "",
     city: restaurant.city || "",
     address: restaurant.address || "",
-    phone: restaurant.phone || "",
+    phone: restaurant.phone || ownerPhone || "",
     country: restaurant.country || "",
     active: restaurant.active !== false,
-    autoAccept: false,
-    soundEnabled: true,
+    autoAccept: readStored(restaurant.id, "autoAccept", false),
+    soundEnabled: readStored(restaurant.id, "soundEnabled", true),
   };
 }
 
 export default function RestaurantSettingsPage() {
   const { restaurant, refreshWorkspace, setFlash, clearFlash } = useRestaurantWorkspace();
+  const { owner } = useAuth();
   const { toast } = useToast();
-  const [form, setForm] = useState(() => buildInitialForm(restaurant));
+  const [form, setForm] = useState(() => buildInitialForm(restaurant, owner?.phoneNumber));
   const [saving, setSaving] = useState(false);
   const [showImageMenu, setShowImageMenu] = useState(false);
   const [viewingImage, setViewingImage] = useState(false);
@@ -31,8 +46,8 @@ export default function RestaurantSettingsPage() {
   usePageTitle(`Settings - ${restaurant.name}`);
 
   useEffect(() => {
-    setForm(buildInitialForm(restaurant));
-  }, [restaurant]);
+    setForm(buildInitialForm(restaurant, owner?.phoneNumber));
+  }, [restaurant, owner?.phoneNumber]);
 
   useEffect(() => {
     function handleClick(e) {
@@ -51,16 +66,21 @@ export default function RestaurantSettingsPage() {
     setSaving(true);
     clearFlash();
 
-    const formData = new FormData();
-    formData.set("restaurantName", form.restaurantName);
-    formData.set("city", form.city);
-    formData.set("address", form.address);
-    formData.set("phone", form.phone);
-    formData.set("country", form.country);
-    formData.set("active", form.active ? "true" : "false");
+    const body = {
+      restaurantName: form.restaurantName,
+      city: form.city,
+      address: form.address,
+      phone: form.phone,
+      country: form.country,
+      active: form.active,
+    };
+    try {
+      localStorage.setItem(storageKey(restaurant.id, "autoAccept"), JSON.stringify(form.autoAccept));
+      localStorage.setItem(storageKey(restaurant.id, "soundEnabled"), JSON.stringify(form.soundEnabled));
+    } catch { /* ignore */ }
 
     try {
-      await apiRequest(`/restaurants/${restaurant.id}`, { method: "PATCH", formData });
+      await apiRequest(`/restaurants/${restaurant.id}`, { method: "PATCH", body });
       await refreshWorkspace();
       setFlash({ type: "success", message: "Settings saved." });
     } catch (error) {
