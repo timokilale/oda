@@ -95,6 +95,11 @@ class RestaurantController extends Controller
             ? $activeInput
             : in_array(strtolower((string) $activeInput), ['true', '1', 'yes', 'active']);
 
+        $menuWrapperUrl = $request->input('menuWrapperUrl');
+        if ($menuWrapperUrl !== null) {
+            $data['menu_wrapper_url'] = trim($menuWrapperUrl) ?: null;
+        }
+
         $removeImage = strtolower(trim($request->input('removeImage', ''))) === 'true';
 
         if ($request->hasFile('restaurantImage')) {

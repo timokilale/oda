@@ -20,6 +20,7 @@ class UpdateRestaurantRequest extends FormRequest
             'restaurantImage' => 'nullable|image|max:5120',
             'restaurantImagePositionX' => 'nullable|numeric|min:0|max:100',
             'restaurantImagePositionY' => 'nullable|numeric|min:0|max:100',
+            'menuWrapperUrl' => 'nullable|string|max:500',
         ];
     }
 }

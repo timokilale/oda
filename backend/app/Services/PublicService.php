@@ -47,6 +47,7 @@ class PublicService
                 'imageUrl' => $restaurant->image_path,
                 'imagePositionX' => (float) ($restaurant->image_position_x ?? 50),
                 'imagePositionY' => (float) ($restaurant->image_position_y ?? 50),
+                'menuWrapperUrl' => $restaurant->menu_wrapper_url,
             ],
             'tableNumber' => $tableNumber,
             'menuItems' => $items,
