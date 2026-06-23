@@ -125,8 +125,9 @@ export default function DishDetailModal({
                 </span>
                 <button
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="w-10 h-10 flex items-center justify-center rounded-md text-primary hover:bg-primary-container hover:text-on-primary-container hover:scale-105 active:scale-95 transition-all"
+                  className="w-10 h-10 flex items-center justify-center rounded-md text-white hover:scale-105 active:scale-95 transition-all"
                   aria-label="Increase quantity"
+                  style={{ backgroundColor: item?.colorLeak }}
                 >
                   <span className="text-xl font-bold font-mono">+</span>
                 </button>
@@ -141,11 +142,10 @@ export default function DishDetailModal({
                     onClose();
                   }, 850);
                 }}
-                className={`flex-1 h-12 rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm ${
-                  successState
-                    ? 'bg-success text-white'
-                    : 'bg-primary text-on-primary hover:opacity-90'
+                className={`flex-1 h-12 rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm text-white ${
+                  successState ? 'bg-success' : 'hover:brightness-110'
                 }`}
+                style={!successState && item?.colorLeak ? { backgroundColor: item.colorLeak } : undefined}
               >
                 {successState ? (
                   <>

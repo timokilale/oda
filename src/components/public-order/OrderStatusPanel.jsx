@@ -258,7 +258,7 @@ export default function OrderStatusPanel({
                   onPlaceOrder(orderNotes);
                   setOrderNotes('');
                 }}
-                className="w-full h-12 bg-primary text-on-primary rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-container active:scale-98 transition-all shadow-sm"
+                className="w-full h-12 bg-primary text-white rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-container active:scale-98 transition-all shadow-sm"
               >
                 Place Order ({formatCurrency(cartSubtotal)})
               </button>

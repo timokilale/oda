@@ -90,7 +90,7 @@ export default function MenuSwiper({
           >
             <div
               onClick={() => onOpenDetails(activeItem)}
-              className="group cursor-pointer w-60 h-60 min-h-60 md:w-72 md:h-72 lg:w-80 lg:h-80 rounded-full shadow-[0_24px_60px_rgba(30,27,75,0.08)] bg-surface flex items-center justify-center p-2.5 mb-6 relative hover:shadow-[0_30px_70px_rgba(30,27,75,0.12)] transition-shadow duration-300"
+              className="group cursor-pointer w-60 h-60 min-h-60 md:w-72 md:h-72 lg:w-80 lg:h-80 rounded-full shadow-[0_24px_60px_rgba(30,27,75,0.08)] flex items-center justify-center mb-6 relative hover:shadow-[0_30px_70px_rgba(30,27,75,0.12)] transition-shadow duration-300"
             >
               <img
                 src={activeItem.image}
@@ -100,14 +100,21 @@ export default function MenuSwiper({
                 className="w-full h-full object-cover rounded-full spin-slow group-hover:scale-[1.02] transition-transform duration-300"
               />
               <div className="absolute inset-0 bg-black/10 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center text-white backdrop-blur-[2px] transition-opacity duration-200">
-                <span className="flex items-center gap-1.5 font-sans font-semibold text-xs tracking-wider uppercase bg-primary/95 px-3.5 py-1.5 rounded-full shadow-md">
+                <span className="flex items-center gap-1.5 font-sans font-semibold text-xs tracking-wider uppercase bg-black/40 px-3.5 py-1.5 rounded-full shadow-md backdrop-blur-sm">
                   <Info className="w-4 h-4" /> View Details
                 </span>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2 mb-3">
-              <span className="font-sans font-semibold text-[10px] tracking-wider px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant border border-outline-variant">
+              <span
+                className="font-sans font-semibold text-[10px] tracking-wider px-3 py-1 rounded-full"
+                style={{
+                  backgroundColor: activeItem.colorLeak + '22',
+                  color: activeItem.colorLeak,
+                  border: `1px solid ${activeItem.colorLeak}44`,
+                }}
+              >
                 {activeItem.category}
               </span>
             </div>
@@ -128,7 +135,10 @@ export default function MenuSwiper({
       </div>
 
       <div className="w-full bg-gradient-to-t from-background via-background/90 to-transparent pt-6 pb-2 px-6 flex flex-col items-center space-y-3 relative z-20">
-        <div className="w-full max-w-sm bg-surface shadow-[0_6px_24px_rgba(30,27,75,0.04)] rounded-xl border border-border p-2 flex items-center justify-between">
+        <div
+          className="w-full max-w-sm bg-surface/80 backdrop-blur-sm shadow-[0_6px_24px_rgba(30,27,75,0.04)] rounded-xl p-2 flex items-center justify-between"
+          style={{ border: `1px solid ${activeItem.colorLeak}33` }}
+        >
           <div className="flex items-center bg-surface-container-low rounded-lg p-0.5 border border-border">
             <button
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
@@ -142,8 +152,9 @@ export default function MenuSwiper({
             </span>
             <button
               onClick={() => setQuantity((q) => q + 1)}
-              className="w-9 h-9 flex items-center justify-center rounded-md text-primary hover:bg-primary-container hover:text-on-primary-container hover:scale-105 active:scale-95 transition-all"
+              className="w-9 h-9 flex items-center justify-center rounded-md text-white hover:scale-105 active:scale-95 transition-all"
               aria-label="Increase quantity"
+              style={{ backgroundColor: activeItem.colorLeak }}
             >
               <span className="text-lg font-bold font-mono">+</span>
             </button>
@@ -154,13 +165,17 @@ export default function MenuSwiper({
               onAddItem(activeItem, quantity);
               setQuantity(1);
             }}
-            className="flex-1 ml-3 bg-primary text-on-primary h-11 rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-container active:scale-98 transition-all shadow-sm"
+            className="flex-1 ml-3 text-white h-11 rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 hover:brightness-110 active:scale-98 transition-all shadow-sm"
+            style={{ backgroundColor: activeItem.colorLeak }}
           >
             <ShoppingBag className="w-4 h-4" /> Add to Order
           </button>
         </div>
 
-        <div className="font-mono text-[11px] font-medium text-outline-variant tracking-widest uppercase select-none pb-1">
+        <div
+          className="font-mono text-[11px] font-medium tracking-widest uppercase select-none pb-1"
+          style={{ color: activeItem.colorLeak }}
+        >
           {activeIndex + 1} / {items.length}
         </div>
       </div>

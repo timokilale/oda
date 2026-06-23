@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Utensils, ReceiptText, ArrowLeft, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Utensils, ReceiptText, CheckCircle2, ChevronDown } from 'lucide-react';
 import usePublicOrder from '../hooks/usePublicOrder';
 import MenuSwiper from '../components/public-order/MenuSwiper';
 import DishDetailModal from '../components/public-order/DishDetailModal';
@@ -57,6 +57,8 @@ export default function PublicOrderPage() {
       ? menuItems
       : menuItems.filter((i) => i.category === selectedCategory);
   }, [menuItems, selectedCategory]);
+
+  const glowColor = filteredMenuItems[swiperIndex]?.colorLeak;
 
   if (!tableNumber) {
     return (
@@ -114,46 +116,41 @@ export default function PublicOrderPage() {
         />
 
         {/* Header */}
-        <header className="relative z-40 bg-surface/90 backdrop-blur-xl flex justify-between items-end px-5 pt-4 pb-3 h-18 shrink-0 select-none">
-          <div className="flex items-center pb-0.5">
-            {activeTab === 'status' ? (
-              <button
-                onClick={() => setActiveTab('menu')}
-                className="p-1.5 -ml-2 rounded-full text-on-surface hover:bg-surface-container transition-all active:scale-90"
-                aria-label="Back to menu"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            ) : (
-              <div className="w-8" />
-            )}
-          </div>
+        <header
+          className="relative z-40 bg-surface/90 backdrop-blur-xl flex items-center justify-between px-5 h-18 shrink-0 select-none"
+          style={activeTab === 'menu' && filteredMenuItems[swiperIndex]?.colorLeak
+            ? { borderBottom: `1px solid ${filteredMenuItems[swiperIndex].colorLeak}33` }
+            : undefined}
+        >
+          <div className="w-8 shrink-0" />
 
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center min-w-0">
             <span className="text-[9px] uppercase tracking-[0.3em] font-black opacity-60 text-secondary">
               {context?.restaurant?.name || 'ODA'}
             </span>
-            {activeTab === 'menu' ? (
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="appearance-none bg-transparent font-serif italic text-lg leading-tight mt-0.5 text-on-surface font-semibold text-center pr-5 focus:outline-none cursor-pointer"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/60" />
-              </div>
-            ) : (
-              <h1 className="font-serif italic text-lg leading-tight mt-0.5 text-on-surface font-semibold">
-                {activeOrders.length > 0 ? 'Order Status' : 'Cart'}
-              </h1>
-            )}
+            <div className="h-7 flex items-center justify-center">
+              {activeTab === 'menu' ? (
+                <div className="relative">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="appearance-none bg-transparent font-serif italic text-lg leading-tight text-on-surface font-semibold text-center pr-5 focus:outline-none cursor-pointer"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/60" />
+                </div>
+              ) : (
+                <h1 className="font-serif italic text-lg leading-tight text-on-surface font-semibold truncate">
+                  {activeOrders.length > 0 ? 'Order Status' : 'Cart'}
+                </h1>
+              )}
+            </div>
           </div>
 
-          <div className="w-8 pb-0.5" />
+          <div className="w-8 shrink-0" />
         </header>
 
         {/* Body */}
@@ -216,27 +213,28 @@ export default function PublicOrderPage() {
         <nav className="bg-surface/95 backdrop-blur-md flex justify-around items-center h-16 shrink-0 relative z-30 select-none">
           <button
             onClick={() => setActiveTab('menu')}
-            className={`flex flex-col items-center justify-center w-full h-full relative cursor-pointer outline-none transition-colors ${
-              activeTab === 'menu' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'
-            }`}
+            className="flex flex-col items-center justify-center w-full h-full cursor-pointer outline-none transition-colors select-none"
+            style={activeTab === 'menu' ? { color: glowColor } : { color: 'var(--color-on-surface-variant, #6b7280)' }}
           >
-            <Utensils className={`w-5 h-5 mb-1 ${activeTab === 'menu' ? 'fill-primary/20' : ''}`} />
+            <Utensils className="w-5 h-5 mb-0.5" />
             <span className="font-sans font-bold text-[10px] uppercase tracking-wider">Menu</span>
             {activeTab === 'menu' && (
-              <motion.div layoutId="active-tab-glow" className="absolute top-0 w-8 h-1 bg-primary rounded-full" />
+              <motion.div layoutId="active-tab-glow" className="absolute top-0 w-8 h-1 rounded-full" style={{ backgroundColor: glowColor }} />
             )}
           </button>
 
           <button
             onClick={() => setActiveTab('status')}
-            className={`flex flex-col items-center justify-center w-full h-full relative cursor-pointer outline-none transition-colors ${
-              activeTab === 'status' ? 'text-primary' : 'text-on-surface-variant hover:text-on-surface'
-            }`}
+            className="flex flex-col items-center justify-center w-full h-full cursor-pointer outline-none transition-colors select-none"
+            style={activeTab === 'status' ? { color: 'var(--color-primary, #3b82f6)' } : { color: 'var(--color-on-surface-variant, #6b7280)' }}
           >
             <div className="relative">
-              <ReceiptText className={`w-5 h-5 mb-1 ${activeTab === 'status' ? 'fill-primary/20' : ''}`} />
+              <ReceiptText className="w-5 h-5 mb-0.5" />
               {cartPlatesTotalCount > 0 && activeOrders.length === 0 && (
-                <span className="absolute -top-1 -right-2 bg-primary text-on-primary font-mono text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center animate-bounce shadow">
+                <span
+                  className="absolute -top-1 -right-2 text-white font-mono text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center animate-bounce shadow"
+                  style={{ backgroundColor: activeTab === 'menu' ? glowColor : 'var(--color-primary, #3b82f6)' }}
+                >
                   {cartPlatesTotalCount}
                 </span>
               )}
