@@ -6,7 +6,6 @@ import usePublicOrder from '../hooks/usePublicOrder';
 import MenuSwiper from '../components/public-order/MenuSwiper';
 import DishDetailModal from '../components/public-order/DishDetailModal';
 import OrderStatusPanel from '../components/public-order/OrderStatusPanel';
-import MenuWrapper from '../components/public-order/MenuWrapper';
 
 function DesktopNotice() {
   return (
@@ -84,30 +83,6 @@ export default function PublicOrderPage() {
           <p className="font-body-sm text-body-sm text-on-surface-variant mt-2">{lookupError}</p>
         </div>
       </div>
-    );
-  }
-
-  const menuWrapperUrl = context?.restaurant?.menuWrapperUrl;
-
-  if (menuWrapperUrl) {
-    return (
-      <MenuWrapper
-        menuUrl={menuWrapperUrl}
-        restaurantName={context?.restaurant?.name}
-        menuItems={menuItems}
-        cartQuantities={cartQuantities}
-        cart={cart}
-        cartPlatesTotalCount={cartPlatesTotalCount}
-        handleAddItem={handleAddItem}
-        handleRemoveCartItem={handleRemoveCartItem}
-        handleClearCart={handleClearCart}
-        activeOrders={activeOrders}
-        completedOrders={completedOrders}
-        tableNumber={tableNumber}
-        submitting={submitting}
-        handlePlaceOrder={handlePlaceOrder}
-        toastMessage={toastMessage}
-      />
     );
   }
 

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
-import ApiLogPanel from "./components/ApiLogPanel.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
@@ -63,7 +62,6 @@ function HomeRedirect() {
 export default function App() {
   return (
     <BrowserRouter>
-      <ApiLogPanel />
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<LoginPage />} />

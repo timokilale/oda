@@ -27,7 +27,6 @@ function buildInitialForm(restaurant, ownerPhone) {
     phone: restaurant.phone || ownerPhone || "",
     country: restaurant.country || "",
     active: restaurant.active !== false,
-    menuWrapperUrl: restaurant.menuWrapperUrl || "",
     autoAccept: readStored(restaurant.id, "autoAccept", false),
     soundEnabled: readStored(restaurant.id, "soundEnabled", true),
   };
@@ -74,7 +73,6 @@ export default function RestaurantSettingsPage() {
       phone: form.phone,
       country: form.country,
       active: form.active,
-      menuWrapperUrl: form.menuWrapperUrl || null,
     };
     try {
       localStorage.setItem(storageKey(restaurant.id, "autoAccept"), JSON.stringify(form.autoAccept));
@@ -259,23 +257,6 @@ export default function RestaurantSettingsPage() {
             type="text"
             value={form.country}
             onChange={(e) => setForm((c) => ({ ...c, country: e.target.value }))}
-            className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 rounded-lg px-3 py-2 focus:ring-1 focus:ring-neutral-400 outline-none text-sm dark:text-neutral-100"
-          />
-        </div>
-
-        <div className="border-t border-[#E5E7EB] dark:border-neutral-800 pt-4">
-          <label className="block font-sans text-[10px] font-medium text-neutral-400 mb-1">
-            External Menu URL <span className="text-neutral-300">(optional)</span>
-          </label>
-          <p className="font-sans text-[10px] text-neutral-400 mb-2">
-            If your restaurant already has a web menu, paste its URL here. Customers will see your existing
-            menu inside the ODA ordering interface instead of the default menu layout.
-          </p>
-          <input
-            type="url"
-            placeholder="https://example.com/our-menu"
-            value={form.menuWrapperUrl}
-            onChange={(e) => setForm((c) => ({ ...c, menuWrapperUrl: e.target.value }))}
             className="w-full bg-white dark:bg-neutral-800 border border-[#E5E7EB] dark:border-neutral-700 rounded-lg px-3 py-2 focus:ring-1 focus:ring-neutral-400 outline-none text-sm dark:text-neutral-100"
           />
         </div>

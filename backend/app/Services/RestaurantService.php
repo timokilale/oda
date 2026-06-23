@@ -32,7 +32,6 @@ class RestaurantService
             'imageUrl' => $r->image_path,
             'imagePositionX' => (float) ($r->image_position_x ?? 50),
             'imagePositionY' => (float) ($r->image_position_y ?? 50),
-            'menuWrapperUrl' => $r->menu_wrapper_url,
             'menuItemCount' => (int) $r->menu_item_count,
             'tableCount' => (int) $r->table_count,
             'orderCount' => (int) $r->order_count,
@@ -101,7 +100,6 @@ class RestaurantService
             'country' => ($data['country'] ?? '') ?: null,
             'phone' => $data['phone'] ?? $restaurant->phone,
             'active' => $data['active'] ?? $restaurant->active,
-            'menu_wrapper_url' => $data['menu_wrapper_url'] ?? $restaurant->menu_wrapper_url,
             'image_path' => $imagePath !== '__NULL_SENTINEL__' ? $imagePath : $restaurant->image_path,
             'image_position_x' => $imagePath !== '__NULL_SENTINEL__'
                 ? (float) ($data['imagePositionX'] ?? $restaurant->image_position_x ?? 50)

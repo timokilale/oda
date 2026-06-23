@@ -25,7 +25,6 @@ class RestaurantResource extends JsonResource
             'tableCount' => (int) ($this->table_count ?? 0),
             'orderCount' => (int) ($this->order_count ?? 0),
             'openOrderCount' => (int) ($this->open_order_count ?? 0),
-            'menuWrapperUrl' => $this->menu_wrapper_url,
         ];
     }
 }

@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('restaurants', function (Blueprint $table) {
-            $table->string('menu_wrapper_url', 500)->nullable()->after('image_position_y');
+            $table->dropColumn('menu_wrapper_url');
         });
     }
 
     public function down(): void
     {
         Schema::table('restaurants', function (Blueprint $table) {
-            $table->dropColumn('menu_wrapper_url');
+            $table->string('menu_wrapper_url', 500)->nullable()->after('image_position_y');
         });
     }
 };

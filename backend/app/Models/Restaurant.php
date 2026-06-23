@@ -25,7 +25,6 @@ class Restaurant extends Model
         'image_path',
         'image_position_x',
         'image_position_y',
-        'menu_wrapper_url',
     ];
 
     protected $casts = [
