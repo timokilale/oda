@@ -10,7 +10,6 @@ export default function usePublicOrder(restaurantRef, tableNumber) {
   const [lookupError, setLookupError] = useState('');
 
   const [activeTab, setActiveTab] = useState('menu');
-  const [menuSubView, setMenuSubView] = useState('swiper');
   const [swiperIndex, setSwiperIndex] = useState(0);
   const [detailItem, setDetailItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
@@ -145,7 +144,6 @@ export default function usePublicOrder(restaurantRef, tableNumber) {
     context, loading, lookupError,
     menuItems, menuIsReady,
     activeTab, setActiveTab,
-    menuSubView, setMenuSubView,
     swiperIndex, setSwiperIndex,
     detailItem, setDetailItem,
     toastMessage, triggerToast,

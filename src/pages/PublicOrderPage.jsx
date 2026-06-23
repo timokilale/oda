@@ -1,9 +1,9 @@
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutGrid, Utensils, ReceiptText, ArrowLeft, Compass, CheckCircle2 } from 'lucide-react';
+import { Utensils, ReceiptText, ArrowLeft, CheckCircle2, ChevronDown } from 'lucide-react';
 import usePublicOrder from '../hooks/usePublicOrder';
 import MenuSwiper from '../components/public-order/MenuSwiper';
-import GridView from '../components/public-order/GridView';
 import DishDetailModal from '../components/public-order/DishDetailModal';
 import OrderStatusPanel from '../components/public-order/OrderStatusPanel';
 
@@ -35,7 +35,6 @@ export default function PublicOrderPage() {
     context, loading, lookupError,
     menuItems, menuIsReady,
     activeTab, setActiveTab,
-    menuSubView, setMenuSubView,
     swiperIndex, setSwiperIndex,
     detailItem, setDetailItem,
     toastMessage,
@@ -44,6 +43,20 @@ export default function PublicOrderPage() {
     activeOrders, completedOrders,
     submitting, handlePlaceOrder,
   } = usePublicOrder(restaurantRef, tableNumber);
+
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const categories = useMemo(() => {
+    const cats = [...new Set(menuItems.map((i) => i.category).filter(Boolean))];
+    return ['All', ...cats.sort()];
+  }, [menuItems]);
+
+  // Reset swiper index when category changes to avoid out-of-bounds
+  useEffect(() => { setSwiperIndex(0); }, [selectedCategory, setSwiperIndex]);
+  const filteredMenuItems = useMemo(() => {
+    return selectedCategory === 'All'
+      ? menuItems
+      : menuItems.filter((i) => i.category === selectedCategory);
+  }, [menuItems, selectedCategory]);
 
   if (!tableNumber) {
     return (
@@ -92,17 +105,11 @@ export default function PublicOrderPage() {
         {/* Header */}
         <header className="relative z-40 bg-surface flex justify-between items-end px-5 pt-4 pb-3 h-18 shrink-0 select-none">
           <div className="flex items-center pb-0.5">
-            {activeTab === 'status' || menuSubView === 'grid' ? (
+            {activeTab === 'status' ? (
               <button
-                onClick={() => {
-                  if (activeTab === 'status') {
-                    setActiveTab('menu');
-                  } else {
-                    setMenuSubView('swiper');
-                  }
-                }}
+                onClick={() => setActiveTab('menu')}
                 className="p-1.5 -ml-2 rounded-full text-on-surface hover:bg-surface-container transition-all active:scale-90"
-                aria-label="Back"
+                aria-label="Back to menu"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -115,56 +122,39 @@ export default function PublicOrderPage() {
             <span className="text-[9px] uppercase tracking-[0.3em] font-black opacity-60 text-secondary">
               {context?.restaurant?.name || 'ODA'}
             </span>
-            <h1 className="font-serif italic text-lg leading-tight mt-0.5 text-on-surface font-semibold">
-              {activeTab === 'menu'
-                ? menuSubView === 'swiper' ? 'Browse Menu' : 'All Dishes'
-                : activeOrders.length > 0 ? 'Order Status' : 'Cart'}
-            </h1>
-          </div>
-
-          <div className="flex items-center pb-0.5">
             {activeTab === 'menu' ? (
-              <button
-                onClick={() => setMenuSubView((prev) => (prev === 'swiper' ? 'grid' : 'swiper'))}
-                className={`p-2 -mr-1.5 rounded-full transition-all active:scale-90 overflow-hidden flex items-center justify-center ${
-                  menuSubView === 'grid'
-                    ? 'bg-primary text-on-primary'
-                    : 'text-on-surface hover:bg-surface-container bg-surface-container-low'
-                }`}
-                title={menuSubView === 'grid' ? 'Swiper view' : 'Grid view'}
-              >
-                {menuSubView === 'swiper' ? (
-                  <LayoutGrid className="w-4 h-4" />
-                ) : (
-                  <Compass className="w-4 h-4" />
-                )}
-              </button>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="appearance-none bg-transparent font-serif italic text-lg leading-tight mt-0.5 text-on-surface font-semibold text-center pr-5 focus:outline-none cursor-pointer"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/60" />
+              </div>
             ) : (
-              <div className="w-8" />
+              <h1 className="font-serif italic text-lg leading-tight mt-0.5 text-on-surface font-semibold">
+                {activeOrders.length > 0 ? 'Order Status' : 'Cart'}
+              </h1>
             )}
           </div>
+
+          <div className="w-8 pb-0.5" />
         </header>
 
         {/* Body */}
         <main className="flex-1 overflow-hidden flex flex-col relative z-10">
-          {activeTab === 'menu' && menuSubView === 'swiper' && (
+          {activeTab === 'menu' && (
             <div className="flex-1 flex flex-col h-full">
               <MenuSwiper
-                items={menuItems}
+                items={filteredMenuItems}
                 activeIndex={swiperIndex}
                 onActiveIndexChange={setSwiperIndex}
                 onAddItem={(item, qty) => handleAddItem(item, qty)}
                 onOpenDetails={(item) => setDetailItem(item)}
-              />
-            </div>
-          )}
-          {activeTab === 'menu' && menuSubView === 'grid' && (
-            <div className="flex-1 flex flex-col h-full">
-              <GridView
-                items={menuItems}
-                onOpenDetails={(item) => setDetailItem(item)}
-                onAddItem={(item, qty) => handleAddItem(item, qty)}
-                cartQuantities={cartQuantities}
               />
             </div>
           )}

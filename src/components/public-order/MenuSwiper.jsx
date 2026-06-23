@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingBag, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { ShoppingBag, Info } from 'lucide-react';
 import { formatCurrency } from '../../lib/format';
 
 export default function MenuSwiper({
@@ -12,6 +12,8 @@ export default function MenuSwiper({
 }) {
   const [quantity, setQuantity] = useState(1);
   const [direction, setDirection] = useState(0);
+  const touchStartX = useRef(0);
+  const mouseDownX = useRef(0);
 
   const activeItem = items[activeIndex];
 
@@ -71,24 +73,23 @@ export default function MenuSwiper({
         />
       </AnimatePresence>
 
-      <div className="absolute inset-x-0 top-1/3 -translate-y-1/2 flex justify-between px-2 z-20 pointer-events-none">
-        <button
-          onClick={handlePrev}
-          className="p-2.5 rounded-full bg-surface/85 backdrop-blur-md text-on-surface shadow-sm border border-border pointer-events-auto hover:bg-surface hover:scale-110 active:scale-95 transition-all outline-none"
-          aria-label="Previous item"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-        <button
-          onClick={handleNext}
-          className="p-2.5 rounded-full bg-surface/85 backdrop-blur-md text-on-surface shadow-sm border border-border pointer-events-auto hover:bg-surface hover:scale-110 active:scale-95 transition-all outline-none"
-          aria-label="Next item"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center px-6 relative z-10 select-none">
+      <div
+        className="flex-1 flex items-center justify-center px-6 relative z-10 select-none"
+        onMouseDown={(e) => { mouseDownX.current = e.clientX; }}
+        onMouseUp={(e) => {
+          const diff = mouseDownX.current - e.clientX;
+          if (Math.abs(diff) > 50) {
+            if (diff > 0) handleNext();
+            else handlePrev();
+          }
+        }}
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          const diff = touchStartX.current - e.changedTouches[0].clientX;
+          if (diff > 50) handleNext();
+          else if (diff < -50) handlePrev();
+        }}
+      >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
             key={activeItem.id}

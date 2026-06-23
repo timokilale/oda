@@ -10,24 +10,15 @@ export default function GridView({
   cartQuantities,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-
-  const categories = useMemo(() => {
-    const cats = [...new Set((items || []).map((i) => i.category).filter(Boolean))];
-    return ['All', ...cats.sort()];
-  }, [items]);
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
-      const q = searchTerm.toLowerCase();
-      const matchesSearch =
-        !q ||
-        item.name.toLowerCase().includes(q) ||
-        (item.description && item.description.toLowerCase().includes(q));
-      const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [items, searchTerm, selectedCategory]);
+    const q = searchTerm.toLowerCase();
+    if (!q) return items;
+    return items.filter((item) =>
+      item.name.toLowerCase().includes(q) ||
+      (item.description && item.description.toLowerCase().includes(q))
+    );
+  }, [items, searchTerm]);
 
   return (
     <div className="flex-1 w-full flex flex-col h-full bg-background overflow-hidden">
@@ -51,24 +42,6 @@ export default function GridView({
             </button>
           )}
         </div>
-
-        <div className="flex items-center gap-2 overflow-hidden shrink-0">
-          <div className="flex gap-1.5 overflow-x-auto hide-scrollbar py-0.5 w-full">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap tracking-wide select-none transition-all ${
-                  selectedCategory === cat
-                    ? 'bg-primary text-on-primary font-medium'
-                    : 'bg-surface-container text-on-surface-variant hover:text-on-surface border border-outline-variant/30'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-28 pt-4">
@@ -77,7 +50,7 @@ export default function GridView({
             <Search className="w-10 h-10 stroke-[1.5]" />
             <h4 className="font-semibold text-sm font-sans text-on-surface">No items match</h4>
             <p className="text-xs max-w-xs font-sans">
-              Try adjusting your search or browsing other categories.
+              Try adjusting your search or selecting a different category.
             </p>
           </div>
         ) : (
