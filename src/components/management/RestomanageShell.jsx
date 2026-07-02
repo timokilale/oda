@@ -16,6 +16,7 @@ export default function RestomanageShell({
         onTabChange={onSectionChange}
         restaurantName={restaurant?.name}
         branchName={restaurant?.city || restaurant?.branch || 'Main Branch'}
+        imageUrl={restaurant?.imageUrl}
         onLogout={onLogout}
       />
 

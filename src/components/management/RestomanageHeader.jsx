@@ -11,14 +11,19 @@ export default function RestomanageHeader({
   onTabChange,
   restaurantName = 'Restaurant',
   branchName = '',
+  imageUrl,
   onLogout,
 }) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-4 md:px-6 py-3 w-full bg-white/80 dark:bg-[#191c1d]/80 border-b border-[#E5E7EB] dark:border-neutral-800">
       <div className="flex items-center gap-1 md:gap-2">
         <div className="hidden md:flex items-center gap-2 mr-3 pr-3 border-r border-[#E5E7EB] dark:border-neutral-800">
-          <div className="w-8 h-8 rounded-lg bg-neutral-800 dark:bg-white flex items-center justify-center text-white dark:text-neutral-800 font-sans text-xs font-bold">
-            O
+          <div className="w-8 h-8 rounded-lg bg-neutral-800 dark:bg-white flex items-center justify-center text-white dark:text-neutral-800 font-sans text-xs font-bold overflow-hidden">
+            {imageUrl ? (
+              <img src={imageUrl} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+            ) : (
+              'O'
+            )}
           </div>
           <div className="hidden lg:block">
             <span className="font-sans text-sm font-semibold text-neutral-800 dark:text-neutral-100 leading-tight block">{restaurantName}</span>
