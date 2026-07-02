@@ -41,7 +41,6 @@ Route::middleware('owner')->group(function () {
     Route::delete('/restaurants/{restaurant}/tables/{table}', [TableController::class, 'destroy']);
 
     Route::get('/restaurants/{restaurant}/orders', [OrderController::class, 'index']);
-    Route::get('/restaurants/{restaurant}/orders/sse', [OrderController::class, 'stream']);
     Route::patch('/restaurants/{restaurant}/orders/{order}/status', [OrderController::class, 'updateStatus']);
 
     Route::get('/restaurants/{restaurant}/reports', [ReportController::class, 'show']);

@@ -88,15 +88,5 @@ class OrderService
         return $nextStatus->value;
     }
 
-    public function getOrdersDigest(string $restaurantId): array
-    {
-        $rows = DB::table('orders')
-            ->select('id', 'status', 'created_at')
-            ->where('restaurant_id', $restaurantId)
-            ->orderByDesc('id')
-            ->take(self::MAX_ORDERS)
-            ->get()
-            ->toArray();
-        return $rows;
-    }
+
 }

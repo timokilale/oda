@@ -151,7 +151,6 @@ export default function OrderStatusPanel({
   onPlaceOrder,
   activeOrders,
   completedOrders,
-  tableNumber,
   onNewOrder,
 }) {
   const [orderNotes, setOrderNotes] = useState('');
@@ -231,9 +230,6 @@ export default function OrderStatusPanel({
             </div>
 
             <div className="bg-surface rounded-xl border border-border p-4.5 space-y-3">
-              <h4 className="font-sans font-semibold text-xs text-on-surface-variant uppercase tracking-widest">
-                Table {tableNumber}
-              </h4>
               <div className="space-y-1 text-xs font-sans">
                 <label className="block text-[10px] text-on-surface-variant/80 uppercase font-semibold">Order Notes</label>
                 <input
@@ -260,7 +256,7 @@ export default function OrderStatusPanel({
                 }}
                 className="w-full h-12 bg-primary text-white rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary-container active:scale-98 transition-all shadow-sm"
               >
-                Place Order ({formatCurrency(cartSubtotal)})
+                Place Order
               </button>
             </div>
           </div>

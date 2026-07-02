@@ -1,27 +1,16 @@
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Clock, Flame, Tag, ChefHat, Check } from 'lucide-react';
-import { formatCurrency } from '../../lib/format';
+import { X, Clock, Flame, ChefHat } from 'lucide-react';
+
+const SPICE_LABELS = ['Mild', 'Light', 'Medium', 'Hot', 'Very Hot', 'Extreme'];
 
 export default function DishDetailModal({
   isOpen,
   onClose,
   item,
-  onAddToOrder,
 }) {
-  const [quantity, setQuantity] = useState(1);
-  const [specialNotes, setSpecialNotes] = useState('');
-  const [successState, setSuccessState] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setQuantity(1);
-      setSpecialNotes('');
-      setSuccessState(false);
-    }
-  }, [isOpen, item]);
-
   if (!item) return null;
+
+  const spiceLabel = item.spiciness != null ? SPICE_LABELS[Math.min(item.spiciness, 5)] : null;
 
   return (
     <AnimatePresence>
@@ -60,7 +49,7 @@ export default function DishDetailModal({
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-surface shadow-[0_12px_36px_rgba(0,0,0,0.06)] flex items-center justify-center p-1 relative z-10">
+              <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-surface shadow-[0_12px_36px_rgba(0,0,0,0.06)] flex items-center justify-center relative z-10">
                 {item.image ? (
                   <img
                     src={item.image}
@@ -76,89 +65,74 @@ export default function DishDetailModal({
 
             <div className="flex-1 overflow-y-auto p-6 space-y-5 relative">
               <div className="space-y-1">
-                <div className="flex flex-wrap gap-2">
-                  <span className="bg-surface-container-high text-on-surface-variant border border-outline-variant font-sans font-semibold text-[10px] tracking-wider px-2 py-0.5 rounded-full">
-                    {item.category}
-                  </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.badges?.map((badge) => (
+                    <span
+                      key={badge}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize"
+                      style={{
+                        backgroundColor: item.colorLeak + '18',
+                        color: item.colorLeak,
+                        border: `1px solid ${item.colorLeak}33`,
+                      }}
+                    >
+                      {badge}
+                    </span>
+                  ))}
                 </div>
                 <h3 className="font-serif italic font-semibold text-2xl sm:text-3xl text-on-surface leading-tight">
                   {item.name}
                 </h3>
-                <p className="font-mono text-price-lg text-secondary font-semibold tracking-tight">
-                  {formatCurrency(item.price)}
-                </p>
+                <span className="inline-block bg-surface-container-high text-on-surface-variant border border-outline-variant font-sans font-semibold text-[10px] tracking-wider px-2 py-0.5 rounded-full">
+                  {item.category}
+                </span>
               </div>
 
               <p className="font-sans text-body-sm text-on-surface-variant leading-relaxed">
                 {item.description}
               </p>
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="special-notes-input"
-                  className="block font-sans font-semibold text-xs text-on-surface-variant uppercase tracking-widest"
-                >
-                  Special Instructions
-                </label>
-                <textarea
-                  id="special-notes-input"
-                  rows={2}
-                  value={specialNotes}
-                  onChange={(e) => setSpecialNotes(e.target.value)}
-                  placeholder="e.g. Allergy to garlic, extra sauce, dressing on the side..."
-                  className="w-full text-sm rounded-lg border border-border p-3 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none placeholder:text-on-surface-variant/40 bg-surface resize-none font-sans"
-                />
-              </div>
-            </div>
-
-            <div className="border-t border-border bg-surface-container-lowest p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center bg-surface-container-low rounded-lg p-1 border border-border">
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="w-10 h-10 flex items-center justify-center rounded-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface hover:scale-105 active:scale-95 transition-all"
-                  aria-label="Decrease quantity"
-                >
-                  <span className="text-xl font-bold font-mono">-</span>
-                </button>
-                <span className="w-12 text-center font-mono text-price-lg text-on-surface font-semibold select-none">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="w-10 h-10 flex items-center justify-center rounded-md text-white hover:scale-105 active:scale-95 transition-all"
-                  aria-label="Increase quantity"
-                  style={{ backgroundColor: item?.colorLeak }}
-                >
-                  <span className="text-xl font-bold font-mono">+</span>
-                </button>
-              </div>
-
-              <button
-                disabled={successState}
-                onClick={() => {
-                  setSuccessState(true);
-                  setTimeout(() => {
-                    onAddToOrder(item, quantity, specialNotes);
-                    onClose();
-                  }, 850);
-                }}
-                className={`flex-1 h-12 rounded-lg font-sans font-semibold text-sm flex items-center justify-center gap-2 active:scale-98 transition-all shadow-sm text-white ${
-                  successState ? 'bg-success' : 'hover:brightness-110'
-                }`}
-                style={!successState && item?.colorLeak ? { backgroundColor: item.colorLeak } : undefined}
-              >
-                {successState ? (
-                  <>
-                    <Check className="w-5 h-5 animate-bounce" /> Added!
-                  </>
-                ) : (
-                  <>
-                    Add to Order
-                    <span className="mx-1 font-light opacity-60">|</span>
-                    <span className="font-mono">{formatCurrency(item.price * quantity)}</span>
-                  </>
+              <div className="grid grid-cols-3 gap-3">
+                {item.calories != null && (
+                  <div className="bg-surface-container-low rounded-xl p-3 flex flex-col items-center gap-1.5">
+                    <Flame className="w-5 h-5 text-secondary" />
+                    <span className="font-mono font-bold text-sm text-on-surface">{item.calories}</span>
+                    <span className="text-[10px] text-on-surface-variant/60 font-sans font-medium uppercase tracking-wider">Calories</span>
+                  </div>
                 )}
-              </button>
+                {item.prepTime != null && (
+                  <div className="bg-surface-container-low rounded-xl p-3 flex flex-col items-center gap-1.5">
+                    <Clock className="w-5 h-5 text-secondary" />
+                    <span className="font-mono font-bold text-sm text-on-surface">{item.prepTime}</span>
+                    <span className="text-[10px] text-on-surface-variant/60 font-sans font-medium uppercase tracking-wider">Minutes</span>
+                  </div>
+                )}
+                {spiceLabel && (
+                  <div className="bg-surface-container-low rounded-xl p-3 flex flex-col items-center gap-1.5">
+                    <Flame className="w-5 h-5 text-secondary" />
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <div
+                          key={i}
+                          className={`w-2 h-2 rounded-full ${i < item.spiciness ? 'bg-secondary' : 'bg-outline-variant/40'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-on-surface-variant/60 font-sans font-medium uppercase tracking-wider">{spiceLabel}</span>
+                  </div>
+                )}
+              </div>
+
+              {item.ingredients && (
+                <div className="space-y-2">
+                  <h4 className="font-sans font-semibold text-xs text-on-surface-variant uppercase tracking-widest flex items-center gap-1.5">
+                    <ChefHat className="w-4 h-4" /> Ingredients
+                  </h4>
+                  <p className="font-sans text-sm text-on-surface leading-relaxed">
+                    {item.ingredients}
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

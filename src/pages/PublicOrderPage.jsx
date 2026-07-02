@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Utensils, ReceiptText, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Utensils, ReceiptText, CheckCircle2, ChevronDown, Search } from 'lucide-react';
 import usePublicOrder from '../hooks/usePublicOrder';
 import MenuSwiper from '../components/public-order/MenuSwiper';
 import DishDetailModal from '../components/public-order/DishDetailModal';
@@ -45,18 +45,24 @@ export default function PublicOrderPage() {
   } = usePublicOrder(restaurantRef, tableNumber);
 
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const categories = useMemo(() => {
     const cats = [...new Set(menuItems.map((i) => i.category).filter(Boolean))];
     return ['All', ...cats.sort()];
   }, [menuItems]);
 
-  // Reset swiper index when category changes to avoid out-of-bounds
-  useEffect(() => { setSwiperIndex(0); }, [selectedCategory, setSwiperIndex]);
+  // Reset swiper index when category or search changes to avoid out-of-bounds
+  useEffect(() => { setSwiperIndex(0); }, [selectedCategory, searchQuery, setSwiperIndex]);
   const filteredMenuItems = useMemo(() => {
-    return selectedCategory === 'All'
+    let items = selectedCategory === 'All'
       ? menuItems
       : menuItems.filter((i) => i.category === selectedCategory);
-  }, [menuItems, selectedCategory]);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      items = items.filter((i) => i.name.toLowerCase().includes(q));
+    }
+    return items;
+  }, [menuItems, selectedCategory, searchQuery]);
 
   const glowColor = filteredMenuItems[swiperIndex]?.colorLeak;
 
@@ -157,13 +163,34 @@ export default function PublicOrderPage() {
         <main className="flex-1 overflow-hidden flex flex-col relative z-10">
           {activeTab === 'menu' && (
             <div className="flex-1 flex flex-col h-full">
-              <MenuSwiper
-                items={filteredMenuItems}
-                activeIndex={swiperIndex}
-                onActiveIndexChange={setSwiperIndex}
-                onAddItem={(item, qty) => handleAddItem(item, qty)}
-                onOpenDetails={(item) => setDetailItem(item)}
-              />
+              <div className="px-4 pt-3 pb-1 shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
+                  <input
+                    type="text"
+                    placeholder="Search menu..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-surface/80 backdrop-blur-sm border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm font-sans text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                  />
+                </div>
+              </div>
+              {filteredMenuItems.length > 0 ? (
+                <MenuSwiper
+                  items={filteredMenuItems}
+                  activeIndex={swiperIndex}
+                  onActiveIndexChange={setSwiperIndex}
+                  onAddItem={(item, qty) => handleAddItem(item, qty)}
+                  onOpenDetails={(item) => setDetailItem(item)}
+                />
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center px-6">
+                    <Search className="w-10 h-10 mx-auto mb-3 text-on-surface-variant/30" />
+                    <p className="font-sans text-sm text-on-surface-variant/60">No items match your search.</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {activeTab === 'status' && (
@@ -175,7 +202,6 @@ export default function PublicOrderPage() {
                 onPlaceOrder={handlePlaceOrder}
                 activeOrders={activeOrders}
                 completedOrders={completedOrders}
-                tableNumber={tableNumber}
                 onNewOrder={() => setActiveTab('menu')}
               />
             </div>
@@ -204,9 +230,6 @@ export default function PublicOrderPage() {
           isOpen={detailItem !== null}
           onClose={() => setDetailItem(null)}
           item={detailItem}
-          onAddToOrder={(item, quantity, notes) => {
-            handleAddItem(item, quantity, notes);
-          }}
         />
 
         {/* Bottom Navigation */}

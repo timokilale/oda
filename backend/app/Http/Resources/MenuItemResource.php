@@ -9,12 +9,19 @@ class MenuItemResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $badges = $this->badges ? array_map('trim', explode(',', $this->badges)) : [];
+
         return [
             'id' => $this->id,
             'restaurantId' => $this->restaurant_id,
             'name' => $this->name,
             'description' => $this->description,
+            'ingredients' => $this->ingredients,
             'price' => (float) $this->price,
+            'calories' => $this->calories,
+            'prepTime' => $this->prep_time,
+            'spiciness' => $this->spiciness,
+            'badges' => $badges,
             'category' => $this->category,
             'active' => (bool) $this->active,
             'imageUrl' => $this->image_path,

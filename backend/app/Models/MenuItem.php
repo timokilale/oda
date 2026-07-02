@@ -14,7 +14,12 @@ class MenuItem extends Model
         'restaurant_id',
         'name',
         'description',
+        'ingredients',
         'price',
+        'calories',
+        'prep_time',
+        'spiciness',
+        'badges',
         'category',
         'active',
         'image_path',
@@ -25,6 +30,9 @@ class MenuItem extends Model
     protected $casts = [
         'active' => 'boolean',
         'price' => 'float',
+        'calories' => 'integer',
+        'prep_time' => 'integer',
+        'spiciness' => 'integer',
         'image_position_x' => 'float',
         'image_position_y' => 'float',
     ];

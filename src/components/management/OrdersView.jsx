@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useToast } from '../../context/ToastContext.jsx';
 import { formatCurrency } from '../../lib/format.js';
+import { RotateCcw } from 'lucide-react';
 
 function elapsedMinutes(timestamp) {
   if (!timestamp) return null;
@@ -30,7 +31,7 @@ function orderTypeLabel(order) {
   return 'Dine-in';
 }
 
-export default function OrdersView({ orders, onAcceptOrder, onCancelOrder, onMarkServed }) {
+export default function OrdersView({ orders, onRefresh, onAcceptOrder, onCancelOrder, onMarkServed }) {
   const { toast } = useToast();
   const [filter, setFilter] = useState('Pending');
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,7 +66,12 @@ export default function OrdersView({ orders, onAcceptOrder, onCancelOrder, onMar
             <button key={opt.key} onClick={() => setFilter(opt.key)} className={`px-3 py-1.5 rounded-md font-sans text-xs font-medium transition-all ${filter === opt.key ? 'bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-800' : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'}`}>{opt.label}</button>
           ))}
         </div>
-        <input type="text" placeholder="Search orders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full sm:w-64 px-3 py-1.5 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-lg font-sans text-xs focus:ring-1 focus:ring-neutral-400 outline-none transition-all dark:text-neutral-100" />
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <input type="text" placeholder="Search orders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="flex-1 sm:w-64 px-3 py-1.5 bg-white dark:bg-neutral-900 border border-[#E5E7EB] dark:border-neutral-800 rounded-lg font-sans text-xs focus:ring-1 focus:ring-neutral-400 outline-none transition-all dark:text-neutral-100" />
+          <button onClick={onRefresh} className="p-1.5 rounded-lg border border-[#E5E7EB] dark:border-neutral-800 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all cursor-pointer" title="Refresh orders">
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        </div>
       </section>
 
       <section className="pb-8">

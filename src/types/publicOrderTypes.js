@@ -46,14 +46,14 @@ export function transformMenuItem(backendItem) {
     name: backendItem.name,
     price: Number(backendItem.price),
     description: backendItem.description || '',
+    ingredients: backendItem.ingredients || '',
+    calories: backendItem.calories || null,
+    prepTime: backendItem.prepTime || null,
+    spiciness: backendItem.spiciness ?? null,
+    badges: backendItem.badges || [],
     image: backendItem.imageUrl || '',
     category,
-    badges: [],
-    ingredients: [],
-    calories: 0,
-    prepTime: 0,
     colorLeak: COLOR_LEAKS[hashCode(String(backendItem.id || backendItem.name)) % COLOR_LEAKS.length],
-    spiciness: 0,
   };
 }
 

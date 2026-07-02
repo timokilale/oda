@@ -154,24 +154,16 @@ class PublicService
             ]);
         }
 
-        $orderStatuses = DB::table('orders')
-            ->whereIn('id', $orderIds)
-            ->select('id', 'status', 'created_at')
-            ->get()
-            ->keyBy('id');
-
-        $mapped = $orders->map(function ($order) use ($menuItemNames, $orderStatuses) {
+        $mapped = $orders->map(function ($order) use ($menuItemNames) {
             $orderId = $order->id;
-            $status = $orderStatuses[$orderId]->status ?? 'pending';
-            $created = $orderStatuses[$orderId]->created_at ?? $order->created_at;
             $orderItems = $menuItemNames[$orderId] ?? collect();
 
             $total = $orderItems->sum(fn($i) => $i['price'] * $i['quantity']);
 
             return [
                 'id' => $orderId,
-                'status' => $status,
-                'createdAt' => $created,
+                'status' => $order->status,
+                'createdAt' => $order->created_at,
                 'totalAmount' => $total,
                 'items' => $orderItems->toArray(),
             ];

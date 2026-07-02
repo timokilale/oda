@@ -20,6 +20,7 @@ export default function usePublicOrder(restaurantRef, tableNumber) {
   const [submitting, setSubmitting] = useState(false);
 
   const ordersMounted = useRef(false);
+  const sessionOrderIds = useRef(new Set());
 
   useEffect(() => {
     if (!tableNumber || !restaurantRef) {
@@ -29,6 +30,11 @@ export default function usePublicOrder(restaurantRef, tableNumber) {
     let active = true;
     setLoading(true);
     setLookupError('');
+
+    const stored = localStorage.getItem(`oda_orders_${restaurantRef}_${tableNumber}`);
+    if (stored) {
+      try { sessionOrderIds.current = new Set(JSON.parse(stored)); } catch {}
+    }
 
     publicOrderService.getOrderContext(restaurantRef, tableNumber)
       .then((data) => { if (active) setContext(data); })
@@ -48,7 +54,11 @@ export default function usePublicOrder(restaurantRef, tableNumber) {
   const loadOrders = useCallback(async () => {
     try {
       const data = await publicOrderService.getOrders(restaurantRef, tableNumber);
-      if (ordersMounted.current) setOrders(data.orders || []);
+      if (ordersMounted.current) {
+        const allOrders = data.orders || [];
+        const filtered = allOrders.filter((o) => sessionOrderIds.current.has(o.id));
+        setOrders(filtered);
+      }
     } catch {
       // silent
     } finally {
@@ -107,9 +117,15 @@ export default function usePublicOrder(restaurantRef, tableNumber) {
         tableNumber,
         cart.map((c) => ({ id: Number(c.menuItem.id), quantity: c.quantity })),
       );
+      const orderId = response?.id;
+      if (orderId) {
+        sessionOrderIds.current.add(orderId);
+        const key = `oda_orders_${restaurantRef}_${tableNumber}`;
+        localStorage.setItem(key, JSON.stringify([...sessionOrderIds.current]));
+      }
       setCart([]);
       setActiveTab('status');
-      triggerToast(response.successMessage || 'Order placed!');
+      triggerToast(response?.successMessage || 'Order placed!');
       await loadOrders();
     } catch (error) {
       triggerToast(error.message || 'Failed to place order');

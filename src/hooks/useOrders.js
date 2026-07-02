@@ -2,23 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useRestaurantWorkspace } from "../context/RestaurantWorkspaceContext.jsx";
 import { transformApiOrderToView } from "../types/managementTypes.js";
 import * as orderService from "../services/orderService.js";
-import { subscribeToOrders } from "../services/realtimeService.js";
-
-function playNotificationSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.frequency.value = 880;
-    oscillator.type = "sine";
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.4);
-  } catch {}
-}
 
 const cache = new Map();
 
@@ -41,30 +24,10 @@ export default function useOrders() {
   }, [restaurant.id, setFlash]);
 
   useEffect(() => {
-    const wasCached = cache.has(restaurant.id);
-
-    if (!wasCached) {
+    if (!cache.has(restaurant.id)) {
       loadOrders();
     }
-
-    const unsubscribe = subscribeToOrders(restaurant.id, (rawOrders) => {
-      const mapped = rawOrders.map(transformApiOrderToView);
-      if (!wasCached) {
-        return;
-      }
-      cache.set(restaurant.id, mapped);
-      setOrders((prev) => {
-        if (mapped.length > prev.length) {
-          playNotificationSound();
-        }
-        return mapped;
-      });
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [restaurant.id, loadOrders]);
+  }, [loadOrders, restaurant.id]);
 
   const acceptOrder = useCallback(
     async (orderId) => {
@@ -110,6 +73,7 @@ export default function useOrders() {
 
   return {
     orders,
+    refreshOrders: loadOrders,
     acceptOrder,
     cancelOrder,
     markServed,

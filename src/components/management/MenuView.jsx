@@ -80,7 +80,13 @@ export default function MenuView({ menuItems, setMenuItems, onAddItem, onDeleteI
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
-        <button onClick={handleOpenAdd} disabled={settingsIncomplete} className="bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-800 px-4 py-2 rounded-lg font-sans text-xs font-medium hover:opacity-80 transition-all cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed" title={settingsIncomplete ? 'Fill in restaurant settings first' : ''}>
+        <button onClick={() => {
+          if (settingsIncomplete) {
+            toast({ type: 'warning', title: 'Settings required', message: 'Fill in your restaurant profile in Settings first.' });
+            return;
+          }
+          handleOpenAdd();
+        }} className="bg-neutral-800 dark:bg-neutral-100 text-white dark:text-neutral-800 px-4 py-2 rounded-lg font-sans text-xs font-medium hover:opacity-80 transition-all cursor-pointer">
           Add Item
         </button>
       </div>
